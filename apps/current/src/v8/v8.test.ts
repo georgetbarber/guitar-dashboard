@@ -7,7 +7,7 @@ import { transformMotif } from "../core/music/motif";
 import { transformRhythm, validateRhythm } from "../core/music/rhythm";
 import { CURRICULUM, validateCurriculum } from "./curriculum";
 import { DEFAULT_STATE } from "./store";
-import { buildSession, createEvidence, masteryFor, recommendPractice, recommendedPracticeStrand } from "./learning";
+import { buildSession, completedActivityIdsFromEvidence, createEvidence, masteryFor, recommendPractice, recommendedPracticeStrand } from "./learning";
 import { availableFreePlayModes, buildFreePlaySequence, freePlayAbilityLevel } from "./freePlay";
 import { cloudProfile, cloudSketch, mergeCloudSnapshot } from "./sync";
 
@@ -51,6 +51,24 @@ describe("V8 musical-freedom foundations", () => {
     expect(masteryFor("ear:u1", [...first, ...assisted]).state).toBe("practising");
     const transfer = createEvidence("c", ["ear:u1"], "transfer", "none", "successful", { ...context, key: "D" }, "2026-07-12T10:00:00Z");
     expect(masteryFor("ear:u1", [...first, ...assisted, ...transfer]).state).toBe("transfer-ready");
+  });
+
+  it("records retry and partial evidence without treating the activity as complete", () => {
+    const retry = createEvidence("activity-1", ["sound:u1"], "performance", "none", "retry", {}, "2026-07-10T10:00:00Z");
+    const partial = createEvidence("activity-1", ["sound:u1"], "performance", "hint", "partial", {}, "2026-07-11T10:00:00Z");
+    expect(completedActivityIdsFromEvidence([...retry, ...partial])).toEqual([]);
+
+    const assistedSuccess = createEvidence("activity-1", ["sound:u1"], "performance", "hint", "successful", {}, "2026-07-12T10:00:00Z");
+    expect(completedActivityIdsFromEvidence([...retry, ...partial, ...assistedSuccess])).toEqual(["activity-1"]);
+  });
+
+  it("repairs completion flags from the durable evidence history", () => {
+    const retry = createEvidence("not-yet-complete", ["sound:u1"], "performance", "none", "retry", {});
+    const merged = mergeCloudSnapshot({ ...DEFAULT_STATE, completedActivityIds: ["not-yet-complete"], evidence: retry }, {});
+    expect(merged.completedActivityIds).toEqual([]);
+
+    const success = createEvidence("complete", ["sound:u2"], "performance", "none", "successful", {});
+    expect(mergeCloudSnapshot(DEFAULT_STATE, { evidence: success }).completedActivityIds).toEqual(["complete"]);
   });
 
   it("chooses a Strengthen focus and activity from the selected skill evidence", () => {

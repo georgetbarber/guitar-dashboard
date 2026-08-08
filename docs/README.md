@@ -19,7 +19,10 @@ live here.
 6. [Roadmap](ROADMAP.md) — evidence-based next directions and non-goals.
 7. [Future features](FUTURE_FEATURES.md) — the planned additions and deferred
    work backlog.
-8. [Additional note takeaways](additional-notes/README.md) — useful ideas
+8. [Learning effectiveness backlog](LEARNING_EFFECTIVENESS_BACKLOG.md) — the
+   remaining product changes needed to make attempts, feedback, physical
+   instruction and musical transfer more effective.
+9. [Additional note takeaways](additional-notes/README.md) — useful ideas
    distilled from informal project notes and checked against the current app.
 
 ## Detailed Source Material

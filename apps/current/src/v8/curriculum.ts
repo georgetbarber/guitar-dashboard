@@ -177,18 +177,25 @@ const ACTIVITY_TEMPLATE: Array<[ActivityKind, EvidenceSource, number, string, st
 function makeActivity(unitId: string, seed: UnitSeed, index: number, template: typeof ACTIVITY_TEMPLATE[number]): ActivityDefinition {
   const [kind, source, minutes, title, instruction, action, doneWhen] = template;
   const override = seed.overrides?.[kind];
+  const tonicOnlyListening = kind === "listen-compare" && seed.earTargets.length === 1 && seed.earTargets[0] === 0;
   return {
     id: `${unitId}-${kind}`,
     unitId,
     kind,
-    title: override?.title ?? title,
-    instruction: override?.instruction ?? `${instruction} Focus on ${seed.focus}.`,
+    title: override?.title ?? (tonicOnlyListening ? "Hear and compare your attempts" : title),
+    instruction: override?.instruction ?? (tonicOnlyListening
+      ? `Hear the tonic reference, then play the micro-study twice and compare the control of its sound and timing. Focus on ${seed.focus}.`
+      : `${instruction} Focus on ${seed.focus}.`),
     why: seed.outcome,
     minutes,
     competencyIds: seed.strands.map((strand) => `${strand}:${unitId}`),
     source,
-    action,
-    observable: doneWhen,
+    action: tonicOnlyListening
+      ? "Tap “Hear the tonic reference”, play the micro-study twice, then name one specific difference between your two attempts."
+      : action,
+    observable: tonicOnlyListening
+      ? "you can name one specific change in sound or timing between your two attempts while keeping the tonic in mind."
+      : doneWhen,
     prompt: `${seed.study[0]}: ${seed.study[3]}. ${seed.study[4].join(" · ")}`,
     hint: `Reduce the tempo or material. Keep ${seed.focus} as the only problem you are solving.`,
     reveal: `Reference: ${seed.study[4].join(" / ")}. The goal is to hear and control ${seed.focus}, not copy mechanically.`,
@@ -248,6 +255,11 @@ export function validateCurriculum(): string[] {
     const kinds = new Set(unit.activities.map((activity) => activity.kind));
     for (const required of ["technique", "rhythm", "creative", "transfer", "reflection"] as ActivityKind[]) {
       if (!kinds.has(required)) errors.push(`${unit.id} is missing ${required}.`);
+    }
+    const listenActivity = unit.activities.find((activity) => activity.kind === "listen-compare");
+    if (unit.microStudy.earTargets?.length === 1 && unit.microStudy.earTargets[0] === 0
+      && !listenActivity?.action.includes("Hear the tonic reference")) {
+      errors.push(`${unit.id} tonic-only listening does not match its available playback action.`);
     }
     const rhythmTokens = unit.microStudy.rhythm.split(/\s+/);
     if (rhythmTokens.every((token) => token in notationDurations)) {

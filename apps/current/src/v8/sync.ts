@@ -1,4 +1,5 @@
 import { SKETCH_SYNC_FIELDS } from "./types";
+import { completedActivityIdsFromEvidence } from "./learning";
 import type { CompetencyEvidence, LearnerSettings, Sketch, SketchSyncField, V8State } from "./types";
 
 export interface CloudProfile {
@@ -119,7 +120,9 @@ export function mergeCloudSnapshot(state: V8State, incoming: CloudSnapshot): V8S
   return {
     ...state,
     activeUnitId: remoteIsNewer && profile ? profile.activeUnitId : state.activeUnitId,
-    completedActivityIds: [...new Set([...state.completedActivityIds, ...(profile?.completedActivityIds ?? [])])],
+    // Evidence is the durable source of truth. A profile can arrive before its
+    // evidence snapshot, but uploads wait until all remote collections load.
+    completedActivityIds: completedActivityIdsFromEvidence(evidence),
     settings: remoteSettingsAreNewer && profile ? profile.settings : state.settings,
     settingsUpdatedAt: remoteSettingsAreNewer && profile ? profile.settingsUpdatedAt : state.settingsUpdatedAt,
     lastReflection: remoteIsNewer && profile ? profile.lastReflection : state.lastReflection,

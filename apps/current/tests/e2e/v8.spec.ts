@@ -129,6 +129,22 @@ test("records hints separately from independent learning evidence", async ({ pag
   await expect(page.getByRole("heading", { name: "Meet this skill in Continue first." })).toBeVisible();
 });
 
+test("keeps retry and partial attempts in the guided path", async ({ page }) => {
+  await completeDiagnostic(page);
+  await page.getByRole("button", { name: /Start with:/ }).click();
+  await page.getByRole("button", { name: "Hear the tonic reference" }).click();
+  await page.getByRole("button", { name: "Needs another pass" }).click();
+  await expect(page.getByRole("heading", { name: /Attempt logged:/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This stays in your path." })).toBeVisible();
+
+  await page.getByRole("button", { name: "Try this activity again" }).click();
+  await page.getByRole("button", { name: "Hear the tonic reference" }).click();
+  await page.getByRole("button", { name: "Partly there" }).click();
+  await page.getByRole("button", { name: "Stop here for now" }).click();
+
+  await expect(page.getByRole("button", { name: "Start with: Hear and compare your attempts" })).toBeVisible();
+});
+
 test("exposes all eight stages and a complete unit activity contract", async ({ page }) => {
   await completeDiagnostic(page);
   await learnViews(page).getByRole("button", { name: /Course map/ }).click();

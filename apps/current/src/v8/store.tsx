@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import { CURRICULUM } from "./curriculum";
+import { completedActivityIdsFromEvidence } from "./learning";
 import { loadPersistedState, newSketch, savePersistedState } from "./repository";
 import { mergeCloudSnapshot } from "./sync";
 import type { CloudSnapshot } from "./sync";
@@ -85,11 +86,19 @@ function withSketchFieldTimes(state: V8State): V8State {
   };
 }
 
+function withEvidenceBackedCompletions(state: V8State): V8State {
+  return { ...state, completedActivityIds: completedActivityIdsFromEvidence(state.evidence) };
+}
+
+function preparePersistedState(state: V8State): V8State {
+  return withSketchFieldTimes(withEvidenceBackedCompletions(state));
+}
+
 function reducer(state: V8State, action: Action): V8State {
   const changedAt = new Date().toISOString();
   switch (action.type) {
-    case "hydrate": return withSketchFieldTimes({ ...DEFAULT_STATE, ...action.state, deletedSketchIds: action.state.deletedSketchIds ?? {}, route: routeFromLocation() });
-    case "replaceState": return withSketchFieldTimes({ ...DEFAULT_STATE, ...action.state, deletedSketchIds: action.state.deletedSketchIds ?? {}, route: routeFromLocation(), updatedAt: changedAt });
+    case "hydrate": return preparePersistedState({ ...DEFAULT_STATE, ...action.state, deletedSketchIds: action.state.deletedSketchIds ?? {}, route: routeFromLocation() });
+    case "replaceState": return preparePersistedState({ ...DEFAULT_STATE, ...action.state, deletedSketchIds: action.state.deletedSketchIds ?? {}, route: routeFromLocation(), updatedAt: changedAt });
     case "mergeCloud": return withSketchFieldTimes(mergeCloudSnapshot(state, action.snapshot));
     case "navigate": return { ...state, route: action.route, activeActivityId: null };
     case "openUnit": return { ...state, route: "path", activeUnitId: action.unitId, activeActivityId: null, updatedAt: changedAt };
@@ -100,16 +109,19 @@ function reducer(state: V8State, action: Action): V8State {
     };
     case "suspendActivity": return { ...state, route: action.route, resumeActivityId: state.activeActivityId, activeActivityId: null };
     case "resumeActivity": return { ...state, activeActivityId: state.resumeActivityId, resumeActivityId: null };
-    case "recordActivity": return {
-      ...state,
-      // activeActivityId is intentionally kept so the player can show a completion
-      // panel with a "continue to next" action; the player closes itself explicitly.
-      resumeActivityId: null,
-      completedActivityIds: [...new Set([...state.completedActivityIds, action.activityId])],
-      evidence: [...state.evidence, ...action.evidence],
-      lastReflection: action.reflection || state.lastReflection,
-      updatedAt: changedAt
-    };
+    case "recordActivity": {
+      const evidence = [...state.evidence, ...action.evidence];
+      return {
+        ...state,
+        // activeActivityId is intentionally kept so the player can show the
+        // recorded outcome and either offer a retry or continue after success.
+        resumeActivityId: null,
+        completedActivityIds: completedActivityIdsFromEvidence(evidence),
+        evidence,
+        lastReflection: action.reflection || state.lastReflection,
+        updatedAt: changedAt
+      };
+    }
     case "updateSettings": {
       const settings = { ...state.settings, ...action.settings };
       return {

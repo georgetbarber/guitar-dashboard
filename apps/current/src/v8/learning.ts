@@ -22,6 +22,17 @@ function contextKey(context: EvidenceContext): string {
     .join("|");
 }
 
+/**
+ * Activity completion means the learner achieved the activity's observable
+ * action at least once. Retry and partial evidence remains valuable practice
+ * history, but must not advance the guided path.
+ */
+export function completedActivityIdsFromEvidence(evidence: CompetencyEvidence[]): string[] {
+  return [...new Set(evidence
+    .filter((item) => item.outcome === "successful")
+    .map((item) => item.activityId))];
+}
+
 export function masteryFor(competencyId: string, evidence: CompetencyEvidence[]): MasterySummary {
   const relevant = evidence.filter((item) => item.competencyId === competencyId);
   const independent = relevant.filter((item) => item.assistance === "none" && item.outcome === "successful");

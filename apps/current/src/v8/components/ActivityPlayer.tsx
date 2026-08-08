@@ -90,10 +90,22 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
     setJustCompleted(outcome);
   };
 
-  // The next thing to do: the next unfinished activity in this unit, then the first
-  // unfinished activity of a later unit. Treats the one just completed as done.
+  const retryCurrentActivity = () => {
+    setJustCompleted(null);
+    setAssistance("none");
+    setHint(false);
+    setReveal(false);
+    setAttempted(activity.kind === "reflection" && reflection.trim().length >= 8);
+    setEarIndex(0);
+    setPlaying(false);
+    setCaption(null);
+  };
+
+  // Find the next unfinished activity in this unit, then in a later unit. The
+  // current activity is treated as done only after a successful outcome.
   const nextActivity = (): ActivityDefinition | null => {
-    const done = new Set([...state.completedActivityIds, activity.id]);
+    const done = new Set(state.completedActivityIds);
+    if (justCompleted === "successful") done.add(activity.id);
     const index = unit.activities.findIndex((item) => item.id === activity.id);
     const inUnit = unit.activities.slice(index + 1).find((item) => !done.has(item.id))
       ?? unit.activities.find((item) => !done.has(item.id));
@@ -111,6 +123,7 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
         : "Make the musical attempt described above, listen back if useful, then choose the result that best describes it.";
 
   if (justCompleted) {
+    const successful = justCompleted === "successful";
     const next = nextActivity();
     const outcomeLabel = OUTCOMES.find((item) => item.value === justCompleted)?.label ?? "Logged";
     const sameUnit = next && next.unitId === unit.id;
@@ -118,11 +131,22 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
       <section className="activity-player activity-done" aria-labelledby="activity-title">
         <header className="activity-header">
           <button className="icon-button" onClick={onClose} aria-label="Close activity">←</button>
-          <div><span>{originLabel} · {unit.title}</span><h1 id="activity-title">Logged: {activity.title}</h1><p>Recorded as “{outcomeLabel}”. Progress is built from real attempts, so this counts.</p></div>
+          <div><span>{originLabel} · {unit.title}</span><h1 id="activity-title">{successful ? "Completed" : "Attempt logged"}: {activity.title}</h1><p>{successful
+            ? `Recorded as “${outcomeLabel}”. This activity is complete; independent mastery still depends on unassisted success across days and contexts.`
+            : `Recorded as “${outcomeLabel}”. The evidence is saved, but this activity remains in your guided path until its success action is achieved.`}</p></div>
         </header>
         <div className="done-panel card">
-          <span className="done-check" aria-hidden="true">✓</span>
-          {next
+          <span className="done-check" aria-hidden="true">{successful ? "✓" : "↻"}</span>
+          {!successful
+            ? <>
+                <h2>This stays in your path.</h2>
+                <p>A partial or unsuccessful attempt is useful evidence, not completion. Simplify the task, use help if useful, and make another deliberate attempt.</p>
+                <div className="done-actions">
+                  <button className="primary-action large" onClick={retryCurrentActivity}>Try this activity again</button>
+                  <button className="text-action" onClick={onClose}>Stop here for now</button>
+                </div>
+              </>
+            : next
             ? <>
                 <h2>Keep the momentum going</h2>
                 <p>{sameUnit ? "Next in this unit:" : "You’ve finished this unit — next up:"} <strong>{next.title}</strong> <small>({next.kind.replaceAll("-", " ")} · {next.minutes} min)</small></p>

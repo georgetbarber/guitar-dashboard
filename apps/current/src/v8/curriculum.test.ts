@@ -44,4 +44,14 @@ describe("V8 curriculum music contract", () => {
     expect(CURRICULUM[9].microStudy.earTargets).toEqual([3, 4]);
     expect(CURRICULUM[0].microStudy.earTargets).toEqual([0]);
   });
+
+  it("keeps listening instructions truthful about the playback that is available", () => {
+    const tonicOnly = CURRICULUM[0].activities.find((activity) => activity.kind === "listen-compare")!;
+    expect(tonicOnly.title).toBe("Hear and compare your attempts");
+    expect(tonicOnly.action).toContain("Hear the tonic reference");
+    expect(tonicOnly.action).not.toContain("reference and target");
+
+    const intervalComparison = CURRICULUM[9].activities.find((activity) => activity.kind === "listen-compare")!;
+    expect(intervalComparison.action).toContain("Hear reference and target");
+  });
 });
