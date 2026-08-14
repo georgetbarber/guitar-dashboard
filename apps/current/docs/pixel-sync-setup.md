@@ -35,14 +35,20 @@ maintenance or recreating the deployment.
 1. Create a project in the [Firebase console](https://console.firebase.google.com/).
 2. Add a Web app and copy its configuration values into a new `.env.local`, using
    `.env.example` as the template.
-   For GitHub Actions deployments, add the same six `VITE_FIREBASE_*` entries as
+   For GitHub Actions deployments, add the same `VITE_FIREBASE_*` entries as
    repository variables under **Settings → Secrets and variables → Actions →
    Variables**. The local file is ignored by Git and is not available to the
    deployment workflow.
-3. In **Authentication → Sign-in method**, enable Google.
-4. Create a Cloud Firestore database. The repository's `firestore.rules` ensures
+3. In **App Check**, register the Web app with a reCAPTCHA Enterprise provider.
+   Put its public site key in `VITE_FIREBASE_APP_CHECK_SITE_KEY` locally and as a
+   GitHub repository variable. Deploy the client first, watch App Check metrics
+   for legitimate requests, and only then enable enforcement for Authentication,
+   Firestore, and Storage. Never enable enforcement before the production client
+   is sending valid tokens.
+4. In **Authentication → Sign-in method**, enable Google.
+5. Create a Cloud Firestore database. The repository's `firestore.rules` ensures
    each authenticated account can access only its own `/users/{uid}` data.
-5. Enable Firebase Storage. The repository's `storage.rules` restricts each take
+6. Enable Firebase Storage. The repository's `storage.rules` restricts each take
    to its authenticated owner, enforces audio content and caps it at 50 MB.
    Apply `storage.cors.json` to the bucket once so authenticated browser playback
    can read the audio as a private blob rather than creating a public download
@@ -51,8 +57,8 @@ maintenance or recreating the deployment.
    ```bash
    gcloud storage buckets update gs://YOUR_STORAGE_BUCKET --cors-file=storage.cors.json
    ```
-6. Copy `.firebaserc.example` to `.firebaserc` and replace the project ID.
-7. Install the Firebase CLI, sign in, build, and deploy:
+7. Copy `.firebaserc.example` to `.firebaserc` and replace the project ID.
+8. Install the Firebase CLI, sign in, build, and deploy:
 
    ```bash
    npm install --global firebase-tools
@@ -65,11 +71,17 @@ The Firebase web configuration is an application identifier and is safe to ship
 to the browser. Access control is enforced by Authentication and Firestore rules,
 not by hiding those values.
 
+App Check makes scripted use of the public Firebase configuration harder, but it
+is not a per-user quota. Configure budget alerts before opening sign-in broadly.
+If real multi-user demand develops, put recording allocation behind a trusted
+service that enforces per-user object counts, total bytes, and request rate.
+
 ## Move the existing laptop history into sync
 
 Browser storage belongs to its exact web address. If the local development address
 already contains V8 progress, open `http://127.0.0.1:4184`, choose **Settings and
-sync → Continue with Google**, and wait for **All progress is synchronised**. Then:
+sync → Continue with Google**, then explicitly choose **Move this device history
+into the account**. Wait for **All progress is synchronised**. Then:
 
 1. Open the [live address](https://learn-the-guitar.web.app) on the laptop and sign
    into the same Google account.
@@ -90,6 +102,10 @@ address and import it at the live address before relying on cloud sync.
 The installed app works offline. Changes made offline are saved locally and sent
 to Firestore when connectivity returns. **Protect offline data** in Settings asks
 the browser not to remove the local history during routine storage cleanup.
+Guest history and each signed-in account use separate device workspaces. Signing
+out never relabels one account's history as another account. **Erase all Guitar
+Academy data from this device** removes every local workspace and recording but
+does not delete cloud data.
 
 ## Updating the app
 

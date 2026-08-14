@@ -15,13 +15,19 @@ jobs:
       run:
         working-directory: apps/current
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: apps/current/package-lock.json
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: "21"
       - run: npm ci
+      - run: npm test
+      - run: npm run test:rules
       - name: Build Firebase-enabled application
         env:
           VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
@@ -30,6 +36,7 @@ jobs:
           VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_APP_CHECK_SITE_KEY: ${{ vars.VITE_FIREBASE_APP_CHECK_SITE_KEY }}
         run: |
           required=(
             VITE_FIREBASE_API_KEY
@@ -38,6 +45,7 @@ jobs:
             VITE_FIREBASE_STORAGE_BUCKET
             VITE_FIREBASE_MESSAGING_SENDER_ID
             VITE_FIREBASE_APP_ID
+            VITE_FIREBASE_APP_CHECK_SITE_KEY
           )
           for name in "${required[@]}"; do
             if [ -z "${!name}" ]; then
@@ -46,7 +54,7 @@ jobs:
             fi
           done
           npm run build
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - uses: FirebaseExtended/action-hosting-deploy@500ac625ca2dd40cbd15f7659af953801858032a # v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LEARN_THE_GUITAR }}

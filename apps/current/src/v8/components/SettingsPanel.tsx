@@ -41,7 +41,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         <header><div><span>Device and account settings</span><h2 id="settings-title">Your instrument, sync and storage</h2></div><button className="icon-button" onClick={onClose} aria-label="Close settings">×</button></header>
         <section className={`sync-panel sync-${cloud.status}`} aria-label="Device synchronisation">
           <div><span className="eyebrow">Across your devices</span><h3>{cloud.user ? `Signed in as ${cloud.user.email ?? "your Google account"}` : cloud.configured ? "Sign in to synchronise" : "Firebase connection required"}</h3><p>{cloud.message}</p></div>
-          {cloud.user ? <button className="secondary-action" onClick={() => void cloud.signOut()}>Sign out</button> : cloud.configured ? <button className="primary-action" onClick={() => void cloud.signIn()}>Continue with Google</button> : <span className="configuration-note">Add the Firebase web configuration to <code>.env.local</code>.</span>}
+          {cloud.user ? <button className="secondary-action" onClick={() => { if (confirm("Sign out and open this device's separate guest workspace? The signed-in account's offline history will remain isolated on this device.")) void cloud.signOut(); }}>Sign out</button> : cloud.configured ? <button className="primary-action" onClick={() => void cloud.signIn()}>Continue with Google</button> : <span className="configuration-note">Add the Firebase web configuration to <code>.env.local</code>.</span>}
         </section>
         <section className="install-panel" aria-label="Install Guitar Academy">
           <div><span className="eyebrow">Pixel and offline use</span><h3>{standalone ? "Opened in app mode" : "Install Guitar Academy"}</h3><p>The app shell works offline. Learning changes queue safely and synchronise when the connection returns.</p></div>
@@ -67,6 +67,12 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             dispatch({ type: "clearRecordings" });
             setMessage("All retained recordings were removed. Progress and sketches were not changed.");
           }}>Delete retained recordings</button>
+          <button className="danger-action" onClick={async () => {
+            if (!confirm("Erase every Guitar Academy workspace, recording and offline account copy from this device? Cloud data will remain. Export a backup first if you need one.")) return;
+            if (!confirm("This device data cannot be recovered after erasing. Continue?")) return;
+            try { await cloud.eraseDeviceData(); }
+            catch (error) { setMessage(error instanceof Error ? error.message : "This device could not be erased."); }
+          }}>Erase all Guitar Academy data from this device</button>
           <input ref={fileRef} hidden type="file" accept=".guitar-academy,application/json" onChange={async (event) => {
             const file = event.target.files?.[0];
             if (!file) return;
@@ -80,7 +86,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             finally { event.target.value = ""; }
           }} />
         </div>
-        <p className="privacy-message">{message} Audio uploads only when you choose one retained take from a finished project; other recordings never synchronise.</p>
+        <p className="privacy-message">{message} Audio uploads only when you choose one retained take from a finished project; other recordings never synchronise. Account and guest workspaces stay separate on this device.</p>
       </section>
     </div>
   );

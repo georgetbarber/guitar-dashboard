@@ -8,3 +8,4 @@ playwright-report/
 .env.local
 .env.*.local
 .firebaserc
+*-debug.log
