@@ -8,6 +8,7 @@ service firebase.storage {
         && request.auth.uid == userId
         && request.resource.size < 50 * 1024 * 1024
         && request.resource.contentType.matches('audio/.*')
+        && request.resource.metadata.keys().hasAll(['explicitlySelected'])
         && request.resource.metadata.explicitlySelected == 'true';
       allow delete: if request.auth != null && request.auth.uid == userId;
     }

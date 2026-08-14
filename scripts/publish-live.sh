@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 
-export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+export PATH="/opt/homebrew/opt/openjdk@21/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 # Publishing is an automated flow: Git output must print and continue rather
 # than opening an interactive `less` screen that waits for the user to press q.
 export GIT_PAGER=cat
@@ -18,6 +18,7 @@ REQUIRED_FIREBASE_VARIABLES=(
   VITE_FIREBASE_STORAGE_BUCKET
   VITE_FIREBASE_MESSAGING_SENDER_ID
   VITE_FIREBASE_APP_ID
+  VITE_FIREBASE_APP_CHECK_SITE_KEY
 )
 
 fail() {
@@ -84,8 +85,8 @@ if [ ! -d "$APP/node_modules" ]; then
 fi
 
 echo
-echo "Running music, application, and production checks..."
-(cd "$APP" && npm run test && npm run build)
+echo "Running music, application, Firebase-rule, and production checks..."
+(cd "$APP" && npm run test && npm run test:rules && npm run build)
 
 echo
 echo "Keeping Firebase cloud sync configured..."

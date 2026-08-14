@@ -2,11 +2,136 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    function owns(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
 
-      match /{document=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+    function validSettings(settings) {
+      return settings is map
+        && settings.keys().hasOnly([
+          'instrument', 'dailyMinutes', 'tonicName', 'mode', 'theme',
+          'reducedMotion', 'diagnosticComplete', 'startingBaseline'
+        ])
+        && settings.instrument in ['electric', 'acoustic']
+        && settings.dailyMinutes is int
+        && settings.dailyMinutes >= 10
+        && settings.dailyMinutes <= 90
+        && settings.tonicName is string
+        && settings.tonicName.size() <= 8
+        && settings.mode is string
+        && settings.mode.size() <= 32
+        && settings.theme in ['light', 'dark']
+        && settings.reducedMotion is bool
+        && settings.diagnosticComplete is bool
+        && settings.startingBaseline in ['repair', 'some', 'secure'];
+    }
+
+    function validProfile(data) {
+      return data.keys().hasOnly([
+          'schemaVersion', 'activeUnitId', 'completedActivityIds', 'settings',
+          'settingsUpdatedAt', 'lastReflection', 'deletedSketchIds', 'updatedAt'
+        ])
+        && data.schemaVersion == 1
+        && data.activeUnitId is string
+        && data.activeUnitId.size() <= 64
+        && data.completedActivityIds is list
+        && data.completedActivityIds.size() <= 5000
+        && validSettings(data.settings)
+        && data.settingsUpdatedAt is string
+        && data.settingsUpdatedAt.size() <= 40
+        && data.lastReflection is string
+        && data.lastReflection.size() <= 20000
+        && data.deletedSketchIds is map
+        && data.deletedSketchIds.keys().size() <= 2000
+        && data.updatedAt is string
+        && data.updatedAt.size() <= 40;
+    }
+
+    function validEvidence(data, evidenceId) {
+      return data.keys().hasOnly([
+          'id', 'competencyId', 'source', 'assistance', 'context',
+          'outcome', 'occurredAt', 'activityId'
+        ])
+        && data.id == evidenceId
+        && data.id is string
+        && data.id.size() <= 160
+        && data.competencyId is string
+        && data.competencyId.size() <= 160
+        && data.source in ['recognition', 'production', 'performance', 'transfer', 'creation', 'reflection']
+        && data.assistance in ['none', 'hint', 'reveal', 'guided']
+        && data.context is map
+        && data.context.keys().hasOnly(['key', 'mode', 'fretRegion', 'tempo', 'instrument'])
+        && data.outcome in ['successful', 'partial', 'retry']
+        && data.occurredAt is string
+        && data.occurredAt.size() <= 40
+        && data.activityId is string
+        && data.activityId.size() <= 160;
+    }
+
+    function validSketch(data, sketchId) {
+      return data.keys().hasOnly([
+          'id', 'name', 'intention', 'tags', 'tempo', 'metre', 'key', 'mode',
+          'chords', 'melody', 'rhythmPattern', 'bassMovement', 'sections', 'notes',
+          'ambiguityNotes', 'takes', 'revisions', 'reflections', 'status',
+          'createdAt', 'updatedAt', 'fieldUpdatedAt'
+        ])
+        && data.id == sketchId
+        && data.id is string
+        && data.id.size() <= 160
+        && data.name is string
+        && data.name.size() <= 300
+        && data.intention is string
+        && data.intention.size() <= 5000
+        && data.tags is list
+        && data.tags.size() <= 100
+        && data.tempo is number
+        && data.tempo >= 20
+        && data.tempo <= 400
+        && data.metre in ['4/4', '3/4', '6/8']
+        && (data.key == null || (data.key is string && data.key.size() <= 16))
+        && (data.mode == null || (data.mode is string && data.mode.size() <= 32))
+        && data.chords is list
+        && data.chords.size() <= 512
+        && data.melody is list
+        && data.melody.size() <= 4096
+        && data.rhythmPattern is string
+        && data.rhythmPattern.size() <= 20000
+        && data.bassMovement is string
+        && data.bassMovement.size() <= 20000
+        && data.sections is list
+        && data.sections.size() <= 128
+        && data.notes is string
+        && data.notes.size() <= 200000
+        && data.ambiguityNotes is string
+        && data.ambiguityNotes.size() <= 20000
+        && data.takes is list
+        && data.takes.size() <= 200
+        && data.revisions is list
+        && data.revisions.size() <= 500
+        && data.reflections is list
+        && data.reflections.size() <= 500
+        && data.status in ['capture', 'understand', 'vary', 'arrange', 'record', 'compare', 'revise', 'finished']
+        && data.createdAt is string
+        && data.createdAt.size() <= 40
+        && data.updatedAt is string
+        && data.updatedAt.size() <= 40;
+    }
+
+    match /users/{userId} {
+      allow read: if owns(userId);
+      allow create, update: if owns(userId) && validProfile(request.resource.data);
+      allow delete: if owns(userId);
+
+      match /evidence/{evidenceId} {
+        allow read: if owns(userId);
+        allow create: if owns(userId) && validEvidence(request.resource.data, evidenceId);
+        allow delete: if owns(userId);
+      }
+
+      match /sketches/{sketchId} {
+        allow read: if owns(userId);
+        allow create, update: if owns(userId) && validSketch(request.resource.data, sketchId);
+        allow delete: if owns(userId);
       }
     }
 

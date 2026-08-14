@@ -1,11 +1,42 @@
 import type { Sketch, V8State } from "./types";
 
 const DB_NAME = "guitar-academy-v8";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STATE_STORE = "state";
 const BLOB_STORE = "blobs";
-const STATE_KEY = "learner";
+const LEGACY_STATE_KEY = "learner";
 const LOCAL_FALLBACK = "guitar-academy-v8-fallback";
+const ANONYMOUS_WORKSPACE = "anonymous";
+const WORKSPACE_SEPARATOR = "\u0000";
+
+export type WorkspaceId = "anonymous" | `account:${string}`;
+
+let activeWorkspace: WorkspaceId = ANONYMOUS_WORKSPACE;
+let deviceErased = false;
+
+export function accountWorkspaceId(uid: string): WorkspaceId {
+  return `account:${uid}`;
+}
+
+export function setActiveWorkspace(workspaceId: WorkspaceId) {
+  activeWorkspace = workspaceId;
+}
+
+export function activeWorkspaceId() {
+  return activeWorkspace;
+}
+
+function stateKey(workspaceId: WorkspaceId) {
+  return workspaceId;
+}
+
+function blobKey(workspaceId: WorkspaceId, id: string) {
+  return `${workspaceId}${WORKSPACE_SEPARATOR}${id}`;
+}
+
+function fallbackKey(workspaceId: WorkspaceId) {
+  return `${LOCAL_FALLBACK}:${workspaceId}`;
+}
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -17,39 +48,67 @@ function requestResult<T>(request: IDBRequest<T>): Promise<T> {
 async function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.addEventListener("upgradeneeded", () => {
+    request.addEventListener("upgradeneeded", (event) => {
       const database = request.result;
       if (!database.objectStoreNames.contains(STATE_STORE)) database.createObjectStore(STATE_STORE);
       if (!database.objectStoreNames.contains(BLOB_STORE)) database.createObjectStore(BLOB_STORE);
+      if ((event as IDBVersionChangeEvent).oldVersion < 2) {
+        const transaction = request.transaction;
+        if (!transaction) return;
+        const states = transaction.objectStore(STATE_STORE);
+        const legacyState = states.get(LEGACY_STATE_KEY);
+        legacyState.addEventListener("success", () => {
+          if (!legacyState.result) return;
+          states.put(legacyState.result, stateKey(ANONYMOUS_WORKSPACE));
+          states.delete(LEGACY_STATE_KEY);
+        });
+        const blobs = transaction.objectStore(BLOB_STORE);
+        const cursorRequest = blobs.openCursor();
+        cursorRequest.addEventListener("success", () => {
+          const cursor = cursorRequest.result;
+          if (!cursor) return;
+          if (typeof cursor.key === "string" && !cursor.key.includes(WORKSPACE_SEPARATOR)) {
+            blobs.put(cursor.value, blobKey(ANONYMOUS_WORKSPACE, cursor.key));
+            cursor.delete();
+          }
+          cursor.continue();
+        });
+      }
     });
     request.addEventListener("success", () => resolve(request.result));
     request.addEventListener("error", () => reject(request.error));
   });
 }
 
-export async function loadPersistedState(): Promise<V8State | null> {
+export async function loadPersistedState(workspaceId: WorkspaceId = activeWorkspace): Promise<V8State | null> {
   try {
     const database = await openDatabase();
     const transaction = database.transaction(STATE_STORE, "readonly");
-    const value = await requestResult(transaction.objectStore(STATE_STORE).get(STATE_KEY));
+    const value = await requestResult(transaction.objectStore(STATE_STORE).get(stateKey(workspaceId)));
     database.close();
     if (value) return value as V8State;
   } catch {
     // Fall through to the compatibility copy below.
   }
   try {
-    const raw = localStorage.getItem(LOCAL_FALLBACK);
+    const scoped = localStorage.getItem(fallbackKey(workspaceId));
+    const raw = scoped ?? (workspaceId === ANONYMOUS_WORKSPACE ? localStorage.getItem(LOCAL_FALLBACK) : null);
+    if (!scoped && raw && workspaceId === ANONYMOUS_WORKSPACE) {
+      localStorage.setItem(fallbackKey(workspaceId), raw);
+      localStorage.removeItem(LOCAL_FALLBACK);
+    }
     return raw ? JSON.parse(raw) as V8State : null;
   } catch {
     return null;
   }
 }
 
-export async function savePersistedState(state: V8State): Promise<void> {
+export async function savePersistedState(state: V8State, workspaceId: WorkspaceId = activeWorkspace): Promise<void> {
+  if (deviceErased) return;
   try {
     const database = await openDatabase();
     const transaction = database.transaction(STATE_STORE, "readwrite");
-    transaction.objectStore(STATE_STORE).put(state, STATE_KEY);
+    transaction.objectStore(STATE_STORE).put(state, stateKey(workspaceId));
     await new Promise<void>((resolve, reject) => {
       transaction.addEventListener("complete", () => resolve());
       transaction.addEventListener("error", () => reject(transaction.error));
@@ -58,15 +117,89 @@ export async function savePersistedState(state: V8State): Promise<void> {
   } catch (error) {
     // localStorage is a compatibility fallback, not a duplicate primary store.
     // Large sketchbooks can exceed its small quota while remaining safe in IndexedDB.
-    try { localStorage.setItem(LOCAL_FALLBACK, JSON.stringify(state)); }
+    try { localStorage.setItem(fallbackKey(workspaceId), JSON.stringify(state)); }
     catch { throw error; }
   }
 }
 
+export async function workspaceExists(workspaceId: WorkspaceId): Promise<boolean> {
+  return Boolean(await loadPersistedState(workspaceId));
+}
+
+export async function workspaceHasLearningData(workspaceId: WorkspaceId): Promise<boolean> {
+  const state = await loadPersistedState(workspaceId);
+  return Boolean(state && (
+    state.settings.diagnosticComplete
+    || state.completedActivityIds.length
+    || state.evidence.length
+    || state.sketches.length
+    || state.lastReflection.trim()
+    || state.updatedAt !== "2026-07-13T00:00:00.000Z"
+  ));
+}
+
+export async function moveWorkspace(source: WorkspaceId, target: WorkspaceId): Promise<void> {
+  if (source === target) return;
+  const sourceState = await loadPersistedState(source);
+  if (!sourceState) return;
+  if (await workspaceExists(target)) throw new Error("That account already has a workspace on this device.");
+
+  const database = await openDatabase();
+  const transaction = database.transaction([STATE_STORE, BLOB_STORE], "readwrite");
+  const states = transaction.objectStore(STATE_STORE);
+  states.put(sourceState, stateKey(target));
+  states.delete(stateKey(source));
+
+  const blobs = transaction.objectStore(BLOB_STORE);
+  const prefix = `${source}${WORKSPACE_SEPARATOR}`;
+  const cursorRequest = blobs.openCursor(IDBKeyRange.bound(prefix, `${prefix}\uffff`));
+  cursorRequest.addEventListener("success", () => {
+    const cursor = cursorRequest.result;
+    if (!cursor) return;
+    const id = String(cursor.key).slice(prefix.length);
+    blobs.put(cursor.value, blobKey(target, id));
+    cursor.delete();
+    cursor.continue();
+  });
+  await new Promise<void>((resolve, reject) => {
+    transaction.addEventListener("complete", () => resolve());
+    transaction.addEventListener("error", () => reject(transaction.error));
+    transaction.addEventListener("abort", () => reject(transaction.error));
+  });
+  database.close();
+
+  try {
+    const fallback = localStorage.getItem(fallbackKey(source));
+    if (fallback) localStorage.setItem(fallbackKey(target), fallback);
+    localStorage.removeItem(fallbackKey(source));
+  } catch {
+    // IndexedDB remains the authoritative copy.
+  }
+}
+
+export async function eraseAllDeviceData(): Promise<void> {
+  deviceErased = true;
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(DB_NAME);
+    request.addEventListener("success", () => resolve());
+    request.addEventListener("error", () => reject(request.error));
+    request.addEventListener("blocked", () => reject(new Error("Close other Guitar Academy tabs, then try erasing this device again.")));
+  });
+  try {
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index);
+      if (key?.startsWith("guitar-academy")) localStorage.removeItem(key);
+    }
+  } catch {
+    // Some privacy modes expose IndexedDB but disable localStorage.
+  }
+}
+
 export async function saveBlob(id: string, blob: Blob): Promise<void> {
+  if (deviceErased) throw new Error("This device workspace was erased. Reload before saving another recording.");
   const database = await openDatabase();
   const transaction = database.transaction(BLOB_STORE, "readwrite");
-  transaction.objectStore(BLOB_STORE).put(blob, id);
+  transaction.objectStore(BLOB_STORE).put(blob, blobKey(activeWorkspace, id));
   await new Promise<void>((resolve, reject) => {
     transaction.addEventListener("complete", () => resolve());
     transaction.addEventListener("error", () => reject(transaction.error));
@@ -78,9 +211,9 @@ export async function loadBlob(id: string): Promise<Blob | null> {
   try {
     const database = await openDatabase();
     const transaction = database.transaction(BLOB_STORE, "readonly");
-    const value = await requestResult(transaction.objectStore(BLOB_STORE).get(id));
+    const value = await requestResult(transaction.objectStore(BLOB_STORE).get(blobKey(activeWorkspace, id)));
     database.close();
-    return value as Blob | null;
+    return value ? value as Blob : null;
   } catch {
     return null;
   }
@@ -98,7 +231,7 @@ export async function clearStoredRecordings(state: V8State): Promise<void> {
   if (!ids.size) return;
   const database = await openDatabase();
   const transaction = database.transaction(BLOB_STORE, "readwrite");
-  for (const id of ids) transaction.objectStore(BLOB_STORE).delete(id);
+  for (const id of ids) transaction.objectStore(BLOB_STORE).delete(blobKey(activeWorkspace, id));
   await new Promise<void>((resolve, reject) => {
     transaction.addEventListener("complete", () => resolve());
     transaction.addEventListener("error", () => reject(transaction.error));
@@ -111,7 +244,7 @@ export async function clearSketchRecordings(sketch: Sketch): Promise<void> {
   if (!ids.length) return;
   const database = await openDatabase();
   const transaction = database.transaction(BLOB_STORE, "readwrite");
-  for (const id of ids) transaction.objectStore(BLOB_STORE).delete(id);
+  for (const id of ids) transaction.objectStore(BLOB_STORE).delete(blobKey(activeWorkspace, id));
   await new Promise<void>((resolve, reject) => {
     transaction.addEventListener("complete", () => resolve());
     transaction.addEventListener("error", () => reject(transaction.error));

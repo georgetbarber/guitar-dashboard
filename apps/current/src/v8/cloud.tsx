@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { initializeApp, getApps } from "firebase/app";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 import {
   GoogleAuthProvider,
   getAuth,
@@ -21,7 +22,7 @@ import {
   type Unsubscribe
 } from "firebase/firestore";
 import { deleteObject, getBlob, getStorage, ref, uploadBytes } from "firebase/storage";
-import { loadBlob } from "./repository";
+import { accountWorkspaceId, eraseAllDeviceData, loadBlob, workspaceExists, workspaceHasLearningData } from "./repository";
 import { cloudProfile, cloudSketch } from "./sync";
 import type { CloudProfile } from "./sync";
 import type { CompetencyEvidence, RecordedTake, Sketch, V8State } from "./types";
@@ -33,25 +34,37 @@ const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID as string | undefined,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID as string | undefined
+  appId: import.meta.env.VITE_FIREBASE_APP_ID as string | undefined,
+  appCheckSiteKey: import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY as string | undefined
 };
 
 export const CLOUD_CONFIGURED = Boolean(firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId && firebaseConfig.appId);
+export const APP_CHECK_CONFIGURED = Boolean(firebaseConfig.appCheckSiteKey);
 
 const app = CLOUD_CONFIGURED ? (getApps()[0] ?? initializeApp(firebaseConfig)) : null;
+if (app && firebaseConfig.appCheckSiteKey) {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(firebaseConfig.appCheckSiteKey),
+    isTokenAutoRefreshEnabled: true
+  });
+}
 const auth = app ? getAuth(app) : null;
 const database = app ? getFirestore(app) : null;
 const recordingStorage = app && firebaseConfig.storageBucket ? getStorage(app) : null;
 
-export type SyncStatus = "local-only" | "signed-out" | "syncing" | "synced" | "offline" | "error";
+export type SyncStatus = "local-only" | "signed-out" | "account-choice" | "syncing" | "synced" | "offline" | "error";
 
 interface CloudValue {
   configured: boolean;
   user: User | null;
   status: SyncStatus;
   message: string;
+  accountChoice: { email: string } | null;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  connectDeviceHistory: () => Promise<void>;
+  useSeparateAccountHistory: () => Promise<void>;
+  eraseDeviceData: () => Promise<void>;
   uploadFinishedTake: (sketchId: string, takeId: string) => Promise<void>;
   removeUploadedTake: (sketchId: string, takeId: string) => Promise<void>;
   uploadedTakeBlob: (take: RecordedTake) => Promise<Blob | null>;
@@ -116,8 +129,9 @@ async function uploadChanges(database: Firestore, uid: string, state: V8State, c
 }
 
 export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
-  const { state, dispatch, hydrated } = useV8Store();
+  const { state, dispatch, hydrated, switchWorkspace } = useV8Store();
   const [user, setUser] = useState<User | null>(null);
+  const [pendingUser, setPendingUser] = useState<User | null>(null);
   const [status, setStatus] = useState<SyncStatus>(CLOUD_CONFIGURED ? "signed-out" : "local-only");
   const [message, setMessage] = useState(CLOUD_CONFIGURED ? "Sign in to synchronise devices." : "Cloud sync is ready for Firebase configuration.");
   const [remoteReady, setRemoteReady] = useState(false);
@@ -125,6 +139,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const cacheRef = useRef<SyncCache>(emptyCache());
   const uploadingRef = useRef(false);
   const queuedRef = useRef(false);
+  const authRevisionRef = useRef(0);
 
   useEffect(() => {
     if (!auth) return;
@@ -133,13 +148,55 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       setMessage(error instanceof Error ? error.message : "Google sign-in could not finish.");
     });
     return onAuthStateChanged(auth, (nextUser) => {
-      setUser(nextUser);
+      const revision = ++authRevisionRef.current;
       setRemoteReady(false);
       cacheRef.current = emptyCache();
-      setStatus(nextUser ? "syncing" : "signed-out");
-      setMessage(nextUser ? "Connecting your learning history…" : "Sign in to synchronise devices.");
+      void (async () => {
+        if (!nextUser) {
+          await switchWorkspace("anonymous");
+          if (revision !== authRevisionRef.current) return;
+          setPendingUser(null);
+          setUser(null);
+          setStatus("signed-out");
+          setMessage("Sign in to synchronise devices. Guest history stays in its own workspace.");
+          return;
+        }
+
+        const accountWorkspace = accountWorkspaceId(nextUser.uid);
+        if (await workspaceExists(accountWorkspace)) {
+          await switchWorkspace(accountWorkspace);
+          if (revision !== authRevisionRef.current) return;
+          setPendingUser(null);
+          setUser(nextUser);
+          setStatus("syncing");
+          setMessage("Connecting your learning history…");
+          return;
+        }
+
+        if (await workspaceHasLearningData("anonymous")) {
+          if (revision !== authRevisionRef.current) return;
+          setUser(null);
+          setPendingUser(nextUser);
+          setStatus("account-choice");
+          setMessage("Choose whether this device's guest history belongs to the signed-in account.");
+          return;
+        }
+
+        await switchWorkspace(accountWorkspace);
+        if (revision !== authRevisionRef.current) return;
+        setPendingUser(null);
+        setUser(nextUser);
+        setStatus("syncing");
+        setMessage("Connecting your learning history…");
+      })().catch((error: unknown) => {
+        if (revision !== authRevisionRef.current) return;
+        setUser(null);
+        setPendingUser(null);
+        setStatus("error");
+        setMessage(error instanceof Error ? error.message : "This device workspace could not be opened safely.");
+      });
     });
-  }, []);
+  }, [switchWorkspace]);
 
   useEffect(() => {
     if (!database || !user) return;
@@ -224,11 +281,35 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     user,
     status,
     message,
+    accountChoice: pendingUser ? { email: pendingUser.email ?? "the selected Google account" } : null,
     signIn: async () => {
       if (!auth) throw new Error("Firebase is not configured yet.");
       await signInWithPopup(auth, new GoogleAuthProvider());
     },
     signOut: async () => { if (auth) await firebaseSignOut(auth); },
+    connectDeviceHistory: async () => {
+      if (!pendingUser) throw new Error("No account is waiting for a device-history choice.");
+      const nextUser = pendingUser;
+      await switchWorkspace(accountWorkspaceId(nextUser.uid), { moveAnonymousHistory: true });
+      setPendingUser(null);
+      setUser(nextUser);
+      setStatus("syncing");
+      setMessage("Connecting your learning history…");
+    },
+    useSeparateAccountHistory: async () => {
+      if (!pendingUser) throw new Error("No account is waiting for a device-history choice.");
+      const nextUser = pendingUser;
+      await switchWorkspace(accountWorkspaceId(nextUser.uid));
+      setPendingUser(null);
+      setUser(nextUser);
+      setStatus("syncing");
+      setMessage("Connecting your account without the guest history…");
+    },
+    eraseDeviceData: async () => {
+      if (auth) await firebaseSignOut(auth);
+      await eraseAllDeviceData();
+      location.reload();
+    },
     uploadFinishedTake: async (sketchId, takeId) => {
       if (!user || !recordingStorage) throw new Error("Sign in with recording storage configured before sharing a take.");
       if (!navigator.onLine) throw new Error("Reconnect before sharing a take. The private device copy remains safe.");
@@ -274,7 +355,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         if (!(error instanceof Error) || !("code" in error) || (error as Error & { code: string }).code !== "storage/object-not-found") throw error;
       })] : []));
     }
-  }), [user, status, message, state]);
+  }), [user, pendingUser, status, message, state, switchWorkspace]);
   return <CloudContext.Provider value={value}>{children}</CloudContext.Provider>;
 }
 

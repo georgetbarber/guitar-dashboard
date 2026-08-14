@@ -35,6 +35,7 @@ function V8Application() {
   const { state, dispatch, navigate, hydrated } = useV8Store();
   const cloud = useCloudSync();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  if (cloud.accountChoice) return <AccountWorkspaceChoice />;
   if (!hydrated) return <div className="loading-screen"><span>GA</span><p>Loading your learning path…</p></div>;
   if (!state.settings.diagnosticComplete) return <Diagnostic />;
   return (
@@ -72,6 +73,26 @@ function V8Application() {
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </div>
   );
+}
+
+function AccountWorkspaceChoice() {
+  const cloud = useCloudSync();
+  const [busy, setBusy] = useState<"connect" | "separate" | "cancel" | null>(null);
+  const [error, setError] = useState("");
+  if (!cloud.accountChoice) return null;
+  const run = async (choice: "connect" | "separate" | "cancel") => {
+    setBusy(choice);
+    setError("");
+    try {
+      if (choice === "connect") await cloud.connectDeviceHistory();
+      else if (choice === "separate") await cloud.useSeparateAccountHistory();
+      else await cloud.signOut();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The workspace choice could not be completed.");
+      setBusy(null);
+    }
+  };
+  return <main className="diagnostic"><div className="diagnostic-mark">GA <span>Private workspace check</span></div><div className="diagnostic-card"><section><span className="eyebrow">Before synchronising</span><h1>Which history belongs with {cloud.accountChoice.email}?</h1><p>This browser already has a guest learning history. Guitar Academy will never silently mix it into a different account.</p><div className="diagnostic-choices"><button disabled={Boolean(busy)} onClick={() => void run("connect")}><strong>{busy === "connect" ? "Connecting…" : "Move this device history into the account"}</strong><span>Use this when the guest progress and sketches are yours. The separate guest copy is removed from this device.</span></button><button disabled={Boolean(busy)} onClick={() => void run("separate")}><strong>{busy === "separate" ? "Opening…" : "Keep the account history separate"}</strong><span>Open a clean account workspace, or download its existing cloud history, without uploading anything from the guest workspace.</span></button></div>{error && <p className="configuration-note" role="alert">{error}</p>}</section><footer><div /><button className="text-action" disabled={Boolean(busy)} onClick={() => void run("cancel")}>{busy === "cancel" ? "Cancelling…" : "Cancel sign-in"}</button></footer></div></main>;
 }
 
 function Diagnostic() {

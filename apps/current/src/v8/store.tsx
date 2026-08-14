@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { CURRICULUM } from "./curriculum";
 import { completedActivityIdsFromEvidence } from "./learning";
-import { loadPersistedState, newSketch, savePersistedState } from "./repository";
+import { activeWorkspaceId, loadPersistedState, moveWorkspace, newSketch, savePersistedState, setActiveWorkspace } from "./repository";
+import type { WorkspaceId } from "./repository";
 import { mergeCloudSnapshot } from "./sync";
 import type { CloudSnapshot } from "./sync";
 import { SKETCH_SYNC_FIELDS } from "./types";
@@ -173,24 +174,34 @@ function reducer(state: V8State, action: Action): V8State {
   }
 }
 
-interface StoreValue { state: V8State; dispatch: React.Dispatch<Action>; hydrated: boolean }
+interface StoreValue {
+  state: V8State;
+  dispatch: React.Dispatch<Action>;
+  hydrated: boolean;
+  workspaceId: WorkspaceId;
+  switchWorkspace: (workspaceId: WorkspaceId, options?: { moveAnonymousHistory?: boolean }) => Promise<void>;
+}
 const Store = createContext<StoreValue | null>(null);
 
 export function V8StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, DEFAULT_STATE);
   const [hydrated, setHydrated] = useState(false);
+  const [workspaceId, setWorkspaceId] = useState<WorkspaceId>("anonymous");
+  const switchingRef = useRef(false);
+  const switchQueueRef = useRef(Promise.resolve());
   useEffect(() => {
-    void loadPersistedState().then((persisted) => {
+    setActiveWorkspace("anonymous");
+    void loadPersistedState("anonymous").then((persisted) => {
       if (persisted?.version === 8) dispatch({ type: "hydrate", state: persisted });
       setHydrated(true);
     });
   }, []);
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || switchingRef.current) return;
     document.documentElement.dataset.theme = state.settings.theme;
     document.documentElement.dataset.motion = state.settings.reducedMotion ? "reduced" : "full";
-    void savePersistedState(state).catch(() => undefined);
-  }, [state, hydrated]);
+    void savePersistedState(state, workspaceId).catch(() => undefined);
+  }, [state, hydrated, workspaceId]);
   useEffect(() => {
     replaceLegacyLocation(routeFromLocation());
     const listener = () => {
@@ -201,7 +212,26 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
     addEventListener("popstate", listener);
     return () => removeEventListener("popstate", listener);
   }, []);
-  const value = useMemo(() => ({ state, dispatch, hydrated }), [state, hydrated]);
+  const switchWorkspace = useCallback(async (nextWorkspace: WorkspaceId, options?: { moveAnonymousHistory?: boolean }) => {
+    const operation = switchQueueRef.current.then(async () => {
+      if (!options?.moveAnonymousHistory && activeWorkspaceId() === nextWorkspace) return;
+      switchingRef.current = true;
+      setHydrated(false);
+      try {
+        if (options?.moveAnonymousHistory) await moveWorkspace("anonymous", nextWorkspace);
+        setActiveWorkspace(nextWorkspace);
+        const persisted = await loadPersistedState(nextWorkspace);
+        dispatch({ type: "hydrate", state: persisted?.version === 8 ? persisted : DEFAULT_STATE });
+        setWorkspaceId(nextWorkspace);
+      } finally {
+        switchingRef.current = false;
+        setHydrated(true);
+      }
+    });
+    switchQueueRef.current = operation.catch(() => undefined);
+    return operation;
+  }, []);
+  const value = useMemo(() => ({ state, dispatch, hydrated, workspaceId, switchWorkspace }), [state, hydrated, workspaceId, switchWorkspace]);
   return <Store.Provider value={value}>{children}</Store.Provider>;
 }
 

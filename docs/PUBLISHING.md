@@ -31,8 +31,9 @@ repository variables must match the values in `apps/current/.env.local`:
 - `VITE_FIREBASE_STORAGE_BUCKET`
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
+- `VITE_FIREBASE_APP_CHECK_SITE_KEY`
 
-The publisher refreshes all six variables every time, and the deployment workflow
+The publisher refreshes the Firebase variables every time, and the deployment workflow
 checks them before building. If one is absent, publishing stops rather than
 replacing the live site with a local-only build.
 
@@ -45,11 +46,16 @@ Recordings remain device-only by default. Application code uploads audio only wh
 the signed-in learner explicitly selects one retained take from a finished project.
 
 If deployment fails, the publisher keeps the window open and displays the failed
-step. Correct it and publish again. Firestore rules and indexes are kept in the
-repository and are deployed separately when those backend permissions need
-changing; ordinary app releases do not need a Firestore deployment. The initial
-selective-take release also requires Firebase Storage to be enabled and
-`firebase deploy --only storage` to publish `apps/current/storage.rules`. Apply
-`apps/current/storage.cors.json` to the bucket once as described in the Pixel
-setup guide; this permits authenticated in-browser blob playback without issuing
-a public download link.
+step. Correct it and publish again. Pull requests run local Firestore and Storage
+rule tests. The protected `main` workflow deploys those tested rules before
+Hosting, so a frontend that depends on a rule change cannot silently go live while
+old permissions remain active. Apply `apps/current/storage.cors.json` to the
+bucket once as described in the Pixel setup guide; this permits authenticated
+in-browser blob playback without issuing a public download link.
+
+The workflow references every third-party GitHub Action by a full reviewed commit
+SHA. Keep the readable version comment, and update a SHA only through a reviewed
+dependency pull request. The Firebase service account should have only the roles
+needed for rules and Hosting deployment. A separate preview-only Firebase identity
+is the next credential-hardening step; until it exists, same-repository preview
+branches remain trusted maintainer code and fork previews receive no secret.
