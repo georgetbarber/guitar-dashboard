@@ -1,6 +1,7 @@
 import { SKETCH_SYNC_FIELDS } from "./types";
 import { completedActivityIdsFromEvidence } from "./learning";
 import type { CompetencyEvidence, LearnerSettings, Sketch, SketchSyncField, V8State } from "./types";
+import { validateEvidence, validateProfile, validateSketch } from "./validation";
 
 export interface CloudProfile {
   schemaVersion: 1;
@@ -132,4 +133,64 @@ export function mergeCloudSnapshot(state: V8State, incoming: CloudSnapshot): V8S
     activeSketchId,
     updatedAt: newestDate(state.updatedAt, profile?.updatedAt)
   };
+}
+
+/**
+ * WHAT ARRIVED FROM THE CLOUD, SPLIT INTO WHAT CAN BE TRUSTED AND WHAT CANNOT.
+ *
+ * Every document here was written by some client — an older build, a partially
+ * migrated one, or one interrupted mid-write — and previously each was cast
+ * straight to its type and merged. One malformed sketch therefore entered the
+ * workspace and, through the field-level merge, could overwrite good local
+ * music with whatever it contained.
+ *
+ * Rejection is per document and never fatal: the rest of the snapshot merges
+ * normally, so a single unreadable record cannot cost the learner access to
+ * everything else in their account.
+ */
+export interface CloudIntake<T> {
+  accepted: T[];
+  rejected: Array<{ id: string; reason: string }>;
+}
+
+export function acceptDocuments<T>(
+  documents: Array<{ id: string; data: unknown }>,
+  validate: (value: unknown) => asserts value is T
+): CloudIntake<T> {
+  const accepted: T[] = [];
+  const rejected: Array<{ id: string; reason: string }> = [];
+  for (const document of documents) {
+    try {
+      validate(document.data);
+      accepted.push(document.data as T);
+    } catch (error) {
+      rejected.push({ id: document.id, reason: error instanceof Error ? error.message : "This record could not be read." });
+    }
+  }
+  return { accepted, rejected };
+}
+
+export function acceptSketches(documents: Array<{ id: string; data: unknown }>): CloudIntake<Sketch> {
+  return acceptDocuments(documents, validateSketch);
+}
+
+export function acceptEvidence(documents: Array<{ id: string; data: unknown }>): CloudIntake<CompetencyEvidence> {
+  return acceptDocuments(documents, validateEvidence);
+}
+
+/** A profile is one document, so it is accepted whole or not at all — but its rejection must not stop sketches and observations from merging. */
+export function acceptProfile(value: unknown): { profile: CloudProfile | null; reason: string | null } {
+  if (value === null || value === undefined) return { profile: null, reason: null };
+  try {
+    validateProfile(value);
+    return { profile: value, reason: null };
+  } catch (error) {
+    return { profile: null, reason: error instanceof Error ? error.message : "This account profile could not be read." };
+  }
+}
+
+/** Wording for the sync badge when part of a snapshot was set aside. */
+export function describeRejected(count: number): string {
+  if (count === 1) return "One record in your account could not be read and was left untouched. Everything else synchronised.";
+  return `${count} records in your account could not be read and were left untouched. Everything else synchronised.`;
 }

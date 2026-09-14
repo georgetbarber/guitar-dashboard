@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { CURRICULUM } from "./curriculum";
 import { completedActivityIdsFromEvidence } from "./learning";
-import { activeWorkspaceId, exportArchive, loadPersistedState, moveWorkspace, newSketch, savePersistedState, setActiveWorkspace } from "./repository";
+import { activeWorkspaceId, exportArchive, loadWorkspace, moveWorkspace, newSketch, savePersistedState, setActiveWorkspace } from "./repository";
 import type { WorkspaceId } from "./repository";
 import { IDLE_SAVE, runSave } from "./saveState";
 import type { LocalSaveState } from "./saveState";
@@ -194,6 +194,12 @@ interface StoreValue {
   retrySave: () => Promise<void>;
   /** Escape hatch when the store will not accept writes: hand the learner a file they can restore. */
   downloadRecoveryArchive: () => Promise<void>;
+  /** Set when this device holds stored bytes that do not describe a workspace. Saving is suspended while it is set. */
+  workspaceIssue: { reason: string } | null;
+  /** Hand the learner the unreadable bytes so a later build, or a person, can recover something from them. */
+  downloadUnreadableWorkspace: () => void;
+  /** Deliberately abandon the unreadable copy and begin a fresh workspace on this device. */
+  discardUnreadableWorkspace: () => void;
 }
 const Store = createContext<StoreValue | null>(null);
 
@@ -202,6 +208,8 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [workspaceId, setWorkspaceId] = useState<WorkspaceId>("anonymous");
   const [save, setSave] = useState<LocalSaveState>(IDLE_SAVE);
+  const [workspaceIssue, setWorkspaceIssue] = useState<{ reason: string } | null>(null);
+  const unreadableRef = useRef<unknown>(null);
   const switchingRef = useRef(false);
   const switchQueueRef = useRef(Promise.resolve());
   /*
@@ -235,6 +243,24 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
     await persist(unsavedRef.current ?? stateRef.current, workspaceRef.current);
   }, [persist]);
 
+  const downloadUnreadableWorkspace = useCallback(() => {
+    const blob = new Blob([JSON.stringify(unreadableRef.current, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    try {
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `guitar-academy-unreadable-workspace-${new Date().toISOString().slice(0, 10)}.json`;
+      anchor.click();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }, []);
+
+  const discardUnreadableWorkspace = useCallback(() => {
+    unreadableRef.current = null;
+    setWorkspaceIssue(null);
+  }, []);
+
   const downloadRecoveryArchive = useCallback(async () => {
     const blob = await exportArchive(unsavedRef.current ?? stateRef.current);
     const url = URL.createObjectURL(blob);
@@ -249,17 +275,31 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
   useEffect(() => {
     setActiveWorkspace("anonymous");
-    void loadPersistedState("anonymous").then((persisted) => {
-      if (persisted?.version === 8) dispatch({ type: "hydrate", state: persisted });
+    void loadWorkspace("anonymous").then((load) => {
+      if (load.status === "ok") dispatch({ type: "hydrate", state: load.state });
+      else if (load.status === "unreadable") {
+        unreadableRef.current = load.raw;
+        setWorkspaceIssue({ reason: load.reason });
+      }
       setHydrated(true);
     });
   }, []);
   useEffect(() => {
     if (!hydrated || switchingRef.current) return;
+    /*
+     * Saving is suspended while a workspace is unreadable. The default state is
+     * what is on screen, and writing it would overwrite the only copy of the
+     * learner's work with an empty one — turning a parsing problem into real
+     * data loss. The learner chooses: export the bytes, or discard them.
+     */
+    if (workspaceIssue) {
+      document.documentElement.dataset.theme = state.settings.theme;
+      return;
+    }
     document.documentElement.dataset.theme = state.settings.theme;
     document.documentElement.dataset.motion = state.settings.reducedMotion ? "reduced" : "full";
     void persist(state, workspaceId);
-  }, [state, hydrated, workspaceId, persist]);
+  }, [state, hydrated, workspaceId, persist, workspaceIssue]);
   useEffect(() => {
     replaceLegacyLocation(routeFromLocation());
     const listener = () => {
@@ -278,8 +318,10 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
       try {
         if (options?.moveAnonymousHistory) await moveWorkspace("anonymous", nextWorkspace);
         setActiveWorkspace(nextWorkspace);
-        const persisted = await loadPersistedState(nextWorkspace);
-        dispatch({ type: "hydrate", state: persisted?.version === 8 ? persisted : DEFAULT_STATE });
+        const load = await loadWorkspace(nextWorkspace);
+        dispatch({ type: "hydrate", state: load.status === "ok" ? load.state : DEFAULT_STATE });
+        unreadableRef.current = load.status === "unreadable" ? load.raw : null;
+        setWorkspaceIssue(load.status === "unreadable" ? { reason: load.reason } : null);
         setWorkspaceId(nextWorkspace);
         /*
          * Retire any save still in flight for the workspace being left, so its
@@ -299,8 +341,11 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
     return operation;
   }, []);
   const value = useMemo(
-    () => ({ state, dispatch, hydrated, workspaceId, switchWorkspace, save, retrySave, downloadRecoveryArchive }),
-    [state, hydrated, workspaceId, switchWorkspace, save, retrySave, downloadRecoveryArchive]
+    () => ({
+      state, dispatch, hydrated, workspaceId, switchWorkspace, save, retrySave, downloadRecoveryArchive,
+      workspaceIssue, downloadUnreadableWorkspace, discardUnreadableWorkspace
+    }),
+    [state, hydrated, workspaceId, switchWorkspace, save, retrySave, downloadRecoveryArchive, workspaceIssue, downloadUnreadableWorkspace, discardUnreadableWorkspace]
   );
   return <Store.Provider value={value}>{children}</Store.Provider>;
 }

@@ -76,3 +76,45 @@ export function SaveFailureAlert() {
     </section>
   );
 }
+
+/**
+ * Shown when this device holds stored bytes that do not describe a workspace.
+ *
+ * Saving is suspended while this is on screen, so the notice has to be
+ * unmissable and has to explain why the app looks empty: silently starting
+ * fresh is indistinguishable from total data loss, and the first autosave would
+ * then make it total data loss for real.
+ */
+export function WorkspaceRecoveryNotice() {
+  const { workspaceIssue, downloadUnreadableWorkspace, discardUnreadableWorkspace } = useV8Store();
+  const [exported, setExported] = useState(false);
+  if (!workspaceIssue) return null;
+  return (
+    <section className="workspace-recovery" role="alert" aria-label="Saved workspace could not be read">
+      <div className="save-failure-copy">
+        <strong>This device's saved work could not be read, so nothing is being saved right now.</strong>
+        <p>{workspaceIssue.reason}</p>
+        <p>
+          The stored copy has not been changed or deleted. Download it first — a later version of Guitar Academy may be
+          able to read it, and it is the only copy. Starting fresh replaces it as soon as you make your next change.
+        </p>
+      </div>
+      <div className="save-failure-actions">
+        <button className="primary-action" onClick={() => { downloadUnreadableWorkspace(); setExported(true); }}>
+          {exported ? "Download again" : "Download the stored copy"}
+        </button>
+        <button
+          className="danger-action"
+          onClick={() => {
+            if (confirm("Start a fresh workspace on this device? The copy that could not be read will be replaced by your next change, and this cannot be undone.")) {
+              discardUnreadableWorkspace();
+            }
+          }}
+        >
+          Start fresh on this device
+        </button>
+      </div>
+      {exported && <small>Downloaded. Keep that file somewhere safe before you start fresh.</small>}
+    </section>
+  );
+}

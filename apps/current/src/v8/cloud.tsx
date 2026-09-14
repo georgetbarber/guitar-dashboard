@@ -23,9 +23,9 @@ import {
 } from "firebase/firestore";
 import { deleteObject, getBlob, getStorage, ref, uploadBytes } from "firebase/storage";
 import { accountWorkspaceId, eraseAllDeviceData, loadBlob, workspaceExists, workspaceHasLearningData } from "./repository";
-import { cloudProfile, cloudSketch } from "./sync";
+import { acceptEvidence, acceptProfile, acceptSketches, cloudProfile, cloudSketch, describeRejected } from "./sync";
 import type { CloudProfile } from "./sync";
-import type { CompetencyEvidence, RecordedTake, Sketch, V8State } from "./types";
+import type { RecordedTake, Sketch, V8State } from "./types";
 import { useV8Store } from "./store";
 
 const firebaseConfig = {
@@ -106,12 +106,29 @@ async function uploadChanges(database: Firestore, uid: string, state: V8State, c
     cache.profileSignature = signature;
   }
 
+  /*
+   * Deletions run before the batch, not after it. A rejected batch throws out of
+   * this function, and when the deletions were last they were simply skipped —
+   * so a sketch the learner deleted on one device stayed in Firestore and was
+   * re-materialised on the next by mergeCloudSnapshot. Removing a document the
+   * learner has already deleted locally is safe to do first: the worst case is
+   * that a later upload recreates it, which the deletion version guard prevents.
+   */
+  for (const [id, deletedAt] of Object.entries(state.deletedSketchIds)) {
+    if ((cache.deletionVersions.get(id) ?? "") >= deletedAt) continue;
+    await deleteDoc(doc(database, "users", uid, "sketches", id));
+    cache.deletionVersions.set(id, deletedAt);
+    cache.sketchVersions.delete(id);
+  }
+
+  const deleted = new Set(Object.keys(state.deletedSketchIds));
   const operations: Array<(batch: ReturnType<typeof writeBatch>) => void> = [];
   for (const evidence of state.evidence) {
     if (cache.evidenceIds.has(evidence.id)) continue;
     operations.push((batch) => batch.set(doc(database, "users", uid, "evidence", evidence.id), evidence));
   }
   for (const sketch of state.sketches) {
+    if (deleted.has(sketch.id)) continue;
     const remoteVersion = cache.sketchVersions.get(sketch.id);
     if (remoteVersion && remoteVersion >= sketch.updatedAt) continue;
     operations.push((batch) => batch.set(doc(database, "users", uid, "sketches", sketch.id), cloudSketch(sketch)));
@@ -119,13 +136,6 @@ async function uploadChanges(database: Firestore, uid: string, state: V8State, c
   await commitInChunks(database, operations);
   for (const evidence of state.evidence) cache.evidenceIds.add(evidence.id);
   for (const sketch of state.sketches) cache.sketchVersions.set(sketch.id, sketch.updatedAt);
-
-  for (const [id, deletedAt] of Object.entries(state.deletedSketchIds)) {
-    if ((cache.deletionVersions.get(id) ?? "") >= deletedAt) continue;
-    await deleteDoc(doc(database, "users", uid, "sketches", id));
-    cache.deletionVersions.set(id, deletedAt);
-    cache.sketchVersions.delete(id);
-  }
 }
 
 export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
@@ -202,33 +212,58 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     if (!database || !user) return;
     const loaded = new Set<string>();
     const subscriptions: Unsubscribe[] = [];
+    /*
+     * Counted per collection rather than summed, so a snapshot that re-delivers
+     * the same bad document does not inflate the number the learner is shown.
+     */
+    const rejectedCounts = new Map<string, number>();
+    const reportIntake = () => {
+      const total = [...rejectedCounts.values()].reduce((sum, count) => sum + count, 0);
+      if (!total) return false;
+      setStatus("error");
+      setMessage(describeRejected(total));
+      return true;
+    };
     const markLoaded = (part: string) => {
       loaded.add(part);
-      if (loaded.size === 3) {
-        setRemoteReady(true);
-        setStatus(navigator.onLine ? "synced" : "offline");
-        setMessage(navigator.onLine ? "Progress synchronises across signed-in devices." : "Working offline. Changes will synchronise when connected.");
-      }
+      if (loaded.size < 3) return;
+      setRemoteReady(true);
+      if (reportIntake()) return;
+      setStatus(navigator.onLine ? "synced" : "offline");
+      setMessage(navigator.onLine ? "Progress synchronises across signed-in devices." : "Working offline. Changes will synchronise when connected.");
     };
     subscriptions.push(onSnapshot(doc(database, "users", user.uid), (snapshot) => {
-      const profile = snapshot.exists() ? snapshot.data() as CloudProfile : null;
+      const { profile, reason } = acceptProfile(snapshot.exists() ? snapshot.data() : null);
+      rejectedCounts.set("profile", reason ? 1 : 0);
+      /*
+       * A rejected profile leaves the cache signature empty, so the next upload
+       * rewrites the account profile from this device's valid copy rather than
+       * treating the unreadable one as current.
+       */
       cacheRef.current.profileUpdatedAt = profile?.updatedAt ?? "";
       cacheRef.current.profileSignature = profile ? profileSignature(profile) : "";
       for (const [id, deletedAt] of Object.entries(profile?.deletedSketchIds ?? {})) cacheRef.current.deletionVersions.set(id, deletedAt);
       dispatch({ type: "mergeCloud", snapshot: { profile } });
       markLoaded("profile");
+      if (loaded.size === 3) reportIntake();
     }, handleError));
     subscriptions.push(onSnapshot(collection(database, "users", user.uid, "evidence"), (snapshot) => {
-      const evidence = snapshot.docs.map((item) => item.data() as CompetencyEvidence);
-      cacheRef.current.evidenceIds = new Set(evidence.map((item) => item.id));
-      dispatch({ type: "mergeCloud", snapshot: { evidence } });
+      const intake = acceptEvidence(snapshot.docs.map((item) => ({ id: item.id, data: item.data() })));
+      rejectedCounts.set("evidence", intake.rejected.length);
+      // Only accepted ids enter the cache, so a local copy of a rejected record is
+      // uploaded again and repairs it rather than being skipped as already present.
+      cacheRef.current.evidenceIds = new Set(intake.accepted.map((item) => item.id));
+      dispatch({ type: "mergeCloud", snapshot: { evidence: intake.accepted } });
       markLoaded("evidence");
+      if (loaded.size === 3) reportIntake();
     }, handleError));
     subscriptions.push(onSnapshot(collection(database, "users", user.uid, "sketches"), (snapshot) => {
-      const sketches = snapshot.docs.map((item) => item.data() as Sketch);
-      cacheRef.current.sketchVersions = new Map(sketches.map((sketch) => [sketch.id, sketch.updatedAt]));
-      dispatch({ type: "mergeCloud", snapshot: { sketches } });
+      const intake = acceptSketches(snapshot.docs.map((item) => ({ id: item.id, data: item.data() })));
+      rejectedCounts.set("sketches", intake.rejected.length);
+      cacheRef.current.sketchVersions = new Map(intake.accepted.map((sketch) => [sketch.id, sketch.updatedAt]));
+      dispatch({ type: "mergeCloud", snapshot: { sketches: intake.accepted } });
       markLoaded("sketches");
+      if (loaded.size === 3) reportIntake();
     }, handleError));
     function handleError(error: Error) {
       setStatus("error");

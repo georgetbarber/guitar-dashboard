@@ -1,5 +1,6 @@
 import { newId } from "./identity";
 import type { Sketch, V8State } from "./types";
+import { validateState } from "./validation";
 
 const DB_NAME = "guitar-academy-v8";
 const DB_VERSION = 2;
@@ -81,13 +82,28 @@ async function openDatabase(): Promise<IDBDatabase> {
   });
 }
 
-export async function loadPersistedState(workspaceId: WorkspaceId = activeWorkspace): Promise<V8State | null> {
+/**
+ * What this device holds for a workspace.
+ *
+ * "unreadable" is the case that matters and that the previous code could not
+ * express: stored bytes exist but do not describe a workspace. Returning null
+ * for that — which casting straight to V8State effectively did — starts the
+ * learner in an empty app that looks exactly like total data loss, and the first
+ * autosave then writes the empty workspace over the only copy of their work.
+ * The raw value is carried out so it can still be exported for recovery.
+ */
+export type WorkspaceLoad =
+  | { status: "empty" }
+  | { status: "ok"; state: V8State }
+  | { status: "unreadable"; reason: string; raw: unknown };
+
+async function readStoredWorkspace(workspaceId: WorkspaceId): Promise<unknown> {
   try {
     const database = await openDatabase();
     const transaction = database.transaction(STATE_STORE, "readonly");
     const value = await requestResult(transaction.objectStore(STATE_STORE).get(stateKey(workspaceId)));
     database.close();
-    if (value) return value as V8State;
+    if (value !== undefined && value !== null) return value;
   } catch {
     // Fall through to the compatibility copy below.
   }
@@ -98,10 +114,27 @@ export async function loadPersistedState(workspaceId: WorkspaceId = activeWorksp
       localStorage.setItem(fallbackKey(workspaceId), raw);
       localStorage.removeItem(LOCAL_FALLBACK);
     }
-    return raw ? JSON.parse(raw) as V8State : null;
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
+}
+
+export async function loadWorkspace(workspaceId: WorkspaceId = activeWorkspace): Promise<WorkspaceLoad> {
+  const value = await readStoredWorkspace(workspaceId);
+  if (value === null || value === undefined) return { status: "empty" };
+  try {
+    validateState(value);
+    return { status: "ok", state: value };
+  } catch (error) {
+    return { status: "unreadable", reason: error instanceof Error ? error.message : "This workspace could not be read.", raw: value };
+  }
+}
+
+/** The validated state, or null for a workspace that is empty *or* unreadable. Prefer loadWorkspace where the difference matters. */
+export async function loadPersistedState(workspaceId: WorkspaceId = activeWorkspace): Promise<V8State | null> {
+  const load = await loadWorkspace(workspaceId);
+  return load.status === "ok" ? load.state : null;
 }
 
 /**
@@ -135,11 +168,15 @@ export async function savePersistedState(state: V8State, workspaceId: WorkspaceI
 }
 
 export async function workspaceExists(workspaceId: WorkspaceId): Promise<boolean> {
-  return Boolean(await loadPersistedState(workspaceId));
+  // Unreadable counts as present. Reporting "no workspace here" is what would let
+  // a sign-in move or overwrite a stored workspace this build merely cannot parse.
+  return (await loadWorkspace(workspaceId)).status !== "empty";
 }
 
 export async function workspaceHasLearningData(workspaceId: WorkspaceId): Promise<boolean> {
-  const state = await loadPersistedState(workspaceId);
+  const load = await loadWorkspace(workspaceId);
+  if (load.status === "unreadable") return true;
+  const state = load.status === "ok" ? load.state : null;
   return Boolean(state && (
     state.settings.diagnosticComplete
     || state.completedActivityIds.length
@@ -152,8 +189,14 @@ export async function workspaceHasLearningData(workspaceId: WorkspaceId): Promis
 
 export async function moveWorkspace(source: WorkspaceId, target: WorkspaceId): Promise<void> {
   if (source === target) return;
-  const sourceState = await loadPersistedState(source);
-  if (!sourceState) return;
+  const sourceLoad = await loadWorkspace(source);
+  if (sourceLoad.status === "empty") return;
+  if (sourceLoad.status === "unreadable") {
+    // Moving it would rewrite it under a new key and lose the only copy that can
+    // still be exported for recovery.
+    throw new Error("This device's guest workspace could not be read, so it was not moved. Export it from the recovery notice first.");
+  }
+  const sourceState = sourceLoad.state;
   if (await workspaceExists(target)) throw new Error("That account already has a workspace on this device.");
 
   const database = await openDatabase();
@@ -383,9 +426,15 @@ function validateArchiveHeader(header: ArchiveHeader) {
   if (header.format !== "guitar-academy" || header.archiveVersion !== 2 || header.stateVersion !== 8 || header.state?.version !== 8) {
     throw new Error("This is not a supported Guitar Academy V8 backup.");
   }
-  if (!Array.isArray(header.state.sketches) || !Array.isArray(header.state.evidence) || !Array.isArray(header.recordings)) {
-    throw new Error("This backup is missing required learning data.");
-  }
+  if (!Array.isArray(header.recordings)) throw new Error("This backup is missing its recording index.");
+  /*
+   * The workspace itself is validated here, before a single blob is written.
+   * Checking only that sketches and evidence were arrays let an archive carrying
+   * malformed music through to savePersistedState, where it became this device's
+   * workspace; and because blobs were written first, a later failure left them
+   * orphaned against a workspace that never arrived.
+   */
+  validateState(header.state);
   const ids = new Set<string>();
   for (const recording of header.recordings) {
     if (!recording.id || !Number.isSafeInteger(recording.size) || recording.size < 0 || ids.has(recording.id)) {
@@ -404,6 +453,7 @@ async function importLegacyArchive(file: File): Promise<V8State> {
   if (archive?.format !== "guitar-academy" || archive.version !== 8 || archive.state?.version !== 8) {
     throw new Error("This is not a supported Guitar Academy V8 archive.");
   }
+  validateState(archive.state);
   for (const recording of archive.recordings ?? []) await saveBlob(recording.id, dataToBlob(recording.data));
   await savePersistedState(archive.state);
   return archive.state;
