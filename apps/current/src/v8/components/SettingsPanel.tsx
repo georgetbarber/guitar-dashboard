@@ -4,6 +4,7 @@ import type { RestorePreview } from "../repository";
 import { useCloudSync } from "../cloud";
 import { currentInstallPrompt, currentStandaloneMode, showInstallPrompt, subscribeInstallPrompt, subscribeStandaloneMode, type InstallPromptEvent } from "../install";
 import { useV8Store } from "../store";
+import { MODE_OPTIONS, TONAL_ROOTS } from "../validation";
 import { useUpdateHold } from "./UpdateNotice";
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
@@ -59,7 +60,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         <div className="settings-grid">
           <label>Primary instrument<select value={state.settings.instrument} onChange={(event) => dispatch({ type: "updateSettings", settings: { instrument: event.target.value as "electric" | "acoustic" } })}><option value="electric">Electric</option><option value="acoustic">Acoustic</option></select></label>
           <label>Practice minutes<input type="number" min="10" max="90" step="5" value={state.settings.dailyMinutes} onChange={(event) => dispatch({ type: "updateSettings", settings: { dailyMinutes: Number(event.target.value) } })} /></label>
-          <label>Tonal centre<select value={state.settings.tonicName} onChange={(event) => dispatch({ type: "updateSettings", settings: { tonicName: event.target.value } })}>{["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"].map((root) => <option key={root}>{root}</option>)}</select></label>
+          <label>Tonal centre<select value={state.settings.tonicName} onChange={(event) => dispatch({ type: "updateSettings", settings: { tonicName: event.target.value } })}>{TONAL_ROOTS.map((root) => <option key={root}>{root}</option>)}</select></label>
+          <label>Mode<select value={state.settings.mode} onChange={(event) => dispatch({ type: "updateSettings", settings: { mode: event.target.value as typeof state.settings.mode } })}>{MODE_OPTIONS.map(([id, label]) => <option value={id} key={id}>{label}</option>)}</select></label>
           <label>Theme<select value={state.settings.theme} onChange={(event) => dispatch({ type: "updateSettings", settings: { theme: event.target.value as "light" | "dark" } })}><option value="light">Light</option><option value="dark">Dark</option></select></label>
           <label className="check-line"><input type="checkbox" checked={state.settings.reducedMotion} onChange={(event) => dispatch({ type: "updateSettings", settings: { reducedMotion: event.target.checked } })} /> Reduce interface motion</label>
         </div>

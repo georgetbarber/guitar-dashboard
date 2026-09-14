@@ -1,4 +1,5 @@
 import { newId } from "./identity";
+import type { ModeId } from "../core/music/types";
 import type { Sketch, V8State } from "./types";
 import { validateState } from "./validation";
 
@@ -685,13 +686,21 @@ async function readLegacyArchive(file: File): Promise<ParsedArchive> {
   return { state: archive.state, exportedAt: archive.exportedAt, recordings };
 }
 
-export function newSketch(index: number): Sketch {
+/**
+ * A sketch starts in the music the learner is actually working in.
+ *
+ * It used to be born in C major whatever the rest of the app was set to, so a
+ * learner practising in E minor opened a new sketch and was handed the wrong
+ * key, the wrong chord choices and the wrong relationships — and the Explore
+ * and Create panels then disagreed with each other about what "home" was.
+ */
+export function newSketch(index: number, context?: { key: string; mode: ModeId }): Sketch {
   const now = new Date().toISOString();
   const sketch: Sketch = {
     id: newId("sketch"),
     name: `Untitled sketch ${index + 1}`,
     intention: "Explore one relationship and listen for what it wants to become.",
-    tags: [], tempo: 72, metre: "4/4", key: "C", mode: "major",
+    tags: [], tempo: 72, metre: "4/4", key: context?.key ?? "C", mode: context?.mode ?? "major",
     chords: [], melody: [], rhythmPattern: "1 & 2 & 3 & 4 &", bassMovement: "",
     sections: ["A"], notes: "", ambiguityNotes: "", takes: [], revisions: [], reflections: [],
     status: "capture", createdAt: now, updatedAt: now

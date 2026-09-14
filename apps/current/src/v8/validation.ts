@@ -83,6 +83,10 @@ function evidence(value: unknown, path: string) {
   choice(v.source, ["recognition", "production", "performance", "transfer", "creation", "reflection"], `${path}.source`);
   choice(v.assistance, ["none", "hint", "reveal", "guided"], `${path}.assistance`);
   choice(v.outcome, ["successful", "partial", "retry"], `${path}.outcome`); date(v.occurredAt, `${path}.occurredAt`);
+  // Absent on records written before the field existed; those are self-reported too.
+  if (v.method !== undefined) choice(v.method, ["self-reported"], `${path}.method`);
+  if (v.artifactId !== undefined) id(v.artifactId, `${path}.artifactId`);
+  if (v.retracts !== undefined) id(v.retracts, `${path}.retracts`);
   const c = object(v.context, `${path}.context`);
   for (const key of Object.keys(c)) choice(key, ["key", "mode", "fretRegion", "tempo", "instrument"], `${path}.context key`);
   if (c.key !== undefined) root(c.key, `${path}.context.key`);

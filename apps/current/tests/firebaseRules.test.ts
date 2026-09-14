@@ -104,7 +104,38 @@ describe("Firestore tenant rules", () => {
     const database = environment.authenticatedContext("learner-a").firestore();
     await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/evidence-1"), evidence));
     await assertFails(setDoc(doc(database, "users/learner-a/evidence/evidence-1"), { ...evidence, outcome: "retry" }));
+    // Delete stays available for erasing an account's history on request. It is
+    // a deliberate, whole-history operation, never a way to amend one record.
     await assertSucceeds(deleteDoc(doc(database, "users/learner-a/evidence/evidence-1")));
+  });
+
+  it("takes a correction as a new retraction record rather than an edit", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/evidence-1"), evidence));
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/evidence-2"), {
+      ...evidence,
+      id: "evidence-2",
+      method: "self-reported",
+      retracts: "evidence-1"
+    }));
+    // Both halves survive: that is what makes the correction auditable.
+    await assertSucceeds(getDoc(doc(database, "users/learner-a/evidence/evidence-1")));
+  });
+
+  it("accepts an observation that names how it was established, and only honestly", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/evidence-3"), {
+      ...evidence, id: "evidence-3", method: "self-reported", artifactId: "sketch-1"
+    }));
+    // Nothing in the app measures a performance, so nothing may claim to.
+    await assertFails(setDoc(doc(database, "users/learner-a/evidence/evidence-4"), {
+      ...evidence, id: "evidence-4", method: "measured"
+    }));
+  });
+
+  it("still accepts a record written before those fields existed", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/evidence-5"), { ...evidence, id: "evidence-5" }));
   });
 
   it("allows a bounded composition sketch and rejects an oversized one", async () => {

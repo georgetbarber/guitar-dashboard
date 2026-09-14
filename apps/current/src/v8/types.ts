@@ -20,6 +20,17 @@ export interface EvidenceContext {
   instrument?: Instrument;
 }
 
+/**
+ * How an outcome was established.
+ *
+ * Only one value exists because only one thing happens today: the learner reads
+ * the success criterion and reports what occurred. Nothing in V8 measures a
+ * performance or checks an answer, and naming those here before they exist
+ * would be the same overstatement this field is meant to remove. Phase 5 adds
+ * them, and the rules and validator gain their values with them.
+ */
+export type EvidenceMethod = "self-reported";
+
 export interface CompetencyEvidence {
   id: string;
   competencyId: string;
@@ -29,6 +40,19 @@ export interface CompetencyEvidence {
   outcome: EvidenceOutcome;
   occurredAt: string;
   activityId: string;
+  /** Absent on records written before this field existed; those are all self-reported too. */
+  method?: EvidenceMethod;
+  /** The sketch this observation points at, for work the learner actually saved. */
+  artifactId?: string;
+  /**
+   * The id of an earlier observation this record retracts.
+   *
+   * Observations are immutable: a mistaken report is corrected by appending a
+   * retraction, never by editing or deleting the original. A record carrying
+   * this is a retraction, counts towards nothing itself, and removes the record
+   * it names from every progress calculation.
+   */
+  retracts?: string;
 }
 
 export type ActivityKind =

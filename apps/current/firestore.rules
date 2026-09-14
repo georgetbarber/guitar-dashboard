@@ -50,8 +50,14 @@ service cloud.firestore {
     function validEvidence(data, evidenceId) {
       return data.keys().hasOnly([
           'id', 'competencyId', 'source', 'assistance', 'context',
-          'outcome', 'occurredAt', 'activityId'
+          'outcome', 'occurredAt', 'activityId',
+          // method, artifactId and retracts are optional: records written before
+          // they existed stay valid, and hasOnly permits a subset.
+          'method', 'artifactId', 'retracts'
         ])
+        && (!('method' in data) || data.method == 'self-reported')
+        && (!('artifactId' in data) || (data.artifactId is string && data.artifactId.size() <= 160))
+        && (!('retracts' in data) || (data.retracts is string && data.retracts.size() <= 160))
         && data.id == evidenceId
         && data.id is string
         && data.id.size() <= 160
@@ -122,9 +128,25 @@ service cloud.firestore {
       allow create, update: if owns(userId) && validProfile(request.resource.data);
       allow delete: if owns(userId);
 
+      /*
+       * OBSERVATIONS ARE IMMUTABLE.
+       *
+       * A record is never edited. A mistaken report is corrected by appending a
+       * retraction that names the original through `retracts`, so the history
+       * stays auditable rather than being quietly rewritten. The absence of an
+       * update rule already denied this; it is stated here because the contract
+       * was previously only implied, and an implied contract sat beside a delete
+       * permission that appeared to contradict it.
+       *
+       * Delete exists for one purpose: erasing an account's history on request.
+       * It is a deliberate, whole-history operation and is never used to amend a
+       * single observation. Nothing in the client deletes an evidence document
+       * during ordinary use.
+       */
       match /evidence/{evidenceId} {
         allow read: if owns(userId);
         allow create: if owns(userId) && validEvidence(request.resource.data, evidenceId);
+        allow update: if false;
         allow delete: if owns(userId);
       }
 

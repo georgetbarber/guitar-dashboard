@@ -142,7 +142,7 @@ function reducer(state: V8State, action: Action): V8State {
       };
     }
     case "createSketch": {
-      const sketch = newSketch(state.sketches.length);
+      const sketch = newSketch(state.sketches.length, { key: state.settings.tonicName, mode: state.settings.mode });
       return { ...state, sketches: [...state.sketches, sketch], activeSketchId: sketch.id, route: "create", updatedAt: changedAt };
     }
     /*

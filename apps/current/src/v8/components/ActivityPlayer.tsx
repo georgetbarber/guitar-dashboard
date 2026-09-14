@@ -2,9 +2,10 @@ import { useMemo, useState } from "react";
 import { playHarmonicRelationship, playMelodicRelationship } from "../../audio/engine";
 import { createContext, normalize } from "../../core/music/theory";
 import { activityById, unitById, CURRICULUM } from "../curriculum";
-import { createEvidence } from "../learning";
+import { createEvidence, retractObservations } from "../learning";
+import { PROFILE_LIMITS } from "../limits";
 import { useV8Store } from "../store";
-import type { ActivityDefinition, Assistance, EvidenceOutcome } from "../types";
+import type { ActivityDefinition, Assistance, CompetencyEvidence, EvidenceOutcome } from "../types";
 import { MicroStudy } from "./MicroStudy";
 import { RhythmNotation } from "./RhythmNotation";
 
@@ -39,6 +40,7 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
   const [playing, setPlaying] = useState(false);
   const [caption, setCaption] = useState<string | null>(null);
   const [justCompleted, setJustCompleted] = useState<EvidenceOutcome | null>(null);
+  const [justRecorded, setJustRecorded] = useState<CompetencyEvidence[]>([]);
   const unit = useMemo(() => unitById(activity?.unitId ?? state.activeUnitId), [activity?.unitId, state.activeUnitId]);
   if (!activity) return null;
   const originLabel = state.activityOrigin === "practice" ? "Strengthen"
@@ -49,6 +51,7 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
             : state.activityOrigin === "explore" ? "Explore"
               : "Learn";
 
+  const capturedSketch = state.sketches.find((sketch) => sketch.id === state.activeSketchId) ?? null;
   const targets = unit.microStudy.earTargets ?? [0];
   const hear = (harmonic = false) => {
     setAttempted(true);
@@ -84,10 +87,28 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
         tempo: unit.microStudy.tempo,
         instrument: state.settings.instrument,
         fretRegion: unit.stage < 3 ? [0, 5] : [0, 12]
-      }
+      },
+      undefined,
+      // A creative observation points at the sketch the learner actually saved.
+      // It records that a thing exists, never a judgement of it.
+      activity.kind === "creative" ? capturedSketch?.id : undefined
     );
     dispatch({ type: "recordActivity", activityId: activity.id, evidence, reflection: reflection.trim() });
+    setJustRecorded(evidence);
     setJustCompleted(outcome);
+  };
+
+  /*
+   * A record is never edited or deleted. Correcting a mistaken report appends a
+   * retraction naming the original, so the history stays auditable and the
+   * retracted observation stops counting towards anything.
+   */
+  const retractRecord = () => {
+    if (justRecorded.length) {
+      dispatch({ type: "recordActivity", activityId: activity.id, evidence: retractObservations(justRecorded) });
+    }
+    setJustRecorded([]);
+    retryCurrentActivity();
   };
 
   const retryCurrentActivity = () => {
@@ -132,8 +153,8 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
         <header className="activity-header">
           <button className="icon-button" onClick={onClose} aria-label="Close activity">←</button>
           <div><span>{originLabel} · {unit.title}</span><h1 id="activity-title">{successful ? "Completed" : "Attempt logged"}: {activity.title}</h1><p>{successful
-            ? `Recorded as “${outcomeLabel}”. This activity is complete; independent mastery still depends on unassisted success across days and contexts.`
-            : `Recorded as “${outcomeLabel}”. The evidence is saved, but this activity remains in your guided path until its success action is achieved.`}</p></div>
+            ? `Recorded as “${outcomeLabel}”, on your own report. This activity is complete; independent mastery still depends on unassisted success across days and contexts.`
+            : `Recorded as “${outcomeLabel}”, on your own report. The evidence is saved, but this activity remains in your guided path until its success action is achieved.`}</p></div>
         </header>
         <div className="done-panel card">
           <span className="done-check" aria-hidden="true">{successful ? "✓" : "↻"}</span>
@@ -143,6 +164,7 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
                 <p>A partial or unsuccessful attempt is useful evidence, not completion. Simplify the task, use help if useful, and make another deliberate attempt.</p>
                 <div className="done-actions">
                   <button className="primary-action large" onClick={retryCurrentActivity}>Try this activity again</button>
+                  <button className="text-action" onClick={retractRecord}>I picked the wrong result</button>
                   <button className="text-action" onClick={onClose}>Stop here for now</button>
                 </div>
               </>
@@ -152,6 +174,7 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
                 <p>{sameUnit ? "Next in this unit:" : "You’ve finished this unit — next up:"} <strong>{next.title}</strong> <small>({next.kind.replaceAll("-", " ")} · {next.minutes} min)</small></p>
                 <div className="done-actions">
                   <button className="primary-action large" onClick={() => dispatch({ type: "openActivity", activityId: next.id })}>Continue to next →</button>
+                  <button className="text-action" onClick={retractRecord}>I picked the wrong result</button>
                   <button className="text-action" onClick={onClose}>Stop here for now</button>
                 </div>
               </>
@@ -210,12 +233,19 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
             <div className="creative-bridge">
               <div><strong>Make two to four bars</strong><span>Capture the idea in the Sketchbook, then return here to describe the result.</span></div>
               <button className="secondary-action" onClick={() => { dispatch({ type: "createSketch" }); dispatch({ type: "suspendActivity", route: "create" }); history.pushState({}, "", "/create"); }}>Open a new sketch</button>
-              <button className="text-action" onClick={() => setAttempted(true)}>I captured the idea</button>
+              {/*
+                * This used to accept the claim on its own. It now needs a sketch
+                * that actually exists, and names it — which is all the app can
+                * honestly say about creative work. It has not listened to it.
+                */}
+              <button className="text-action" disabled={!capturedSketch} onClick={() => setAttempted(true)}>
+                {capturedSketch ? `I captured it in “${capturedSketch.name}”` : "Capture a sketch first"}
+              </button>
             </div>
           )}
           {activity.kind === "reflection" && (
             <label className="reflection-field">What changed, what remains uncertain, and what will you keep?
-              <textarea value={reflection} onChange={(event) => { setReflection(event.target.value); setAttempted(event.target.value.trim().length >= 8); }} placeholder="Be specific about sound, timing, movement or intention…" />
+              <textarea maxLength={PROFILE_LIMITS.lastReflection} value={reflection} onChange={(event) => { setReflection(event.target.value); setAttempted(event.target.value.trim().length >= 8); }} placeholder="Be specific about sound, timing, movement or intention…" />
             </label>
           )}
           <div className="help-actions">
@@ -230,7 +260,7 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
         <aside className="activity-check card">
           <span>How did it go?</span>
           <div className="success-criterion"><small>You’ve succeeded when</small><p>{activity.observable}</p></div>
-          <div className="assistance-state"><small>Evidence status</small><strong>{assistance === "none" ? "Independent attempt" : `${assistance} used`}</strong></div>
+          <div className="assistance-state"><small>Evidence status</small><strong>{assistance === "none" ? "Independent attempt" : `${assistance} used`}</strong><span>Recorded as your own report. Guitar Academy does not listen to or judge your playing.</span></div>
           <p className="outcome-lead">Pick the option that matches what just happened:</p>
           <div className="outcome-buttons">
             {OUTCOMES.map((outcome) => (

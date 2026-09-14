@@ -331,18 +331,113 @@ application code, which is also why `npm test` now names it explicitly.
 
 ---
 
+## Phase 1E — correct the current promises
+
+| | |
+| --- | --- |
+| **Status** | Verified locally |
+| **Findings** | B01, B05 (interim wording), B07, B10, B29 — all closed pending CI |
+| **Depends on** | 1A–1D |
+| **Changed** | `promises.test.ts` (new); `learning.ts`, `types.ts`, `repository.ts`, `store.tsx`, `validation.ts`, `firestore.rules`, `tests/firebaseRules.test.ts`, `components/ActivityPlayer.tsx`, `components/SettingsPanel.tsx`, `features/Create.tsx` |
+| **Evidence** | 180 tests pass across 24 files (164 before); build clean. Five defects reintroduced individually failed ten of the sixteen new tests and no others |
+| **Migration impact** | Three optional evidence fields (`method`, `artifactId`, `retracts`). Records written without them stay valid in the validator and the rules; nothing is rewritten |
+
+Every item here is a case where the interface claimed something the app did not
+do.
+
+**B01 — the session is the length that was chosen.** `buildSession` hard-coded
+five items totalling 25 minutes, while `dailyMinutes` was settable from 10 to 90
+and displayed on Learn as though it applied. It now fits the existing five-part
+shape to the budget: fewer parts when there is less time rather than unusable
+slivers, whole minutes that add up to the figure exactly, and no activity used
+twice to fill two slots — which the old planner could do, so a "five-part
+session" was sometimes three. This is an interim correction; the session design
+itself is Phase 4A.
+
+**B10 — a sketch starts in the music the learner is in.** `newSketch` was born
+in C major whatever the app was set to, so someone practising in E minor got the
+wrong key, the wrong chord choices and the wrong relationships, and Create and
+Explore then disagreed about where home was. It now inherits the current root
+and mode. The root lists also differed — seven options in Create, twelve in
+Settings — so a key chosen in one place could not be chosen in the other; both
+now use the shared `TONAL_ROOTS` and `MODE_OPTIONS` from `validation.ts`, which
+were present and, like the rest of that module, used by nothing.
+
+**B05 — the experiments no longer read as operations.** Five of the six buttons
+appended a sentence to `notes` while presenting as actions, so pressing
+"Transpose the idea" could reasonably be taken to mean something had been
+transposed. They now say they are noting an experiment for the learner to try,
+under a heading that says the app does not change your music for you. "Add a B
+section", the one that does change the sketch, is separated out and labelled as
+such. The real reversible operations remain Phase 4C.
+
+**B07 — an observation says how it was established.** Nothing in V8 measures a
+performance or checks an answer; every outcome is the learner reading a success
+criterion and reporting what happened. Observations now carry
+`method: "self-reported"`, and the interface says so at the point of recording
+and again on the confirmation. The type deliberately has one value — naming
+"measured" before anything measures would be the same overstatement this field
+removes. Creative completion also used to accept "I captured the idea" on its
+own; it now requires a sketch that exists, names it, and links it through
+`artifactId` — which records that work exists, never a judgement of it.
+
+**B29 — the append-only contract is settled.** The rules allowed `create` but
+not `update`, implying immutability, while also allowing `delete`. The contract
+is now explicit in all three places. Observations are immutable: a mistaken
+report is corrected by appending a **retraction** naming the original through
+`retracts`, and the player offers exactly that ("I picked the wrong result").
+Both halves survive, so the correction is auditable rather than a quiet rewrite,
+and every progress calculation runs through `liveObservations`, which sets aside
+retractions and what they retract. `allow update: if false` states the rule the
+omission only implied, and `delete` is documented as belonging to deliberate
+account erasure — never to amending a single record. Nothing in the client
+deletes an evidence document during ordinary use.
+
+### Limitations
+
+- Not verified in CI, on a real device, or against the emulator. The four new
+  rules cases are written and will run there.
+- The session fitting is arithmetic over the existing activity set. Whether the
+  resulting sessions are musically coherent at 10 or 90 minutes is a content
+  question for Phase 4A, not something these tests can answer.
+- Retraction covers the record a learner just wrote, from the confirmation
+  screen. Correcting an older observation from the history has no route yet.
+- `method` exists to be extended. Phase 5 adds measured and answer-checked
+  values, and the rules and validator gain them at the same time.
+
+## Phase 1 gate
+
+With 1E complete, Phase 1's gate is met as far as local evidence can establish
+it: failure injection does not lose the previous durable workspace (1A, 1C);
+saves and sync never falsely report success (1A, 1B-2); malformed data is
+handled visibly (1B-1); and each confirmed trust failure has a targeted
+regression check, every one of them mutation-verified. Local transactions are
+not described as atomic across Firebase and browser storage — activation is
+atomic within IndexedDB only, and the log says so.
+
+What the gate still wants and this repository cannot yet give: CI runs, Firebase
+rules evidence from the emulator, and real-device behaviour. Those belong to
+Phase 2B and Phase 7.
+
+---
+
 ## Next package
 
-**Phase 1E — correct the current promises.** The remaining Phase 1 items, all
-of them cases where the interface claims something the app does not do:
-`buildSession` ignores the chosen practice duration (B01); five of the six Create
-experiment buttons only append prose (B05 interim wording, with the real
-operations in 4C); a new sketch hard-codes C major instead of inheriting the
-tonal context (B10); evidence does not say when it is learner-reported (B07);
-and the append-only evidence contract still conflicts with the client delete the
-rules allow (B29).
+**Phase 2 — accessibility and release foundations.** 2A is the interface work:
+the mobile settings/new-sketch collision and cramped Learn tabs (B11), text and
+control contrast (B12), dialog focus entry, containment, Escape and restoration
+(B13), a usable keyboard fretboard (B14), automated and manual accessibility
+checks (B15), fonts supplied locally or chosen deliberately (B16), and removing
+"V8" and build language from learner-facing copy (B17).
 
-Completing 1E closes Phase 1 and reaches its gate: failure injection does not
-lose the previous durable workspace, saves and sync never falsely report
-success, malformed data is handled visibly, and each confirmed trust failure has
-a targeted regression check.
+2B is the release side: browser journeys in CI (B21), deployment concurrency
+protection (B22), linting, formatting and coverage visibility (B23), reviewed
+dependency upgrades (B30), lazy-loading Firebase so guest startup omits the
+594 kB chunk (B18), startup and cache measurement (B19), iteration 07 in the
+verification script (B24), and the app-directory README and two broken
+historical links (B25, B26).
+
+**Worth doing early in 2B:** a DOM test environment. `runSave`, the restore hold
+and the update holds are all provider or component state covered by reading
+rather than by a rendered test. Their rules are tested; their wiring is not.
+That gap has now accrued across 1A, 1C and 1D.
