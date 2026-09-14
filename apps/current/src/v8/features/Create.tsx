@@ -7,7 +7,7 @@ import { generateShapes } from "../../core/instrument/guitar";
 import { newId } from "../identity";
 import { clearSketchRecordings, loadBlob, saveBlob } from "../repository";
 import { useCloudSync } from "../cloud";
-import { SKETCH_LIMITS, boundTempo } from "../limits";
+import { SKETCH_LIMITS, admitSketchEdit, boundTempo, describeExceedances } from "../limits";
 import { useV8Store } from "../store";
 import { SKETCH_SYNC_FIELDS } from "../types";
 import type { ChordEvent, RecordedTake, Sketch, SketchRevision, SketchSyncField } from "../types";
@@ -69,7 +69,17 @@ function SketchEditor({ sketch }: { sketch: Sketch }) {
     const updatedAt = new Date().toISOString();
     const fieldUpdatedAt = { ...sketch.fieldUpdatedAt };
     for (const field of Object.keys(changes)) if ((SKETCH_SYNC_FIELDS as readonly string[]).includes(field)) fieldUpdatedAt[field as SketchSyncField] = updatedAt;
-    dispatch({ type: "updateSketch", sketch: { ...sketch, ...changes, fieldUpdatedAt, updatedAt } });
+    /*
+     * Refused here rather than truncated later. The text inputs cap themselves,
+     * so what actually reaches a limit is accumulated work — the experiment
+     * buttons appending to `notes`, or a long chord track — and the learner
+     * should be told while they can still act on it.
+     */
+    const decision = admitSketchEdit(sketch, { ...sketch, ...changes, fieldUpdatedAt, updatedAt });
+    if (decision.refused.length) {
+      setMessage(`That change was not applied: ${describeExceedances(decision.refused)}. Nothing was removed — shorten it here, or carry the idea into a new sketch.`);
+    }
+    dispatch({ type: "updateSketch", sketch: decision.admitted });
   };
   const revise = (summary: string, changes: Partial<Sketch>) => update({
     ...changes,

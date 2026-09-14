@@ -2,6 +2,7 @@ import { SKETCH_SYNC_FIELDS } from "./types";
 import { completedActivityIdsFromEvidence } from "./learning";
 import type { CompetencyEvidence, LearnerSettings, Sketch, SketchSyncField, V8State } from "./types";
 import { validateEvidence, validateProfile, validateSketch } from "./validation";
+import { describeExceedances, profileExceedances, sketchExceedances } from "./limits";
 
 export interface CloudProfile {
   schemaVersion: 1;
@@ -193,4 +194,120 @@ export function acceptProfile(value: unknown): { profile: CloudProfile | null; r
 export function describeRejected(count: number): string {
   if (count === 1) return "One record in your account could not be read and was left untouched. Everything else synchronised.";
   return `${count} records in your account could not be read and were left untouched. Everything else synchronised.`;
+}
+
+/**
+ * A document this device is holding back from the cloud, and why.
+ *
+ * Withholding is not discarding. The record stays on the device exactly as the
+ * learner left it; what stops is the attempt to put it in a batch that the
+ * server will reject. Without this, one out-of-range field fails the whole
+ * atomic commit, the same batch is retried on every subsequent change, and the
+ * account's sync is over — while the interface can only say "Sync failed. Local
+ * work remains safe."
+ */
+export interface Withheld {
+  kind: "profile" | "sketch" | "evidence";
+  id: string;
+  reason: string;
+}
+
+export function screenSketch(sketch: Sketch): { document: Sketch; withheld: Withheld | null } {
+  const document = cloudSketch(sketch);
+  const exceedances = sketchExceedances(document);
+  if (exceedances.length) {
+    return { document, withheld: { kind: "sketch", id: sketch.id, reason: describeExceedances(exceedances) } };
+  }
+  try {
+    validateSketch(document);
+    return { document, withheld: null };
+  } catch (error) {
+    return { document, withheld: { kind: "sketch", id: sketch.id, reason: error instanceof Error ? error.message : "This sketch could not be prepared for the cloud." } };
+  }
+}
+
+export function screenEvidence(evidence: CompetencyEvidence): Withheld | null {
+  try {
+    validateEvidence(evidence);
+    return null;
+  } catch (error) {
+    return { kind: "evidence", id: evidence.id, reason: error instanceof Error ? error.message : "This observation could not be prepared for the cloud." };
+  }
+}
+
+export function screenProfile(state: V8State, profile: CloudProfile): Withheld | null {
+  const exceedances = profileExceedances(state);
+  if (exceedances.length) return { kind: "profile", id: "profile", reason: describeExceedances(exceedances) };
+  try {
+    validateProfile(profile);
+    return null;
+  } catch (error) {
+    return { kind: "profile", id: "profile", reason: error instanceof Error ? error.message : "This account profile could not be prepared for the cloud." };
+  }
+}
+
+/** Firestore codes worth another attempt. Anything else will fail identically for ever, so it is isolated instead of retried. */
+const TRANSIENT_CODES = new Set(["unavailable", "deadline-exceeded", "resource-exhausted", "aborted", "internal", "cancelled", "unknown"]);
+
+export function isTransientCloudFailure(error: unknown): boolean {
+  const code = typeof error === "object" && error && "code" in error ? String((error as { code: unknown }).code) : "";
+  return TRANSIENT_CODES.has(code.replace(/^firestore\//, ""));
+}
+
+export function describeWithheld(withheld: Withheld[]): string {
+  if (!withheld.length) return "";
+  const sketches = withheld.filter((item) => item.kind === "sketch").length;
+  const others = withheld.length - sketches;
+  const subject = sketches && others ? `${sketches} sketch${sketches === 1 ? "" : "es"} and ${others} other record${others === 1 ? "" : "s"}`
+    : sketches ? `${sketches} sketch${sketches === 1 ? "" : "es"}`
+    : `${others} record${others === 1 ? "" : "s"}`;
+  return `${subject} could not be synchronised and stayed on this device: ${withheld[0].reason}. Everything else is up to date. Export a backup from Settings to keep a copy off this device.`;
+}
+
+export interface PendingWrite<Batch> {
+  kind: "sketch" | "evidence";
+  id: string;
+  apply: (batch: Batch) => void;
+  /** The same write on its own, used to find the offender when a batch is refused. */
+  alone: () => Promise<void>;
+}
+
+/**
+ * Commit in batches, but never let one rejected document end the account's sync.
+ *
+ * A batch is atomic, so a document the server refuses fails every other write
+ * beside it — and because the next state change rebuilds the same batch, it
+ * fails identically for ever. That is the mechanism by which a single
+ * out-of-range field used to stop a learner's sync permanently, leaving the
+ * interface able to say only "Sync failed. Local work remains safe."
+ *
+ * When a batch is refused for a permanent reason its writes are retried one at
+ * a time, so the offender is found and withheld with its reason while
+ * everything else gets through. A transient refusal is rethrown untouched:
+ * those are worth trying again as a batch, and isolating them would turn one
+ * dropped connection into hundreds of individual writes.
+ */
+export async function commitIsolating<Batch extends { commit: () => Promise<void> }>(
+  writes: Array<PendingWrite<Batch>>,
+  createBatch: () => Batch,
+  withheld: Withheld[],
+  chunkSize = 400
+): Promise<void> {
+  for (let index = 0; index < writes.length; index += chunkSize) {
+    const slice = writes.slice(index, index + chunkSize);
+    const batch = createBatch();
+    for (const write of slice) write.apply(batch);
+    try {
+      await batch.commit();
+    } catch (error) {
+      if (isTransientCloudFailure(error)) throw error;
+      for (const write of slice) {
+        try { await write.alone(); }
+        catch (cause) {
+          if (isTransientCloudFailure(cause)) throw cause;
+          withheld.push({ kind: write.kind, id: write.id, reason: cause instanceof Error ? cause.message : "The cloud refused this record." });
+        }
+      }
+    }
+  }
 }

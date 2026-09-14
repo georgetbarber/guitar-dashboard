@@ -5,7 +5,7 @@ import { activeWorkspaceId, exportArchive, loadWorkspace, moveWorkspace, newSket
 import type { WorkspaceId } from "./repository";
 import { IDLE_SAVE, runSave } from "./saveState";
 import type { LocalSaveState } from "./saveState";
-import { boundReflection, boundSketch } from "./limits";
+import { clampSketchTempo } from "./limits";
 import { mergeCloudSnapshot } from "./sync";
 import type { CloudSnapshot } from "./sync";
 import { SKETCH_SYNC_FIELDS } from "./types";
@@ -122,9 +122,10 @@ function reducer(state: V8State, action: Action): V8State {
         resumeActivityId: null,
         completedActivityIds: completedActivityIdsFromEvidence(evidence),
         evidence,
-        // Validated as part of the profile, which uploads before evidence does, so an
-        // over-length reflection blocks the account's whole sync rather than itself.
-        lastReflection: boundReflection(action.reflection || state.lastReflection),
+        // Not truncated. An over-length reflection is withheld from the profile
+        // upload with an explanation (see ./sync.ts screenProfile) rather than
+        // being silently cut back to fit a cloud document.
+        lastReflection: action.reflection || state.lastReflection,
         updatedAt: changedAt
       };
     }
@@ -144,13 +145,16 @@ function reducer(state: V8State, action: Action): V8State {
       const sketch = newSketch(state.sketches.length);
       return { ...state, sketches: [...state.sketches, sketch], activeSketchId: sketch.id, route: "create", updatedAt: changedAt };
     }
-    // Bound here rather than at each input: every sketch write goes through this
-    // case, including the transformation buttons that append to `notes`. A field
-    // outside the range firestore.rules accepts fails the whole batch, not just
-    // itself, and the retry fails identically for ever. See ./limits.ts.
+    /*
+     * Tempo is clamped here because every sketch write passes through this case
+     * and an out-of-range figure is a typo rather than work. Nothing else is
+     * altered: over-limit material is the learner's, is kept locally, and is
+     * withheld from the cloud visibly instead. Create refuses the edit that
+     * would newly exceed a cap, while the learner still has the text in hand.
+     */
     case "updateSketch": return {
       ...state,
-      sketches: state.sketches.map((sketch) => sketch.id === action.sketch.id ? boundSketch(action.sketch) : sketch),
+      sketches: state.sketches.map((sketch) => sketch.id === action.sketch.id ? clampSketchTempo(action.sketch) : sketch),
       activeSketchId: action.sketch.id,
       updatedAt: changedAt
     };

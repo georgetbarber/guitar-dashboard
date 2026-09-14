@@ -95,12 +95,106 @@ Now:
 
 ---
 
+## Phase 1B-1 — validation at the three trust boundaries
+
+| | |
+| --- | --- |
+| **Status** | Verified locally |
+| **Findings** | B08 (closed pending CI); part of B04 (blob ordering on import) |
+| **Depends on** | Phase 1A |
+| **Changed** | `validation.test.ts` (new); `repository.ts`, `sync.ts`, `cloud.tsx`, `store.tsx`, `components/SaveStatus.tsx`, `app/App.tsx`, `styles/app.css`. `validation.ts` adopted unchanged |
+| **Evidence** | 122 unit tests pass (110 before); build clean. Four defects reintroduced individually failed seven of the twelve new tests and no others |
+| **Migration impact** | A stored workspace this build cannot parse now blocks saving and shows a recovery notice instead of starting empty. No schema or rules change |
+| **Limitations** | Not verified in CI, on a device, or against the emulator |
+
+`validation.ts` had been in the tree imported by nothing, so nothing was
+validated at all. It is now applied at all three boundaries:
+
+- **Local.** `loadWorkspace` returns empty, ok or **unreadable** rather than
+  casting bytes to `V8State`. Unreadable suspends saving, because the default
+  state is what is on screen and the first autosave would write it over the only
+  copy of the learner's work — turning a parsing problem into real data loss.
+  `workspaceExists` treats unreadable as present so signing in cannot replace
+  it, and `moveWorkspace` refuses it rather than rewriting the only recoverable
+  copy under a new key.
+- **Archives.** The workspace is validated in full, and before any recording is
+  written. The old ordering wrote blobs first, so a rejected import left them
+  orphaned.
+- **Cloud.** Documents are accepted one at a time. The valid ones merge, the
+  rest are set aside with a reason, and the badge says how many were skipped.
+  Only accepted ids enter the upload cache, so a good local copy of a rejected
+  record repairs it rather than being skipped as already present.
+
+---
+
+## Phase 1B-2 — complete bounds, visible refusal, isolated uploads
+
+| | |
+| --- | --- |
+| **Status** | Verified locally |
+| **Findings** | B09 (closed pending CI); the sync-stall half of B02's cloud path |
+| **Depends on** | 1B-1 |
+| **Changed** | `upload.test.ts` (new); `limits.ts` (rewritten), `limits.test.ts` (rewritten), `sync.ts`, `cloud.tsx`, `store.tsx`, `features/Create.tsx` |
+| **Evidence** | 143 unit tests pass (122 before); build clean. Four defects reintroduced individually failed seven tests and no others |
+| **Migration impact** | Over-limit material already on a device is preserved and kept working locally; it stops being uploaded and says so. No schema or rules change |
+
+These two landed together because removing the truncation without the isolation
+would have reintroduced the permanent sync stall that the truncation existed to
+avoid.
+
+**Bounds (B09).** `tags`, `chords`, `melody`, `sections`, `takes`, `revisions`
+and `reflections` were all capped by `firestore.rules` and unbounded on the
+client, so any of them could end an account's sync with no warning. All are now
+mirrored, along with the profile's `activeUnitId`, `completedActivityIds` and
+`deletedSketchIds`. A whole-document size estimate was added as well, because
+the per-field caps do not add up to a guarantee: exactly 500 revisions is within
+the rules' cap and still exceeds the 1 MiB Firestore refuses outright — before
+any rule runs, so the rules tests would never catch it.
+
+**No more silent truncation.** The previous `boundSketch` cut every over-length
+string back to the cap, arguing that losing the overflow beat losing sync. That
+argument fails in the one case it matters: the caps are far above anything typed
+by hand, so they are reached by accumulated work, and quietly deleting a
+learner's accumulated work to make a cloud document fit is the worst available
+outcome. Now `admitSketchEdit` refuses an edit that would **newly** exceed a cap
+and Create names what was refused while the learner still has the text in hand;
+material already over a cap is left untouched, because it is theirs and a bound
+introduced later must not consume it. Tempo remains the one clamped value — it
+comes from a number input and has no content to lose.
+
+**Isolation.** A batch is atomic, so a document the server refuses failed every
+write beside it, and the next state change rebuilt the identical batch — which
+is the mechanism by which one out-of-range field ended a learner's sync for
+good. Documents are now screened before batching, and a batch refused for a
+permanent reason is retried one write at a time so the offender is found,
+withheld with its reason, and everything else gets through. Transient codes are
+rethrown untouched rather than split into hundreds of individual writes.
+Withheld records never enter the upload cache, so trimming a sketch back within
+range uploads it rather than leaving it skipped as already sent.
+
+**Growth strategy.** Deletion records are counted and reported, never pruned:
+dropping one to fit the cap lets a device offline since before the deletion
+resurrect the deleted sketch on its next sync, which is a worse failure than a
+profile that will not upload and says so.
+
+### Limitations
+
+- Not verified in CI, on a real device, or against the Firebase emulator. The
+  isolation path in particular deserves an emulator test against the real rules.
+- Separating histories into their own records, if revision growth demands it, is
+  deliberately **not** done here. It is a schema change with a migration, and it
+  belongs with 1C's transactional work rather than being bolted onto a bounds
+  change.
+- `firestore.rules` is unchanged; these are the client counterparts to limits
+  that already existed server-side.
+
+---
+
 ## Next package
 
-**Phase 1B — validation and bounded data.** It begins by adopting
-`src/v8/validation.ts`, which is present in the tree and imported by nothing, so
-the app currently validates no persisted, imported or cloud data at all. Wiring
-it in changes what the app accepts from storage, so it needs 1B's isolation and
-recovery behaviour built alongside it: a rejected cloud record must not stall
-unrelated valid work, and oversized legacy material must be preserved and
-exportable rather than discarded.
+**Phase 1C — transactional restore and migration.** Import still writes
+recordings and then the state with no staging generation, so an interruption
+part-way leaves new blobs against the previous workspace. 1C stages into an
+inactive workspace generation and activates only once every required write is
+durable, keeps the previous workspace usable on failure, and separates a local
+restore from a cloud merge or replacement.

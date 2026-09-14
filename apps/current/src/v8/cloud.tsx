@@ -23,8 +23,8 @@ import {
 } from "firebase/firestore";
 import { deleteObject, getBlob, getStorage, ref, uploadBytes } from "firebase/storage";
 import { accountWorkspaceId, eraseAllDeviceData, loadBlob, workspaceExists, workspaceHasLearningData } from "./repository";
-import { acceptEvidence, acceptProfile, acceptSketches, cloudProfile, cloudSketch, describeRejected } from "./sync";
-import type { CloudProfile } from "./sync";
+import { acceptEvidence, acceptProfile, acceptSketches, cloudProfile, commitIsolating, describeRejected, describeWithheld, screenEvidence, screenProfile, screenSketch } from "./sync";
+import type { CloudProfile, PendingWrite, Withheld } from "./sync";
 import type { RecordedTake, Sketch, V8State } from "./types";
 import { useV8Store } from "./store";
 
@@ -89,21 +89,21 @@ function profileSignature(profile: CloudProfile): string {
   return JSON.stringify(profile);
 }
 
-async function commitInChunks(database: Firestore, operations: Array<(batch: ReturnType<typeof writeBatch>) => void>) {
-  for (let index = 0; index < operations.length; index += 400) {
-    const batch = writeBatch(database);
-    for (const operation of operations.slice(index, index + 400)) operation(batch);
-    await batch.commit();
-  }
-}
-
-async function uploadChanges(database: Firestore, uid: string, state: V8State, cache: SyncCache) {
+async function uploadChanges(database: Firestore, uid: string, state: V8State, cache: SyncCache): Promise<Withheld[]> {
+  const withheld: Withheld[] = [];
   const profile = cloudProfile(state);
   const signature = profileSignature(profile);
   if (state.updatedAt >= cache.profileUpdatedAt && signature !== cache.profileSignature) {
-    await setDoc(doc(database, "users", uid), profile);
-    cache.profileUpdatedAt = profile.updatedAt;
-    cache.profileSignature = signature;
+    const refused = screenProfile(state, profile);
+    if (refused) {
+      // Not cached as sent, so a later edit that brings the profile back within
+      // range uploads it rather than being skipped as unchanged.
+      withheld.push(refused);
+    } else {
+      await setDoc(doc(database, "users", uid), profile);
+      cache.profileUpdatedAt = profile.updatedAt;
+      cache.profileSignature = signature;
+    }
   }
 
   /*
@@ -122,20 +122,48 @@ async function uploadChanges(database: Firestore, uid: string, state: V8State, c
   }
 
   const deleted = new Set(Object.keys(state.deletedSketchIds));
-  const operations: Array<(batch: ReturnType<typeof writeBatch>) => void> = [];
+  const writes: Array<PendingWrite<ReturnType<typeof writeBatch>>> = [];
+  const sent = { evidence: new Set<string>(), sketches: new Map<string, string>() };
+
   for (const evidence of state.evidence) {
     if (cache.evidenceIds.has(evidence.id)) continue;
-    operations.push((batch) => batch.set(doc(database, "users", uid, "evidence", evidence.id), evidence));
+    const refused = screenEvidence(evidence);
+    if (refused) { withheld.push(refused); continue; }
+    const reference = doc(database, "users", uid, "evidence", evidence.id);
+    writes.push({
+      kind: "evidence", id: evidence.id,
+      apply: (batch) => batch.set(reference, evidence),
+      alone: () => setDoc(reference, evidence)
+    });
+    sent.evidence.add(evidence.id);
   }
+
   for (const sketch of state.sketches) {
     if (deleted.has(sketch.id)) continue;
     const remoteVersion = cache.sketchVersions.get(sketch.id);
     if (remoteVersion && remoteVersion >= sketch.updatedAt) continue;
-    operations.push((batch) => batch.set(doc(database, "users", uid, "sketches", sketch.id), cloudSketch(sketch)));
+    const { document, withheld: refused } = screenSketch(sketch);
+    if (refused) { withheld.push(refused); continue; }
+    const reference = doc(database, "users", uid, "sketches", sketch.id);
+    writes.push({
+      kind: "sketch", id: sketch.id,
+      apply: (batch) => batch.set(reference, document),
+      alone: () => setDoc(reference, document)
+    });
+    sent.sketches.set(sketch.id, sketch.updatedAt);
   }
-  await commitInChunks(database, operations);
-  for (const evidence of state.evidence) cache.evidenceIds.add(evidence.id);
-  for (const sketch of state.sketches) cache.sketchVersions.set(sketch.id, sketch.updatedAt);
+
+  await commitIsolating(writes, () => writeBatch(database), withheld);
+
+  /*
+   * Only what was actually accepted enters the cache. Marking a withheld record
+   * as sent would hide it from every later upload, so a sketch that the learner
+   * later trims back within range would never reach the cloud.
+   */
+  const refusedIds = new Set(withheld.map((item) => item.id));
+  for (const id of sent.evidence) if (!refusedIds.has(id)) cache.evidenceIds.add(id);
+  for (const [id, updatedAt] of sent.sketches) if (!refusedIds.has(id)) cache.sketchVersions.set(id, updatedAt);
+  return withheld;
 }
 
 export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
@@ -295,7 +323,12 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       uploadingRef.current = true;
       setStatus(navigator.onLine ? "syncing" : "offline");
       void uploadChanges(database, user.uid, state, cacheRef.current)
-        .then(() => {
+        .then((withheld) => {
+          if (withheld.length) {
+            setStatus("error");
+            setMessage(describeWithheld(withheld));
+            return;
+          }
           setStatus(navigator.onLine ? "synced" : "offline");
           setMessage(navigator.onLine ? "All progress is synchronised." : "Saved offline; waiting for a connection.");
         })
