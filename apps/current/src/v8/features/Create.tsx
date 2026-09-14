@@ -9,6 +9,7 @@ import { clearSketchRecordings, loadBlob, saveBlob } from "../repository";
 import { useCloudSync } from "../cloud";
 import { SKETCH_LIMITS, admitSketchEdit, boundTempo, describeExceedances } from "../limits";
 import { useV8Store } from "../store";
+import { useUpdateHold } from "../components/UpdateNotice";
 import { SKETCH_SYNC_FIELDS } from "../types";
 import type { ChordEvent, RecordedTake, Sketch, SketchRevision, SketchSyncField } from "../types";
 
@@ -63,6 +64,13 @@ function SketchEditor({ sketch }: { sketch: Sketch }) {
    * through "1" -> 20. The clamp applies on blur, where the value is complete.
    */
   const [tempoDraft, setTempoDraft] = useState<string | null>(null);
+  /*
+   * A temporary take lives only in this tab's memory — no chunk persistence
+   * exists — so a reload destroys it. Holding the update off is the whole
+   * protection; there is no recovery to fall back on.
+   */
+  useUpdateHold(recording, "a recording in progress");
+  useUpdateHold(Boolean(pendingTake), "a temporary take you have not kept or discarded");
   useEffect(() => () => { sessionRef.current?.close(); stopAudio(); }, []);
   useEffect(() => () => { if (pendingTake) URL.revokeObjectURL(pendingTake.url); }, [pendingTake]);
   const update = (changes: Partial<Sketch>) => {
@@ -108,7 +116,7 @@ function SketchEditor({ sketch }: { sketch: Sketch }) {
     if (!recorderRef.current) return;
     const blob = await recorderRef.current.stop();
     setPendingTake({ blob, url: URL.createObjectURL(blob) });
-    recorderRef.current = null; setRecording(false); setMessage("Temporary take ready. Compare it now, then keep it deliberately or discard it.");
+    recorderRef.current = null; setRecording(false); setMessage("Temporary take ready, held only in this tab. Compare it now, then keep it on this device or discard it — closing or reloading this tab loses it.");
   };
   const keepPendingTake = async () => {
     if (!pendingTake) return;
@@ -135,7 +143,7 @@ function SketchEditor({ sketch }: { sketch: Sketch }) {
       <section className="card transformation-panel"><header><div><span className="eyebrow">Optional experiments</span><h2>Preserve one identity; change another.</h2><p>These are comparisons, not rules or answers.</p></div></header><div className="transformation-grid">{TRANSFORMATIONS.map(([title, explanation]) => <button onClick={() => revise(title, title === "Create a B section" ? { sections: [...new Set([...sketch.sections, "B"])] } : { notes: `${sketch.notes}\nExperiment: ${title} — ${explanation}`.trim() })} key={title}><strong>{title}</strong><span>{explanation}</span></button>)}</div></section>
       <div className="studio-grid">
         <section className="card notes-panel"><span className="eyebrow">Arrangement and reflection</span><h2>Notes to your future self</h2><textarea maxLength={SKETCH_LIMITS.notes} value={sketch.notes} onChange={(event) => update({ notes: event.target.value })} placeholder="What should stay? What is the next deliberate change?" /><label>Ambiguity or alternate readings<textarea maxLength={SKETCH_LIMITS.ambiguityNotes} value={sketch.ambiguityNotes} onChange={(event) => update({ ambiguityNotes: event.target.value })} placeholder="Outside the key is information, not an error…" /></label></section>
-        <section className="card take-panel"><span className="eyebrow">Optional listening evidence</span><h2>{visibleTakes.length} retained takes</h2><p>{message}</p>{pendingTake && <div className="pending-take"><strong>Temporary take—not stored yet</strong><audio controls src={pendingTake.url} /><div className="action-row"><button className="primary-action" onClick={() => void keepPendingTake()}>Keep on this device</button><button className="secondary-action" onClick={() => { setPendingTake(null); setMessage("Temporary take discarded. No storage was used."); }}>Discard</button></div><small>A kept take stays private unless you later finish the project and explicitly share that individual take.</small></div>}{visibleTakes.map((take) => <TakePlayer sketch={sketch} take={take} key={take.id} />)}{sketch.status !== "finished" && visibleTakes.length > 0 && <small>Finish this version before choosing any individual take to share across signed-in devices.</small>}<div className="revision-count"><strong>{sketch.revisions.length}</strong><span>preserved revisions</span></div></section>
+        <section className="card take-panel"><span className="eyebrow">Optional listening evidence</span><h2>{visibleTakes.length} retained takes</h2><p>{message}</p>{pendingTake && <div className="pending-take"><strong>Temporary take — held in this tab only, not stored</strong><audio controls src={pendingTake.url} /><div className="action-row"><button className="primary-action" onClick={() => void keepPendingTake()}>Keep on this device</button><button className="secondary-action" onClick={() => { setPendingTake(null); setMessage("Temporary take discarded. No storage was used."); }}>Discard</button></div><small>A kept take stays private unless you later finish the project and explicitly share that individual take.</small></div>}{visibleTakes.map((take) => <TakePlayer sketch={sketch} take={take} key={take.id} />)}{sketch.status !== "finished" && visibleTakes.length > 0 && <small>Finish this version before choosing any individual take to share across signed-in devices.</small>}<div className="revision-count"><strong>{sketch.revisions.length}</strong><span>preserved revisions</span></div></section>
       </div>
       <footer className="studio-footer"><button className="danger-action" onClick={async () => { if (confirm(`Delete “${sketch.name}”? Its device recordings and any explicitly shared takes will also be deleted.`)) { try { await cloud.deleteUploadedTakes(sketch); await clearSketchRecordings(sketch); dispatch({ type: "deleteSketch", id: sketch.id }); } catch (error) { setMessage(error instanceof Error ? error.message : "The shared recordings could not be removed."); } } }}>Delete sketch</button><button className="primary-action" onClick={() => revise("Marked finished after comparative listening", { status: "finished" })}>Finish this version</button></footer>
     </div>

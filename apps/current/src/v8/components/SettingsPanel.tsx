@@ -4,11 +4,15 @@ import type { RestorePreview } from "../repository";
 import { useCloudSync } from "../cloud";
 import { currentInstallPrompt, currentStandaloneMode, showInstallPrompt, subscribeInstallPrompt, subscribeStandaloneMode, type InstallPromptEvent } from "../install";
 import { useV8Store } from "../store";
+import { useUpdateHold } from "./UpdateNotice";
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const { state, dispatch, workspaceId, holdRestoreFromAccount } = useV8Store();
   const [restore, setRestore] = useState<RestorePreview | null>(null);
   const [restoreBusy, setRestoreBusy] = useState<"restoring" | "cancelling" | null>(null);
+  // A staged restore is durable, but reloading mid-activation would discard it
+  // on the next start, and the learner would have to prepare it again.
+  useUpdateHold(Boolean(restore), "a backup you are restoring");
   const cloud = useCloudSync();
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState("Progress stays local first and synchronises after sign-in. Recordings stay private unless you explicitly share one finished-project take.");

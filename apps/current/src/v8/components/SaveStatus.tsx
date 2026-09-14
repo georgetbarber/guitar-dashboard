@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useCloudSync } from "../cloud";
 import { useV8Store } from "../store";
+import { useUpdateHold } from "./UpdateNotice";
 
 /**
  * The quiet half of the local save contract: a small, permanently visible
@@ -11,6 +12,9 @@ import { useV8Store } from "../store";
  */
 export function SaveIndicator() {
   const { save } = useV8Store();
+  // An update reloads the page. Work that is mid-write, or that this device has
+  // refused to store, exists only in this tab, so it must not be reloaded away.
+  useUpdateHold(save.status === "saving" || save.status === "failed", "your work to finish saving");
   const label =
     save.status === "saving" ? "Saving on this device…"
     : save.status === "failed" ? "Not saved on this device"

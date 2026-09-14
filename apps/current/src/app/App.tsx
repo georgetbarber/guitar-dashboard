@@ -6,6 +6,7 @@ import type { RouteId } from "../v8/types";
 import { ActivityPlayer } from "../v8/components/ActivityPlayer";
 import { SettingsPanel } from "../v8/components/SettingsPanel";
 import { RestoreHoldNotice, SaveFailureAlert, SaveIndicator, WorkspaceRecoveryNotice } from "../v8/components/SaveStatus";
+import { UpdateNotice } from "../v8/components/UpdateNotice";
 import { Today } from "../v8/features/Today";
 import { Path } from "../v8/features/Path";
 import { Practice } from "../v8/features/Practice";
@@ -57,6 +58,7 @@ function V8Application() {
         <WorkspaceRecoveryNotice />
         <SaveFailureAlert />
         <RestoreHoldNotice />
+        <UpdateNotice />
         {cloud.status === "offline" && <div className="offline-banner" role="status"><strong>Working offline.</strong> Nothing will synchronise to your other devices until you reconnect. This device's own save status is shown in the sidebar.</div>}
         {LEARN_ROUTES.includes(state.route) && <nav className="learn-tabs" aria-label="Learn views">
           {LEARN_VIEWS.map((item) => <button className={state.route === item.route ? "is-active" : ""} aria-current={state.route === item.route ? "page" : undefined} onClick={() => navigate(item.route)} key={item.route}><strong>{item.label}</strong><small>{item.purpose}</small></button>)}

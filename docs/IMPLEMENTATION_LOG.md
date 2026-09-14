@@ -259,13 +259,90 @@ in or out changes which account is at stake.
 
 ---
 
+## Phase 1D — safe application updates
+
+| | |
+| --- | --- |
+| **Status** | Verified locally |
+| **Findings** | B03, B20 (both closed pending CI and a live check) |
+| **Depends on** | 1A (save state), 1C (restore) |
+| **Changed** | `updates.ts`, `updates.test.ts`, `components/UpdateNotice.tsx`, `tests/hosting.test.ts` (all new); `install.ts`, `vite.config.ts`, `firebase.json`, `package.json`, `features/Create.tsx`, `components/SaveStatus.tsx`, `components/SettingsPanel.tsx`, `app/App.tsx`, `styles/app.css` |
+| **Evidence** | 164 tests pass across 23 files (152 before); build clean. Three defects reintroduced individually failed eight of the fifteen new tests and no others. The built `dist/sw.js` was inspected directly: `skipWaiting()` now appears only inside the SKIP_WAITING message handler, and `clientsClaim()` is gone |
+| **Migration impact** | A client on the old build still self-activates once, because its worker was built with `skipWaiting`. From the first build carrying this change onward, updates wait to be asked for |
+
+### The update no longer takes the page
+
+`registerType: "autoUpdate"` with `skipWaiting` and `clientsClaim` meant a new
+build took control the moment it finished installing, and `install.ts` reloaded
+on `controllerchange`. A learner could lose a recording in progress, an import
+part-way through, or unsaved edits — with no warning and nothing to decline.
+Worse, the update check was tied to window focus, so the reload was most likely
+to arrive exactly as they returned to the tab.
+
+A new worker now installs and waits. `updates.ts` holds the rules about when it
+may be applied, deliberately free of service-worker and DOM types so they can be
+tested directly:
+
+- `holdUpdates(reason)` keeps an update off while something is in flight, and
+  the reason is shown to the learner.
+- `requestUpdate()` applies immediately when nothing is held, and otherwise
+  **queues** — the last hold to be released applies it. Nothing is interrupted.
+- Releasing a hold with no update requested does nothing. Finishing a recording
+  is not consent to reload the page.
+- A queued update can be called off and asked for again later.
+
+Holds are taken while a recording is in progress, while a temporary take is
+neither kept nor discarded, while work is mid-save or failed to save, and while
+a backup is being restored.
+
+`install.ts` also reloads only for an update **this tab** asked for. A
+`controllerchange` can arrive because another tab applied the update, and
+reloading on that would reintroduce the same interruption in a tab that never
+consented.
+
+### Temporary audio is described as what it is
+
+A pending take lives only in the tab's memory — no chunk persistence exists — so
+the copy now says so plainly rather than implying a recovery that is not
+implemented. The update hold is the whole protection, not a fallback.
+
+### The cache header named a file that is never built
+
+`firebase.json` set `Cache-Control: no-cache` on `/service-worker.js`;
+`vite-plugin-pwa` emits `/sw.js`. The rule applied to nothing and the real
+worker was served with default caching, which is how a device goes on running an
+old build after a new one is published. `tests/hosting.test.ts` now asserts the
+header names the emitted worker, and — when a build is present — that every
+`.js` source named in the hosting headers actually exists in `dist`. It sits
+outside `src/` because it reads repository configuration rather than
+application code, which is also why `npm test` now names it explicitly.
+
+### Limitations
+
+- Not verified in CI, on a real device, or against a live deployment. Whether
+  the header is actually served, and whether the waiting worker behaves on the
+  Pixel's installed PWA, are Phase 7 checks (B32).
+- The hold wiring is provider and component state, covered by reading rather
+  than by a rendered test — the standing gap until a DOM environment exists
+  (Phase 2B, B23). The rules those holds obey are fully tested.
+- One client already running the old build will still self-activate its next
+  update, because the decision lives in the worker it already has. Only builds
+  from this change onward wait.
+
+---
+
 ## Next package
 
-**Phase 1D — safe application updates.** The service worker is configured with
-`registerType: "autoUpdate"`, `skipWaiting` and `clientsClaim`, so a new build
-takes over and reloads whenever it arrives — including mid-recording, mid-import
-and over unsaved edits (B03). 1D replaces that with update-ready handling that
-defers activation to a safe boundary, corrects the `/service-worker.js` cache
-header that targets a filename the build never emits (B20), and makes the
-temporary state of unretained audio honest rather than implying a recovery that
-does not exist.
+**Phase 1E — correct the current promises.** The remaining Phase 1 items, all
+of them cases where the interface claims something the app does not do:
+`buildSession` ignores the chosen practice duration (B01); five of the six Create
+experiment buttons only append prose (B05 interim wording, with the real
+operations in 4C); a new sketch hard-codes C major instead of inheriting the
+tonal context (B10); evidence does not say when it is learner-reported (B07);
+and the append-only evidence contract still conflicts with the client delete the
+rules allow (B29).
+
+Completing 1E closes Phase 1 and reaches its gate: failure injection does not
+lose the previous durable workspace, saves and sync never falsely report
+success, malformed data is handled visibly, and each confirmed trust failure has
+a targeted regression check.
