@@ -1,4 +1,5 @@
 import { ACTIVITIES, CURRICULUM, activityById, unitById } from "./curriculum";
+import { newId } from "./identity";
 import { COMPETENCY_STRANDS } from "./types";
 import type {
   Assistance,
@@ -154,8 +155,8 @@ export function createEvidence(
   context: EvidenceContext,
   occurredAt = new Date().toISOString()
 ): CompetencyEvidence[] {
-  return competencyIds.map((competencyId, index) => ({
-    id: `${occurredAt}-${activityId}-${index}`,
+  return competencyIds.map((competencyId) => ({
+    id: newId("evidence"),
     competencyId,
     source,
     assistance,

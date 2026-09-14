@@ -5,6 +5,7 @@ import { CloudSyncProvider, useCloudSync } from "../v8/cloud";
 import type { RouteId } from "../v8/types";
 import { ActivityPlayer } from "../v8/components/ActivityPlayer";
 import { SettingsPanel } from "../v8/components/SettingsPanel";
+import { SaveFailureAlert, SaveIndicator } from "../v8/components/SaveStatus";
 import { Today } from "../v8/features/Today";
 import { Path } from "../v8/features/Path";
 import { Practice } from "../v8/features/Practice";
@@ -49,11 +50,12 @@ function V8Application() {
             return <button className={active ? "is-active" : ""} aria-current={active ? "page" : undefined} onClick={() => navigate(item.route)} key={item.id}><i>{item.symbol}</i><div><strong>{item.label}</strong><small>{item.purpose}</small></div></button>;
           })}
         </nav>
-        <div className="sidebar-context"><span>Current reference</span><strong>{state.settings.tonicName} {state.settings.mode}</strong><small>{state.settings.instrument} · {state.settings.dailyMinutes} min sessions</small></div>
+        <div className="sidebar-context"><span>Current reference</span><strong>{state.settings.tonicName} {state.settings.mode}</strong><small>{state.settings.instrument} · {state.settings.dailyMinutes} min sessions</small><SaveIndicator /></div>
         <button className="settings-button" onClick={() => setSettingsOpen(true)}><span>⚙</span><div><strong>Settings and sync</strong><small>{cloud.user ? cloud.status : "Private backup and devices"}</small></div></button>
       </aside>
       <main id="main-content" tabIndex={-1}>
-        {cloud.status === "offline" && <div className="offline-banner" role="status"><strong>Working offline.</strong> Your changes are safe on this device and will synchronise after reconnection.</div>}
+        <SaveFailureAlert />
+        {cloud.status === "offline" && <div className="offline-banner" role="status"><strong>Working offline.</strong> Nothing will synchronise to your other devices until you reconnect. This device's own save status is shown in the sidebar.</div>}
         {LEARN_ROUTES.includes(state.route) && <nav className="learn-tabs" aria-label="Learn views">
           {LEARN_VIEWS.map((item) => <button className={state.route === item.route ? "is-active" : ""} aria-current={state.route === item.route ? "page" : undefined} onClick={() => navigate(item.route)} key={item.route}><strong>{item.label}</strong><small>{item.purpose}</small></button>)}
         </nav>}

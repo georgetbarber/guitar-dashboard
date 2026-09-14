@@ -1,8 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { CURRICULUM } from "./curriculum";
 import { completedActivityIdsFromEvidence } from "./learning";
-import { activeWorkspaceId, loadPersistedState, moveWorkspace, newSketch, savePersistedState, setActiveWorkspace } from "./repository";
+import { activeWorkspaceId, exportArchive, loadPersistedState, moveWorkspace, newSketch, savePersistedState, setActiveWorkspace } from "./repository";
 import type { WorkspaceId } from "./repository";
+import { IDLE_SAVE, runSave } from "./saveState";
+import type { LocalSaveState } from "./saveState";
+import { boundReflection, boundSketch } from "./limits";
 import { mergeCloudSnapshot } from "./sync";
 import type { CloudSnapshot } from "./sync";
 import { SKETCH_SYNC_FIELDS } from "./types";
@@ -119,7 +122,9 @@ function reducer(state: V8State, action: Action): V8State {
         resumeActivityId: null,
         completedActivityIds: completedActivityIdsFromEvidence(evidence),
         evidence,
-        lastReflection: action.reflection || state.lastReflection,
+        // Validated as part of the profile, which uploads before evidence does, so an
+        // over-length reflection blocks the account's whole sync rather than itself.
+        lastReflection: boundReflection(action.reflection || state.lastReflection),
         updatedAt: changedAt
       };
     }
@@ -139,9 +144,13 @@ function reducer(state: V8State, action: Action): V8State {
       const sketch = newSketch(state.sketches.length);
       return { ...state, sketches: [...state.sketches, sketch], activeSketchId: sketch.id, route: "create", updatedAt: changedAt };
     }
+    // Bound here rather than at each input: every sketch write goes through this
+    // case, including the transformation buttons that append to `notes`. A field
+    // outside the range firestore.rules accepts fails the whole batch, not just
+    // itself, and the retry fails identically for ever. See ./limits.ts.
     case "updateSketch": return {
       ...state,
-      sketches: state.sketches.map((sketch) => sketch.id === action.sketch.id ? action.sketch : sketch),
+      sketches: state.sketches.map((sketch) => sketch.id === action.sketch.id ? boundSketch(action.sketch) : sketch),
       activeSketchId: action.sketch.id,
       updatedAt: changedAt
     };
@@ -180,6 +189,11 @@ interface StoreValue {
   hydrated: boolean;
   workspaceId: WorkspaceId;
   switchWorkspace: (workspaceId: WorkspaceId, options?: { moveAnonymousHistory?: boolean }) => Promise<void>;
+  save: LocalSaveState;
+  /** Retry the state that failed to save, not whatever is current, so nothing queues behind a stuck write. */
+  retrySave: () => Promise<void>;
+  /** Escape hatch when the store will not accept writes: hand the learner a file they can restore. */
+  downloadRecoveryArchive: () => Promise<void>;
 }
 const Store = createContext<StoreValue | null>(null);
 
@@ -187,8 +201,52 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, DEFAULT_STATE);
   const [hydrated, setHydrated] = useState(false);
   const [workspaceId, setWorkspaceId] = useState<WorkspaceId>("anonymous");
+  const [save, setSave] = useState<LocalSaveState>(IDLE_SAVE);
   const switchingRef = useRef(false);
   const switchQueueRef = useRef(Promise.resolve());
+  /*
+   * A save that is superseded before it settles must not report anything: its
+   * successor carries the same edits plus later ones, so only the newest
+   * attempt's outcome is true of what the learner can currently see.
+   */
+  const saveRevisionRef = useRef(0);
+  /* The exact state that has not reached the device, so a retry resends it rather than a newer partial. */
+  const unsavedRef = useRef<V8State | null>(null);
+  const stateRef = useRef(state);
+  const workspaceRef = useRef(workspaceId);
+  useEffect(() => { stateRef.current = state; }, [state]);
+  useEffect(() => { workspaceRef.current = workspaceId; }, [workspaceId]);
+
+  const persist = useCallback(async (next: V8State, workspace: WorkspaceId) => {
+    const revision = ++saveRevisionRef.current;
+    // Held before the write starts, so a failure leaves the learner's edits in
+    // hand rather than only on screen: nothing durable is lost, and the retry
+    // resends exactly this state.
+    unsavedRef.current = next;
+    await runSave(next, workspace, {
+      write: savePersistedState,
+      isCurrent: () => revision === saveRevisionRef.current,
+      apply: setSave,
+      onDurable: () => { unsavedRef.current = null; }
+    });
+  }, []);
+
+  const retrySave = useCallback(async () => {
+    await persist(unsavedRef.current ?? stateRef.current, workspaceRef.current);
+  }, [persist]);
+
+  const downloadRecoveryArchive = useCallback(async () => {
+    const blob = await exportArchive(unsavedRef.current ?? stateRef.current);
+    const url = URL.createObjectURL(blob);
+    try {
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `guitar-academy-recovery-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.guitar-academy`;
+      anchor.click();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }, []);
   useEffect(() => {
     setActiveWorkspace("anonymous");
     void loadPersistedState("anonymous").then((persisted) => {
@@ -200,8 +258,8 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
     if (!hydrated || switchingRef.current) return;
     document.documentElement.dataset.theme = state.settings.theme;
     document.documentElement.dataset.motion = state.settings.reducedMotion ? "reduced" : "full";
-    void savePersistedState(state, workspaceId).catch(() => undefined);
-  }, [state, hydrated, workspaceId]);
+    void persist(state, workspaceId);
+  }, [state, hydrated, workspaceId, persist]);
   useEffect(() => {
     replaceLegacyLocation(routeFromLocation());
     const listener = () => {
@@ -223,6 +281,15 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
         const persisted = await loadPersistedState(nextWorkspace);
         dispatch({ type: "hydrate", state: persisted?.version === 8 ? persisted : DEFAULT_STATE });
         setWorkspaceId(nextWorkspace);
+        /*
+         * Retire any save still in flight for the workspace being left, so its
+         * result cannot be reported against the one now on screen, and drop the
+         * unsaved copy with it — retrying it here would write one workspace's
+         * work into another.
+         */
+        saveRevisionRef.current += 1;
+        unsavedRef.current = null;
+        setSave(IDLE_SAVE);
       } finally {
         switchingRef.current = false;
         setHydrated(true);
@@ -231,7 +298,10 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
     switchQueueRef.current = operation.catch(() => undefined);
     return operation;
   }, []);
-  const value = useMemo(() => ({ state, dispatch, hydrated, workspaceId, switchWorkspace }), [state, hydrated, workspaceId, switchWorkspace]);
+  const value = useMemo(
+    () => ({ state, dispatch, hydrated, workspaceId, switchWorkspace, save, retrySave, downloadRecoveryArchive }),
+    [state, hydrated, workspaceId, switchWorkspace, save, retrySave, downloadRecoveryArchive]
+  );
   return <Store.Provider value={value}>{children}</Store.Provider>;
 }
 

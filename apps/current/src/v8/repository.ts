@@ -1,3 +1,4 @@
+import { newId } from "./identity";
 import type { Sketch, V8State } from "./types";
 
 const DB_NAME = "guitar-academy-v8";
@@ -103,8 +104,17 @@ export async function loadPersistedState(workspaceId: WorkspaceId = activeWorksp
   }
 }
 
-export async function savePersistedState(state: V8State, workspaceId: WorkspaceId = activeWorkspace): Promise<void> {
-  if (deviceErased) return;
+/**
+ * Where a successful write actually landed. The caller needs this because the
+ * two are not equivalent: "fallback" means IndexedDB refused the write and the
+ * state is sitting in localStorage, which holds a few megabytes at best and will
+ * start refusing a growing sketchbook. Reporting both as a plain success is how
+ * a learner ends up trusting a store that is about to fail.
+ */
+export type SaveMedium = "indexeddb" | "fallback" | "erased";
+
+export async function savePersistedState(state: V8State, workspaceId: WorkspaceId = activeWorkspace): Promise<SaveMedium> {
+  if (deviceErased) return "erased";
   try {
     const database = await openDatabase();
     const transaction = database.transaction(STATE_STORE, "readwrite");
@@ -114,11 +124,13 @@ export async function savePersistedState(state: V8State, workspaceId: WorkspaceI
       transaction.addEventListener("error", () => reject(transaction.error));
     });
     database.close();
+    return "indexeddb";
   } catch (error) {
     // localStorage is a compatibility fallback, not a duplicate primary store.
     // Large sketchbooks can exceed its small quota while remaining safe in IndexedDB.
     try { localStorage.setItem(fallbackKey(workspaceId), JSON.stringify(state)); }
     catch { throw error; }
+    return "fallback";
   }
 }
 
@@ -400,7 +412,7 @@ async function importLegacyArchive(file: File): Promise<V8State> {
 export function newSketch(index: number): Sketch {
   const now = new Date().toISOString();
   const sketch: Sketch = {
-    id: `sketch-${Date.now()}-${index}`,
+    id: newId("sketch"),
     name: `Untitled sketch ${index + 1}`,
     intention: "Explore one relationship and listen for what it wants to become.",
     tags: [], tempo: 72, metre: "4/4", key: "C", mode: "major",
