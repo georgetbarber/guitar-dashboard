@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { CURRICULUM } from "./curriculum";
 import { completedActivityIdsFromEvidence } from "./learning";
-import { activeWorkspaceId, exportArchive, loadWorkspace, moveWorkspace, newSketch, savePersistedState, setActiveWorkspace } from "./repository";
+import { activeWorkspaceId, discardIncompleteStaging, exportArchive, loadWorkspace, moveWorkspace, newSketch, savePersistedState, setActiveWorkspace } from "./repository";
 import type { WorkspaceId } from "./repository";
 import { IDLE_SAVE, runSave } from "./saveState";
 import type { LocalSaveState } from "./saveState";
@@ -204,6 +204,12 @@ interface StoreValue {
   downloadUnreadableWorkspace: () => void;
   /** Deliberately abandon the unreadable copy and begin a fresh workspace on this device. */
   discardUnreadableWorkspace: () => void;
+  /** True while a local restore is waiting for the learner to say whether it should reach their account. Uploading is paused. */
+  restoreHold: boolean;
+  /** Called after a restore activates, so the restored workspace cannot reach the account without being asked for. */
+  holdRestoreFromAccount: () => void;
+  /** The learner has chosen to update their account from the restored workspace. */
+  releaseRestoreToAccount: () => void;
 }
 const Store = createContext<StoreValue | null>(null);
 
@@ -214,6 +220,7 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
   const [save, setSave] = useState<LocalSaveState>(IDLE_SAVE);
   const [workspaceIssue, setWorkspaceIssue] = useState<{ reason: string } | null>(null);
   const unreadableRef = useRef<unknown>(null);
+  const [restoreHold, setRestoreHold] = useState(false);
   const switchingRef = useRef(false);
   const switchQueueRef = useRef(Promise.resolve());
   /*
@@ -260,6 +267,16 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  /*
+   * A backup restored on this device is a local operation. Left alone, the
+   * ordinary upload loop would push the restored workspace straight into the
+   * signed-in account and overwrite whatever history was there — silently, and
+   * with no way back. So uploading pauses until the learner says which they
+   * meant.
+   */
+  const holdRestoreFromAccount = useCallback(() => setRestoreHold(true), []);
+  const releaseRestoreToAccount = useCallback(() => setRestoreHold(false), []);
+
   const discardUnreadableWorkspace = useCallback(() => {
     unreadableRef.current = null;
     setWorkspaceIssue(null);
@@ -279,6 +296,13 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
   useEffect(() => {
     setActiveWorkspace("anonymous");
+    /*
+     * A staging generation that survived a reload belongs to a restore that never
+     * activated — activation deletes its manifest in the same transaction that
+     * moves the data — so whatever it holds is incomplete and is cleared before
+     * the workspace opens.
+     */
+    void discardIncompleteStaging().catch(() => undefined);
     void loadWorkspace("anonymous").then((load) => {
       if (load.status === "ok") dispatch({ type: "hydrate", state: load.state });
       else if (load.status === "unreadable") {
@@ -336,6 +360,9 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
         saveRevisionRef.current += 1;
         unsavedRef.current = null;
         setSave(IDLE_SAVE);
+        // Signing in or out changes which account is at stake, so a hold from the
+        // previous workspace cannot carry over.
+        setRestoreHold(false);
       } finally {
         switchingRef.current = false;
         setHydrated(true);
@@ -347,9 +374,11 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       state, dispatch, hydrated, workspaceId, switchWorkspace, save, retrySave, downloadRecoveryArchive,
-      workspaceIssue, downloadUnreadableWorkspace, discardUnreadableWorkspace
+      workspaceIssue, downloadUnreadableWorkspace, discardUnreadableWorkspace,
+      restoreHold, holdRestoreFromAccount, releaseRestoreToAccount
     }),
-    [state, hydrated, workspaceId, switchWorkspace, save, retrySave, downloadRecoveryArchive, workspaceIssue, downloadUnreadableWorkspace, discardUnreadableWorkspace]
+    [state, hydrated, workspaceId, switchWorkspace, save, retrySave, downloadRecoveryArchive, workspaceIssue,
+     downloadUnreadableWorkspace, discardUnreadableWorkspace, restoreHold, holdRestoreFromAccount, releaseRestoreToAccount]
   );
   return <Store.Provider value={value}>{children}</Store.Provider>;
 }

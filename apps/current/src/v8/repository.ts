@@ -3,9 +3,10 @@ import type { Sketch, V8State } from "./types";
 import { validateState } from "./validation";
 
 const DB_NAME = "guitar-academy-v8";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STATE_STORE = "state";
 const BLOB_STORE = "blobs";
+const STAGING_STORE = "staging";
 const LEGACY_STATE_KEY = "learner";
 const LOCAL_FALLBACK = "guitar-academy-v8-fallback";
 const ANONYMOUS_WORKSPACE = "anonymous";
@@ -32,8 +33,13 @@ function stateKey(workspaceId: WorkspaceId) {
   return workspaceId;
 }
 
-function blobKey(workspaceId: WorkspaceId, id: string) {
-  return `${workspaceId}${WORKSPACE_SEPARATOR}${id}`;
+/** Namespaced so a staging generation's recordings cannot be mistaken for a workspace's own. */
+function blobKey(namespace: string, id: string) {
+  return `${namespace}${WORKSPACE_SEPARATOR}${id}`;
+}
+
+function stagingNamespace(operationId: string) {
+  return `staging${WORKSPACE_SEPARATOR}${operationId}`;
 }
 
 function fallbackKey(workspaceId: WorkspaceId) {
@@ -54,6 +60,7 @@ async function openDatabase(): Promise<IDBDatabase> {
       const database = request.result;
       if (!database.objectStoreNames.contains(STATE_STORE)) database.createObjectStore(STATE_STORE);
       if (!database.objectStoreNames.contains(BLOB_STORE)) database.createObjectStore(BLOB_STORE);
+      if (!database.objectStoreNames.contains(STAGING_STORE)) database.createObjectStore(STAGING_STORE);
       if ((event as IDBVersionChangeEvent).oldVersion < 2) {
         const transaction = request.transaction;
         if (!transaction) return;
@@ -385,14 +392,232 @@ export async function exportArchive(state: V8State): Promise<Blob> {
   return new Blob([magic, headerLength, headerBytes, ...recordings.map((recording) => recording.blob)], { type: "application/vnd.guitar-academy" });
 }
 
-export async function importArchive(file: File): Promise<V8State> {
-  const prefix = new Uint8Array(await file.slice(0, ARCHIVE_PREFIX_BYTES).arrayBuffer());
-  const magic = new TextDecoder().decode(prefix.slice(0, ARCHIVE_MAGIC.length));
-  if (magic === ARCHIVE_MAGIC) return importBinaryArchive(file, prefix);
-  return importLegacyArchive(file);
+/**
+ * A RESTORE IS STAGED, THEN ACTIVATED. IT IS NEVER A SEQUENCE OF LIVE WRITES.
+ *
+ * The previous implementation wrote each recording straight into the active
+ * workspace and then replaced the state. Every step of that was live: an
+ * interruption between the first blob and the final state left new recordings
+ * sitting against the old workspace with nothing referencing them, and a failure
+ * on the state write left them there permanently with no way to find them again.
+ * There was also no point at which the learner could see what they were about to
+ * replace, or into which workspace.
+ *
+ * Now the archive is validated whole, written into an inactive generation, and
+ * only then moved into place inside a single IndexedDB transaction — which is
+ * atomic, so the workspace either becomes the restored one or stays exactly as
+ * it was. Nothing in the previous workspace is touched before that transaction
+ * commits, so a cancellation, a crash or a quota failure at any earlier stage
+ * costs the learner nothing.
+ */
+export interface RestorePreview {
+  operationId: string;
+  /** The workspace this restore will replace. Shown to the learner before they confirm. */
+  workspaceId: WorkspaceId;
+  exportedAt: string;
+  sketches: number;
+  evidence: number;
+  recordings: number;
+  recordingBytes: number;
+  /** Recordings currently on this device that this restore would supersede. */
+  supersededRecordings: number;
 }
 
-async function importBinaryArchive(file: File, prefix: Uint8Array): Promise<V8State> {
+interface StagingManifest {
+  id: string;
+  workspaceId: WorkspaceId;
+  createdAt: string;
+  /** "ready" means every staged recording is durable and activation may proceed. */
+  status: "staging" | "ready";
+  state: V8State;
+  recordingIds: string[];
+}
+
+function referencedBlobIds(state: V8State): Set<string> {
+  return new Set(state.sketches.flatMap((sketch) => sketch.takes.map((take) => take.blobId).filter(Boolean) as string[]));
+}
+
+async function readManifest(operationId: string): Promise<StagingManifest | null> {
+  const database = await openDatabase();
+  const transaction = database.transaction(STAGING_STORE, "readonly");
+  const value = await requestResult(transaction.objectStore(STAGING_STORE).get(operationId));
+  database.close();
+  return (value as StagingManifest) ?? null;
+}
+
+async function writeManifest(manifest: StagingManifest): Promise<void> {
+  const database = await openDatabase();
+  const transaction = database.transaction(STAGING_STORE, "readwrite");
+  transaction.objectStore(STAGING_STORE).put(manifest, manifest.id);
+  await new Promise<void>((resolve, reject) => {
+    transaction.addEventListener("complete", () => resolve());
+    transaction.addEventListener("error", () => reject(transaction.error));
+  });
+  database.close();
+}
+
+async function removeStaging(operationId: string): Promise<void> {
+  const database = await openDatabase();
+  const transaction = database.transaction([BLOB_STORE, STAGING_STORE], "readwrite");
+  const prefix = `${stagingNamespace(operationId)}${WORKSPACE_SEPARATOR}`;
+  const cursorRequest = transaction.objectStore(BLOB_STORE).openCursor(IDBKeyRange.bound(prefix, `${prefix}\uffff`));
+  cursorRequest.addEventListener("success", () => {
+    const cursor = cursorRequest.result;
+    if (!cursor) return;
+    cursor.delete();
+    cursor.continue();
+  });
+  transaction.objectStore(STAGING_STORE).delete(operationId);
+  await new Promise<void>((resolve, reject) => {
+    transaction.addEventListener("complete", () => resolve());
+    transaction.addEventListener("error", () => reject(transaction.error));
+    transaction.addEventListener("abort", () => reject(transaction.error));
+  });
+  database.close();
+}
+
+/** Abandon a prepared restore. The active workspace has not been touched, so there is nothing to undo. */
+export async function cancelRestore(operationId: string): Promise<void> {
+  await removeStaging(operationId);
+}
+
+/**
+ * Called at startup. A manifest that still exists means its restore never
+ * activated — activation deletes the manifest in the same transaction that
+ * moves the data — so whatever it staged is incomplete and is removed.
+ */
+export async function discardIncompleteStaging(): Promise<number> {
+  const database = await openDatabase();
+  const transaction = database.transaction(STAGING_STORE, "readonly");
+  const keys = await requestResult(transaction.objectStore(STAGING_STORE).getAllKeys());
+  database.close();
+  for (const key of keys) await removeStaging(String(key));
+  return keys.length;
+}
+
+async function stageRecording(operationId: string, id: string, blob: Blob): Promise<void> {
+  const database = await openDatabase();
+  const transaction = database.transaction(BLOB_STORE, "readwrite");
+  transaction.objectStore(BLOB_STORE).put(blob, blobKey(stagingNamespace(operationId), id));
+  await new Promise<void>((resolve, reject) => {
+    transaction.addEventListener("complete", () => resolve());
+    transaction.addEventListener("error", () => reject(transaction.error));
+  });
+  database.close();
+}
+
+/**
+ * Validate an archive in full and stage it. Nothing in the active workspace
+ * changes here, so the returned preview can be shown and declined freely.
+ */
+export async function prepareRestore(file: File, workspaceId: WorkspaceId = activeWorkspace): Promise<RestorePreview> {
+  if (deviceErased) throw new Error("This device workspace was erased. Reload before restoring a backup.");
+  const prefix = new Uint8Array(await file.slice(0, ARCHIVE_PREFIX_BYTES).arrayBuffer());
+  const magic = new TextDecoder().decode(prefix.slice(0, ARCHIVE_MAGIC.length));
+  const parsed = magic === ARCHIVE_MAGIC ? await readBinaryArchive(file, prefix) : await readLegacyArchive(file);
+
+  const operationId = newId("restore");
+  const manifest: StagingManifest = {
+    id: operationId,
+    workspaceId,
+    createdAt: new Date().toISOString(),
+    status: "staging",
+    state: parsed.state,
+    recordingIds: parsed.recordings.map((recording) => recording.id)
+  };
+  await writeManifest(manifest);
+
+  try {
+    for (const recording of parsed.recordings) await stageRecording(operationId, recording.id, recording.blob);
+    // Only once every recording is durable does the manifest become activatable.
+    await writeManifest({ ...manifest, status: "ready" });
+  } catch (error) {
+    await removeStaging(operationId).catch(() => undefined);
+    throw error;
+  }
+
+  const existing = await loadWorkspace(workspaceId);
+  const previous = existing.status === "ok" ? referencedBlobIds(existing.state) : new Set<string>();
+  const incoming = referencedBlobIds(parsed.state);
+  return {
+    operationId,
+    workspaceId,
+    exportedAt: parsed.exportedAt,
+    sketches: parsed.state.sketches.length,
+    evidence: parsed.state.evidence.length,
+    recordings: parsed.recordings.length,
+    recordingBytes: parsed.recordings.reduce((sum, recording) => sum + recording.blob.size, 0),
+    supersededRecordings: [...previous].filter((id) => !incoming.has(id)).length
+  };
+}
+
+/**
+ * Move a staged restore into place. One transaction covers re-keying every
+ * staged recording, replacing the state and deleting the staging generation, so
+ * the workspace either becomes the restored one or is left entirely untouched.
+ */
+export async function activateRestore(operationId: string): Promise<V8State> {
+  const manifest = await readManifest(operationId);
+  if (!manifest) throw new Error("That restore is no longer staged on this device. Prepare it again.");
+  if (manifest.status !== "ready") throw new Error("That restore did not finish staging. Prepare it again.");
+
+  const existing = await loadWorkspace(manifest.workspaceId);
+  const superseded = existing.status === "ok" ? referencedBlobIds(existing.state) : new Set<string>();
+
+  const database = await openDatabase();
+  const transaction = database.transaction([STATE_STORE, BLOB_STORE, STAGING_STORE], "readwrite");
+  const blobs = transaction.objectStore(BLOB_STORE);
+  const prefix = `${stagingNamespace(operationId)}${WORKSPACE_SEPARATOR}`;
+  const cursorRequest = blobs.openCursor(IDBKeyRange.bound(prefix, `${prefix}\uffff`));
+  cursorRequest.addEventListener("success", () => {
+    const cursor = cursorRequest.result;
+    if (!cursor) return;
+    const id = String(cursor.key).slice(prefix.length);
+    blobs.put(cursor.value, blobKey(manifest.workspaceId, id));
+    cursor.delete();
+    cursor.continue();
+  });
+  transaction.objectStore(STATE_STORE).put(manifest.state, stateKey(manifest.workspaceId));
+  transaction.objectStore(STAGING_STORE).delete(operationId);
+  await new Promise<void>((resolve, reject) => {
+    transaction.addEventListener("complete", () => resolve());
+    transaction.addEventListener("error", () => reject(transaction.error));
+    transaction.addEventListener("abort", () => reject(transaction.error));
+  });
+  database.close();
+
+  /*
+   * Superseded recordings go only after activation has committed, and only the
+   * ones the previous workspace referenced and the restored one does not. A blob
+   * the restored state still points at, or one belonging to another workspace,
+   * is never a candidate — so a shared or externally referenced recording cannot
+   * be removed by a restore.
+   */
+  const stillReferenced = referencedBlobIds(manifest.state);
+  const removable = [...superseded].filter((id) => !stillReferenced.has(id));
+  if (removable.length) await deleteWorkspaceBlobs(manifest.workspaceId, removable).catch(() => undefined);
+
+  return manifest.state;
+}
+
+async function deleteWorkspaceBlobs(workspaceId: WorkspaceId, ids: string[]): Promise<void> {
+  const database = await openDatabase();
+  const transaction = database.transaction(BLOB_STORE, "readwrite");
+  for (const id of ids) transaction.objectStore(BLOB_STORE).delete(blobKey(workspaceId, id));
+  await new Promise<void>((resolve, reject) => {
+    transaction.addEventListener("complete", () => resolve());
+    transaction.addEventListener("error", () => reject(transaction.error));
+  });
+  database.close();
+}
+
+interface ParsedArchive {
+  state: V8State;
+  exportedAt: string;
+  recordings: Array<{ id: string; blob: Blob }>;
+}
+
+async function readBinaryArchive(file: File, prefix: Uint8Array): Promise<ParsedArchive> {
   if (prefix.byteLength < ARCHIVE_PREFIX_BYTES) throw new Error("This backup is incomplete.");
   const headerLength = new DataView(prefix.buffer, prefix.byteOffset + ARCHIVE_MAGIC.length, 4).getUint32(0, true);
   if (!headerLength || headerLength > MAX_HEADER_BYTES || ARCHIVE_PREFIX_BYTES + headerLength > file.size) {
@@ -413,13 +638,12 @@ async function importBinaryArchive(file: File, prefix: Uint8Array): Promise<V8St
   const expectedSize = ARCHIVE_PREFIX_BYTES + headerLength + recordingBytes;
   if (expectedSize !== file.size) throw new Error("This backup is incomplete or contains unexpected data.");
   let offset = ARCHIVE_PREFIX_BYTES + headerLength;
-  for (const recording of header.recordings) {
+  const recordings = header.recordings.map((recording) => {
     const blob = file.slice(offset, offset + recording.size, recording.type);
-    await saveBlob(recording.id, blob);
     offset += recording.size;
-  }
-  await savePersistedState(header.state);
-  return header.state;
+    return { id: recording.id, blob };
+  });
+  return { state: header.state, exportedAt: header.exportedAt, recordings };
 }
 
 function validateArchiveHeader(header: ArchiveHeader) {
@@ -428,11 +652,10 @@ function validateArchiveHeader(header: ArchiveHeader) {
   }
   if (!Array.isArray(header.recordings)) throw new Error("This backup is missing its recording index.");
   /*
-   * The workspace itself is validated here, before a single blob is written.
-   * Checking only that sketches and evidence were arrays let an archive carrying
+   * The workspace itself is validated here, before anything is staged. Checking
+   * only that sketches and evidence were arrays let an archive carrying
    * malformed music through to savePersistedState, where it became this device's
-   * workspace; and because blobs were written first, a later failure left them
-   * orphaned against a workspace that never arrived.
+   * workspace.
    */
   validateState(header.state);
   const ids = new Set<string>();
@@ -442,11 +665,11 @@ function validateArchiveHeader(header: ArchiveHeader) {
     }
     ids.add(recording.id);
   }
-  const referenced = new Set(header.state.sketches.flatMap((sketch) => sketch.takes.map((take) => take.blobId).filter(Boolean) as string[]));
+  const referenced = referencedBlobIds(header.state);
   for (const id of referenced) if (!ids.has(id)) throw new Error("This backup is missing a retained recording.");
 }
 
-async function importLegacyArchive(file: File): Promise<V8State> {
+async function readLegacyArchive(file: File): Promise<ParsedArchive> {
   let archive: LegacyArchive;
   try { archive = JSON.parse(await file.text()) as LegacyArchive; }
   catch { throw new Error("This is not a supported Guitar Academy backup."); }
@@ -454,9 +677,12 @@ async function importLegacyArchive(file: File): Promise<V8State> {
     throw new Error("This is not a supported Guitar Academy V8 archive.");
   }
   validateState(archive.state);
-  for (const recording of archive.recordings ?? []) await saveBlob(recording.id, dataToBlob(recording.data));
-  await savePersistedState(archive.state);
-  return archive.state;
+  const recordings = (archive.recordings ?? []).map((recording) => ({ id: recording.id, blob: dataToBlob(recording.data) }));
+  const available = new Set(recordings.map((recording) => recording.id));
+  for (const id of referencedBlobIds(archive.state)) {
+    if (!available.has(id)) throw new Error("This backup is missing a retained recording.");
+  }
+  return { state: archive.state, exportedAt: archive.exportedAt, recordings };
 }
 
 export function newSketch(index: number): Sketch {

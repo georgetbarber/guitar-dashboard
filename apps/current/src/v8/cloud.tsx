@@ -52,7 +52,7 @@ const auth = app ? getAuth(app) : null;
 const database = app ? getFirestore(app) : null;
 const recordingStorage = app && firebaseConfig.storageBucket ? getStorage(app) : null;
 
-export type SyncStatus = "local-only" | "signed-out" | "account-choice" | "syncing" | "synced" | "offline" | "error";
+export type SyncStatus = "local-only" | "signed-out" | "account-choice" | "restore-hold" | "syncing" | "synced" | "offline" | "error";
 
 interface CloudValue {
   configured: boolean;
@@ -167,7 +167,7 @@ async function uploadChanges(database: Firestore, uid: string, state: V8State, c
 }
 
 export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
-  const { state, dispatch, hydrated, switchWorkspace } = useV8Store();
+  const { state, dispatch, hydrated, switchWorkspace, restoreHold } = useV8Store();
   const [user, setUser] = useState<User | null>(null);
   const [pendingUser, setPendingUser] = useState<User | null>(null);
   const [status, setStatus] = useState<SyncStatus>(CLOUD_CONFIGURED ? "signed-out" : "local-only");
@@ -313,6 +313,11 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!database || !user || !hydrated || !remoteReady) return;
+    if (restoreHold) {
+      setStatus("restore-hold");
+      setMessage("A backup was restored on this device. Your account has not been changed — choose whether it should be.");
+      return;
+    }
     if (!navigator.onLine) {
       setStatus("offline");
       setMessage("Saved offline; waiting for a connection.");
@@ -342,7 +347,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         });
     }, 650);
     return () => clearTimeout(timer);
-  }, [state, user?.uid, hydrated, remoteReady, connectivityRevision]);
+  }, [state, user?.uid, hydrated, remoteReady, connectivityRevision, restoreHold]);
 
   const value = useMemo<CloudValue>(() => ({
     configured: CLOUD_CONFIGURED,

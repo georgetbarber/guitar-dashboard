@@ -467,6 +467,12 @@ textarea { min-height: 92px; resize: vertical; }
 .workspace-recovery strong { color: var(--ink); font-size: .82rem; }
 .workspace-recovery p { max-width: 74ch; margin: 0; color: var(--ink); font-size: .7rem; }
 .workspace-recovery small { color: var(--muted); font-size: .62rem; }
+.restore-preview { display: grid; gap: .7rem; padding: .85rem 1rem; border: 1px solid color-mix(in srgb, var(--blue) 55%, var(--line)); border-radius: 12px; background: var(--blue-soft); }
+.restore-preview h3 { margin: .1rem 0 .35rem; font-size: .9rem; }
+.restore-preview p { max-width: 70ch; margin: 0 0 .3rem; color: var(--ink); font-size: .68rem; }
+.restore-hold { position: sticky; z-index: 46; top: .35rem; display: grid; gap: .6rem; width: min(1540px, calc(100% - 1rem)); margin: 0 auto .6rem; padding: .85rem 1rem; border: 1px solid color-mix(in srgb, var(--gold) 65%, var(--line)); border-radius: 12px; background: color-mix(in srgb, var(--gold) 14%, var(--paper)); box-shadow: var(--shadow); }
+.restore-hold strong { color: var(--ink); font-size: .82rem; }
+.restore-hold p { max-width: 74ch; margin: 0; color: var(--ink); font-size: .7rem; }
 
 .play-page { width: min(1540px, 100%); }
 .play-hero { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 2rem; min-height: 440px; padding: clamp(1.8rem, 5vw, 5rem); border-radius: 30px; color: #f2f5f1; background: radial-gradient(circle at 82% 25%, rgba(240,160,132,.18), transparent 18rem), radial-gradient(circle at 15% 100%, rgba(101,184,147,.16), transparent 22rem), var(--night); overflow: hidden; }

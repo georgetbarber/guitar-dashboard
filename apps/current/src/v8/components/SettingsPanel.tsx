@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { clearStoredRecordings, exportArchive, importArchive, requestPersistentStorage, retainedRecordingBytes, storageEstimate, storagePersistenceStatus } from "../repository";
+import { activateRestore, cancelRestore, clearStoredRecordings, exportArchive, prepareRestore, requestPersistentStorage, retainedRecordingBytes, storageEstimate, storagePersistenceStatus } from "../repository";
+import type { RestorePreview } from "../repository";
 import { useCloudSync } from "../cloud";
 import { currentInstallPrompt, currentStandaloneMode, showInstallPrompt, subscribeInstallPrompt, subscribeStandaloneMode, type InstallPromptEvent } from "../install";
 import { useV8Store } from "../store";
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
-  const { state, dispatch } = useV8Store();
+  const { state, dispatch, workspaceId, holdRestoreFromAccount } = useV8Store();
+  const [restore, setRestore] = useState<RestorePreview | null>(null);
+  const [restoreBusy, setRestoreBusy] = useState<"restoring" | "cancelling" | null>(null);
   const cloud = useCloudSync();
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState("Progress stays local first and synchronises after sign-in. Recordings stay private unless you explicitly share one finished-project take.");
@@ -76,16 +79,56 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           <input ref={fileRef} hidden type="file" accept=".guitar-academy,application/json" onChange={async (event) => {
             const file = event.target.files?.[0];
             if (!file) return;
-            if (!confirm("Restore this complete backup? It will replace the learning history currently stored in this browser.")) { event.target.value = ""; return; }
             try {
-              const restored = await importArchive(file);
-              dispatch({ type: "replaceState", state: restored });
-              setMessage(`Backup restored: ${restored.sketches.length} sketches and ${restored.evidence.length} evidence records passed validation.`);
+              /*
+               * Staging only. Nothing in the current workspace changes here, so the
+               * learner sees exactly what they would be replacing, and in which
+               * workspace, before anything is at risk.
+               */
+              setRestore(await prepareRestore(file, workspaceId));
+              setMessage("");
             }
-            catch (error) { setMessage(error instanceof Error ? error.message : "The backup could not be imported."); }
+            catch (error) { setMessage(error instanceof Error ? error.message : "The backup could not be read."); }
             finally { event.target.value = ""; }
           }} />
         </div>
+        {restore && <section className="restore-preview" role="group" aria-label="Confirm this restore">
+          <div>
+            <span className="eyebrow">Nothing has changed yet</span>
+            <h3>Restore this backup into {workspaceId === "anonymous" ? "this device's guest workspace" : "your signed-in workspace on this device"}?</h3>
+            <p>
+              Exported {new Date(restore.exportedAt).toLocaleDateString()}. It holds {restore.sketches} sketch{restore.sketches === 1 ? "" : "es"},{" "}
+              {restore.evidence} observation{restore.evidence === 1 ? "" : "s"} and {restore.recordings} recording{restore.recordings === 1 ? "" : "s"}
+              {restore.recordings ? ` (${(restore.recordingBytes / 1_048_576).toFixed(1)} MB)` : ""}.
+            </p>
+            <p>
+              Restoring replaces that workspace's learning history. {restore.supersededRecordings
+                ? `${restore.supersededRecordings} recording${restore.supersededRecordings === 1 ? "" : "s"} on this device are not in the backup and will be removed once the restore completes.`
+                : "No recordings on this device would be removed."} Your other workspaces and any cloud history are untouched.
+            </p>
+          </div>
+          <div className="action-row">
+            <button className="primary-action" disabled={Boolean(restoreBusy)} onClick={async () => {
+              setRestoreBusy("restoring");
+              try {
+                const restored = await activateRestore(restore.operationId);
+                // Held before the state lands, so the upload loop never sees the
+                // restored workspace as an ordinary change to push to the account.
+                holdRestoreFromAccount();
+                dispatch({ type: "replaceState", state: restored });
+                setRestore(null);
+                setMessage(`Backup restored: ${restored.sketches.length} sketches and ${restored.evidence.length} observations.`);
+              }
+              catch (error) { setMessage(error instanceof Error ? error.message : "The restore could not be completed. This workspace is unchanged."); }
+              finally { setRestoreBusy(null); }
+            }}>{restoreBusy === "restoring" ? "Restoring…" : "Restore this backup"}</button>
+            <button className="secondary-action" disabled={Boolean(restoreBusy)} onClick={async () => {
+              setRestoreBusy("cancelling");
+              try { await cancelRestore(restore.operationId); }
+              finally { setRestore(null); setRestoreBusy(null); setMessage("Restore cancelled. This workspace was not changed."); }
+            }}>{restoreBusy === "cancelling" ? "Cancelling…" : "Cancel"}</button>
+          </div>
+        </section>}
         <p className="privacy-message">{message} Audio uploads only when you choose one retained take from a finished project; other recordings never synchronise. Account and guest workspaces stay separate on this device.</p>
       </section>
     </div>

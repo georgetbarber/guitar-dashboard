@@ -1,11 +1,12 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  importArchive,
+  activateRestore,
   loadBlob,
   loadWorkspace,
   moveWorkspace,
   newSketch,
+  prepareRestore,
   savePersistedState,
   setActiveWorkspace,
   workspaceExists,
@@ -105,14 +106,15 @@ describe("an imported archive is validated before anything is written (B08, B04)
   );
 
   it("imports a sound archive", async () => {
-    const restored = await importArchive(legacyArchive(validState()));
+    const preview = await prepareRestore(legacyArchive(validState()), "anonymous");
+    const restored = await activateRestore(preview.operationId);
     expect(restored.sketches).toHaveLength(1);
     expect(await loadBlob("take-from-archive")).not.toBeNull();
   });
 
   it("rejects a malformed archive without writing its recordings", async () => {
     const state = { ...validState(), evidence: [{ id: "evidence-1", competencyId: "ear:u1", source: "made-up-source" }] };
-    await expect(importArchive(legacyArchive(state))).rejects.toThrow(/Invalid learning data/);
+    await expect(prepareRestore(legacyArchive(state), "anonymous")).rejects.toThrow(/Invalid learning data/);
     /*
      * The ordering is the point. Recordings used to be written before the state
      * was checked, so a rejected import left blobs behind with nothing

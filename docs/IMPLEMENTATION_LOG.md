@@ -190,11 +190,82 @@ profile that will not upload and says so.
 
 ---
 
+## Phase 1C — transactional restore
+
+| | |
+| --- | --- |
+| **Status** | Verified locally |
+| **Findings** | B04 (closed pending CI) |
+| **Depends on** | 1B |
+| **Changed** | `restore.test.ts` (new); `repository.ts`, `store.tsx`, `cloud.tsx`, `components/SettingsPanel.tsx`, `components/SaveStatus.tsx`, `app/App.tsx`, `styles/app.css`, `validation.test.ts` |
+| **Evidence** | 152 unit tests pass (143 before); build clean. Four defects reintroduced individually failed four of the nine new tests and no others |
+| **Migration impact** | IndexedDB goes to version 3, adding a `staging` store. The upgrade only creates the store; no existing record is read or rewritten. `importArchive` is replaced by `prepareRestore` + `activateRestore` |
+
+### Staged, then activated
+
+Every step of the old import was live. Recordings were written straight into the
+active workspace and the state replaced afterwards, so an interruption between
+the first blob and the final state left new recordings against the old workspace
+with nothing referencing them — and a failure on the state write left them there
+permanently with no way to find them again. There was also no point at which the
+learner could see what they were about to replace, or in which workspace.
+
+Now:
+
+- **Validated whole, before anything is staged** — versions, metadata, the
+  workspace itself, the recording index, and that every recording the state
+  references is actually carried.
+- **Staged into an inactive generation.** Recordings are written under a
+  `staging\u0000<operationId>` namespace, never the workspace's own, and the
+  manifest only becomes activatable once every one of them is durable.
+- **Activated in a single IndexedDB transaction** that re-keys the staged
+  recordings, replaces the state and deletes the staging generation. The
+  transaction is atomic, so the workspace either becomes the restored one or
+  stays exactly as it was.
+- **Interruption costs nothing.** Nothing in the previous workspace is touched
+  before that transaction commits, so a cancellation, a crash or a quota failure
+  at any earlier stage leaves it fully usable. A manifest still present at
+  startup means activation never ran, so `discardIncompleteStaging` clears what
+  it staged before the workspace opens.
+- **A preview before confirming** names the workspace, the export date, the
+  counts and how many recordings the restore would supersede.
+
+**Superseded recordings** are removed only after activation has committed, and
+only those the previous workspace referenced and the restored one does not. A
+recording the restored state still points at is never a candidate, and neither
+is one belonging to another workspace — so a restore cannot delete a shared or
+externally referenced recording.
+
+### A local restore is not an account replacement
+
+Left alone, the ordinary upload loop would push a restored workspace straight
+into the signed-in account and overwrite whatever history was there, silently
+and with nothing to undo it with. Activating a restore now pauses uploading and
+asks: update the account from this backup, or sign out and keep the restored
+copy on this device. The pause is cleared on any workspace switch, since signing
+in or out changes which account is at stake.
+
+### Limitations
+
+- Not verified in CI, on a real device, or against the Firebase emulator.
+- The restore hold is provider state, covered by reading rather than by a test,
+  for the same reason as `runSave`: there is still no DOM test environment
+  (Phase 2B, B23).
+- Quota exhaustion *during* staging is handled by the same cleanup path as any
+  other staging failure, but is not itself fault-injected in a test — only its
+  cleanup is, through `discardIncompleteStaging`.
+- Real-device restore behaviour, including a large archive on the Pixel, is
+  Phase 7 work.
+
+---
+
 ## Next package
 
-**Phase 1C — transactional restore and migration.** Import still writes
-recordings and then the state with no staging generation, so an interruption
-part-way leaves new blobs against the previous workspace. 1C stages into an
-inactive workspace generation and activates only once every required write is
-durable, keeps the previous workspace usable on failure, and separates a local
-restore from a cloud merge or replacement.
+**Phase 1D — safe application updates.** The service worker is configured with
+`registerType: "autoUpdate"`, `skipWaiting` and `clientsClaim`, so a new build
+takes over and reloads whenever it arrives — including mid-recording, mid-import
+and over unsaved edits (B03). 1D replaces that with update-ready handling that
+defers activation to a safe boundary, corrects the `/service-worker.js` cache
+header that targets a filename the build never emits (B20), and makes the
+temporary state of unretained audio honest rather than implying a recovery that
+does not exist.

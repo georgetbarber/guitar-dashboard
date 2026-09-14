@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCloudSync } from "../cloud";
 import { useV8Store } from "../store";
 
 /**
@@ -115,6 +116,44 @@ export function WorkspaceRecoveryNotice() {
         </button>
       </div>
       {exported && <small>Downloaded. Keep that file somewhere safe before you start fresh.</small>}
+    </section>
+  );
+}
+
+/**
+ * Shown after a backup is restored while signed in.
+ *
+ * A restore is a local operation on one device. Without this pause the ordinary
+ * upload loop would push the restored workspace into the account and overwrite
+ * whatever history was there — silently, and with nothing to undo it with. The
+ * two choices here are the only two that are honest: make the account match
+ * this device, or leave the account alone and keep the restored copy off it.
+ */
+export function RestoreHoldNotice() {
+  const { restoreHold, releaseRestoreToAccount } = useV8Store();
+  const cloud = useCloudSync();
+  const [busy, setBusy] = useState(false);
+  if (!restoreHold || !cloud.user) return null;
+  return (
+    <section className="restore-hold" role="alert" aria-label="Restored backup is not in your account">
+      <div className="save-failure-copy">
+        <strong>This device holds a restored backup. Your account still holds what it had.</strong>
+        <p>
+          Nothing has been uploaded. Updating your account replaces its learning history with the backup on every device
+          you sign in to, and that cannot be undone from here — so export a backup of the account first if you are unsure.
+        </p>
+      </div>
+      <div className="save-failure-actions">
+        <button className="danger-action" disabled={busy} onClick={() => {
+          if (confirm("Replace your account's learning history with the backup restored on this device? Your other devices will follow.")) {
+            releaseRestoreToAccount();
+          }
+        }}>Update my account from this backup</button>
+        <button className="secondary-action" disabled={busy} onClick={async () => {
+          setBusy(true);
+          try { await cloud.signOut(); } finally { setBusy(false); }
+        }}>Sign out and keep this on this device</button>
+      </div>
     </section>
   );
 }
