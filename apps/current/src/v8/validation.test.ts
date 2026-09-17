@@ -164,3 +164,17 @@ describe("one unreadable cloud record does not cost the learner the rest (B08)",
     expect(describeRejected(3)).toContain("Everything else synchronised");
   });
 });
+
+
+describe("device restore decision validation", () => {
+  beforeEach(resetDatabase);
+  it("accepts old workspaces without a decision and keeps the marker out of cloud profiles", async () => {
+    await savePersistedState(validState());
+    expect((await loadWorkspace()).status).toBe("ok");
+    expect(cloudProfile({ ...validState(), pendingRestoreId: "restore-local" })).not.toHaveProperty("pendingRestoreId");
+  });
+  it.each([null, "", 42, {}])("refuses an invalid decision marker: %s", async (pendingRestoreId) => {
+    await writeRaw({ ...validState(), pendingRestoreId });
+    expect((await loadWorkspace()).status).toBe("unreadable");
+  });
+});

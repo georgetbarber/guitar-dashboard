@@ -22,6 +22,13 @@ const listeners = new Set<() => void>();
 let ready = false;
 let applying = false;
 let apply: (() => void) | null = null;
+let activationSent = false;
+
+function applyIfSafe() {
+  if (!ready || holds.size || !applying || activationSent || !apply) return;
+  activationSent = true;
+  apply();
+}
 
 function announce() {
   for (const listener of listeners) listener();
@@ -42,7 +49,10 @@ export function holdUpdates(reason: string): () => void {
     announce();
     // Reaching zero holds is itself a safe boundary: whatever was in flight has
     // finished, so a waiting update can go in without interrupting anything.
-    if (ready && !holds.size && applying) apply?.();
+    // React cleans up old effects before installing their replacements. A
+    // recording becoming a temporary take must not reload in that brief gap.
+    // Recheck after the whole transition, and send activation at most once.
+    queueMicrotask(applyIfSafe);
   };
 }
 
@@ -82,7 +92,7 @@ export function requestUpdate(): "applied" | "queued" | "unavailable" {
   applying = true;
   announce();
   if (holds.size) return "queued";
-  apply();
+  applyIfSafe();
   return "applied";
 }
 
@@ -100,4 +110,5 @@ export function resetUpdateStateForTests() {
   ready = false;
   applying = false;
   apply = null;
+  activationSent = false;
 }

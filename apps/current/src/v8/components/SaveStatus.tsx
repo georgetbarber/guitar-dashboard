@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useCloudSync } from "../cloud";
 import { useV8Store } from "../store";
-import { useUpdateHold } from "./UpdateNotice";
+import { UpdateNotice, useUpdateHold } from "./UpdateNotice";
 
 /**
  * The quiet half of the local save contract: a small, permanently visible
@@ -12,9 +12,8 @@ import { useUpdateHold } from "./UpdateNotice";
  */
 export function SaveIndicator() {
   const { save } = useV8Store();
-  // An update reloads the page. Work that is mid-write, or that this device has
-  // refused to store, exists only in this tab, so it must not be reloaded away.
-  useUpdateHold(save.status === "saving" || save.status === "failed", "your work to finish saving");
+  // The store owns the update hold from the instant a save begins, including
+  // the interval before this status is rendered.
   const label =
     save.status === "saving" ? "Saving on this device…"
     : save.status === "failed" ? "Not saved on this device"
@@ -130,34 +129,79 @@ export function WorkspaceRecoveryNotice() {
  * A restore is a local operation on one device. Without this pause the ordinary
  * upload loop would push the restored workspace into the account and overwrite
  * whatever history was there — silently, and with nothing to undo it with. The
- * two choices here are the only two that are honest: make the account match
- * this device, or leave the account alone and keep the restored copy off it.
+ * two choices are normal merge with the account, or keeping this copy paused.
+ * This is not an account-history replacement operation.
  */
 export function RestoreHoldNotice() {
   const { restoreHold, releaseRestoreToAccount } = useV8Store();
   const cloud = useCloudSync();
+  // The decision survives reloads, but do not interrupt a choice in progress.
+  useUpdateHold(restoreHold && Boolean(cloud.user), "your choice about the restored backup");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   if (!restoreHold || !cloud.user) return null;
   return (
     <section className="restore-hold" role="alert" aria-label="Restored backup is not in your account">
       <div className="save-failure-copy">
-        <strong>This device holds a restored backup. Your account still holds what it had.</strong>
+        <strong>This device holds a restored backup. Account sync is paused.</strong>
         <p>
-          Nothing has been uploaded. Updating your account replaces its learning history with the backup on every device
-          you sign in to, and that cannot be undone from here — so export a backup of the account first if you are unsure.
+          The restored work has not been uploaded, and incoming account changes are paused.
+          Merging keeps other account records and uses the newer version where the same record differs.
+          It does not replace your whole account history. Export this restored copy first if you want to keep it separately.
         </p>
+        <p>This choice stays with this workspace if you reload or sign out.</p>
+        {error && <p role="alert">{error}</p>}
       </div>
       <div className="save-failure-actions">
-        <button className="danger-action" disabled={busy} onClick={() => {
-          if (confirm("Replace your account's learning history with the backup restored on this device? Your other devices will follow.")) {
-            releaseRestoreToAccount();
-          }
-        }}>Update my account from this backup</button>
+        <button className="primary-action" disabled={busy} onClick={async () => {
+          if (!confirm("Merge this restored work with your account? Other records stay; newer versions win where the same record differs.")) return;
+          setBusy(true); setError("");
+          try { await releaseRestoreToAccount(); }
+          catch (failure) { setError(failure instanceof Error ? failure.message : "The choice could not be saved. Account sync is still paused."); }
+          finally { setBusy(false); }
+        }}>Merge with my account</button>
         <button className="secondary-action" disabled={busy} onClick={async () => {
           setBusy(true);
-          try { await cloud.signOut(); } finally { setBusy(false); }
-        }}>Sign out and keep this on this device</button>
+          setError("");
+          try { await cloud.signOut(); }
+          catch (failure) { setError(failure instanceof Error ? failure.message : "Sign-out failed. Account sync is still paused."); }
+          finally { setBusy(false); }
+        }}>Sign out and leave this copy paused</button>
       </div>
     </section>
   );
+}
+
+/**
+ * Every notice that can require the learner to act, in priority order. Render
+ * it exactly once per screen: on the page, or inside an open dialog through
+ * NoticeHost, and on the onboarding screens too — an unreadable workspace opens
+ * with default settings, which is the onboarding screen, and that is precisely
+ * when silently looking empty would be mistaken for data loss.
+ */
+export function AppNotices() {
+  return <>
+    <WorkspaceRecoveryNotice />
+    <SaveFailureAlert />
+    <RestoreHoldNotice />
+    <UpdateNotice />
+  </>;
+}
+
+/**
+ * The save status of observations the learner has just recorded. The
+ * interface must not describe a record as saved before the write holding it
+ * has completed, nor go on saying "saving" once saving has stopped.
+ */
+export function RecordSaveStatus({ evidenceIds }: { evidenceIds: readonly string[] }) {
+  const { save, workspaceIssue, isEvidenceSaved } = useV8Store();
+  const [text, status] =
+    isEvidenceSaved(evidenceIds)
+      ? [save.medium === "fallback" ? "Saved to this browser's limited backup store." : "Saved on this device.", "saved"]
+    : workspaceIssue
+      ? ["Not saved: this device's stored work could not be read, so saving is paused. See the notice at the top.", "failed"]
+    : save.status === "failed"
+      ? ["Not saved on this device yet. It is still on screen — use the notice at the top to try again or download a recovery file.", "failed"]
+      : ["Saving on this device…", "saving"];
+  return <p className="record-save-status" data-status={status} role="status">{text}</p>;
 }

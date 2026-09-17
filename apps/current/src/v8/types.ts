@@ -212,6 +212,8 @@ export interface Sketch {
 }
 
 export interface V8State {
+  /** Device-only decision, committed atomically with a restored workspace. */
+  pendingRestoreId?: string;
   version: 8;
   syncVersion: 1;
   updatedAt: string;

@@ -5,6 +5,7 @@ import {
   buildScale,
   chordToneDisplayLabel,
   createContext,
+  pitchWithOctave,
   ROOTS
 } from "./theory";
 
@@ -84,5 +85,15 @@ describe("V7 contextual music model", () => {
     expect(chords.every((chord) => chord.quality === "dominant7")).toBe(true);
     expect(chords.find((chord) => chord.degree === 4)?.roman).toBe("IV7");
     expect(chords[4 - 1]).toBeUndefined();
+  });
+});
+
+describe("octave numbers follow the spelled letter", () => {
+  it.each([
+    ["E", 40, "E2"], ["E", 64, "E4"], ["C", 60, "C4"], ["B", 59, "B3"],
+    ["B#", 60, "B#3"], ["Cb", 59, "Cb4"], ["Bb", 58, "Bb3"], ["C#", 61, "C#4"],
+    ["Fbb", 63, "Fbb4"], ["A##", 71, "A##4"]
+  ])("%s at MIDI %i is %s", (name, midi, expected) => {
+    expect(pitchWithOctave(name, midi)).toBe(expected);
   });
 });

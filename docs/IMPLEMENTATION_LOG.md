@@ -421,7 +421,7 @@ Phase 2B and Phase 7.
 
 ---
 
-## Next package
+## Next package at the end of Phase 1 (historical)
 
 **Phase 2 — accessibility and release foundations.** 2A is the interface work:
 the mobile settings/new-sketch collision and cramped Learn tabs (B11), text and
@@ -441,3 +441,524 @@ historical links (B25, B26).
 and the update holds are all provider or component state covered by reading
 rather than by a rendered test. Their rules are tested; their wiring is not.
 That gap has now accrued across 1A, 1C and 1D.
+
+
+---
+
+## Phase 2B-1 — rendered reliability tests and release checks
+
+Completed locally 17 September 2026, starting at `d0cf81d` on
+`codex/public-hardening`. This is the first Phase 2 package, not completion of
+Phase 2 or a release approval. Earlier changes in the root `.gitignore` and
+`scripts/publish-live.sh` were preserved separately.
+
+### What changed
+
+- Added jsdom and React Testing Library. Nine new rendered tests run the actual
+  store, save notices, Create recording controls, restore controls, update
+  coordinator, and cloud provider. Storage and Firebase SDK operations are
+  controlled test doubles; no production account or microphone is used.
+- Four update-protection defects were reproduced and fixed: React's transition
+  from recording to temporary take could release the last hold too early;
+  keeping a take could release its temporary hold before the sketch's save
+  indicator rendered; backup file preparation was unprotected; and completing
+  activation could reload away the pending account choice. Update activation
+  now rechecks holds after React's effect handoff and is sent at most once.
+  The store owns save protection from the start of the write, through failures
+  and retries, rather than depending on a status component rendering.
+- Restore preparation, activation and cancellation keep Settings open.
+  Conflicting import, sign-in/out and erasure controls are disabled while a
+  restore is pending. Failed cancellation keeps the preview and an actionable
+  error. Failed recording storage keeps the temporary take available for retry;
+  bounds are checked before storing it, and keep/discard cannot race each other.
+- Added a real browser journey covering export, preview, cancel, confirmed
+  restore and reload. Added a Firestore emulator case exercising `commitIsolating`
+  against real rules: one denied sketch is withheld while a valid sketch is saved.
+- Both hosting workflows now run unit/component coverage and desktop/mobile
+  browser journeys, retain coverage and browser failure evidence, and keep the
+  existing Java 21 rules gate. CI refuses focused browser tests and always starts
+  its own server. These are workflow changes, not claims of executed GitHub runs.
+- Live publication has a shared concurrency group with cancellation disabled,
+  protecting the rules-to-hosting sequence. `check-release-head.sh` rejects
+  non-main branches, mismatched checkouts, stale reruns and unreadable remote
+  refs. Five disposable-local-Git tests exercise these cases without GitHub writes.
+  Concurrency alone does not establish release order; the final remote-head
+  check is necessary. See [GitHub's concurrency documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency).
+- `test:coverage` reports selected critical domains and UI, including gaps, with
+  HTML and JSON output. There is deliberately no blanket percentage target.
+  Lint and formatting gates remain separate Phase 2 work.
+- `verify-all.sh` now includes history iteration 07. The app-directory README
+  identifies V8 and seven historical snapshots, and iteration 07's two broken
+  root-document links resolve. No historical application code changed.
+
+### Dependency review
+
+Added development-only DOM testing and coverage tools. Updated Vitest and its
+coverage reporter together from 4.1.8 to 4.1.11 to address
+[GHSA-82fw-gwwq-j7x9](https://github.com/advisories/GHSA-82fw-gwwq-j7x9).
+A second compatible update group covered Browserslist/browser data, fast-uri,
+js-yaml, Hono and Morgan within their existing dependency constraints. The
+lockfile was inspected; Firebase application dependencies were not changed.
+
+The initial audit found 18 development advisories. Adding coverage briefly
+increased the dependency-path count to 19; the reviewed updates leave **10
+moderate, zero high, zero critical**. Every remaining affected lockfile path is
+a development dependency. Remaining reports concern Firebase CLI dependencies
+including OpenTelemetry, csv-parse, stream-json and uuid, plus Express/body-parser
+and qs. npm's suggested Firebase CLI 10.1.1 downgrade was not applied. The
+compatible qs update attempt did not resolve its constrained nested copy.
+This is partial B30 remediation, not a claim that dependency review is closed.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run test:coverage` | 194 tests in 27 files passed on Vitest 4.1.11. |
+| `CI=true npm run test:e2e` | 34 passed; desktop Chromium and Pixel 7 viewport/emulation. Complete exit status 0 recorded. |
+| `npm run test:rules` with local Java 21 | 10 passed against Firestore and Storage emulators using `demo-guitar-academy`; complete exit status 0. |
+| `npm run build` | TypeScript and production bundle passed; existing large-chunk warning remains. |
+| Targeted mutation checks | All four update-protection defects reintroduced individually failed their selected rendered test; source restored after each run. |
+| Release guard | Five cases passed against disposable local repositories, including a stale rerun with its matching checkout and a failed remote lookup. |
+| Workflow/config review | Both YAML files parsed; browser, coverage and Java 21 gates present. Shell syntax and diff whitespace checks passed. |
+| Preservation documentation | Both repaired historical links resolve; iteration 07 is in the verification list. Full historical-app suite was not rerun. |
+
+Coverage for the selected reported files: **75.35% lines, 51.77% branches**.
+The cloud provider remains only 53.11% line-covered; this is useful visibility,
+not evidence that all auth, upload and restoration interactions are tested.
+PWA build measurement: **14 precached entries, 1024.60 KiB**. B18/B19 loading and
+cache work has not happened in this package.
+
+Local Node was 26.8.1. CI specifies Node 22; jsdom requires 22.22.2 or newer in
+that line. npm warns that Firebase's `superstatic` package declares support for
+Node 20/22/24. Local success is not a substitute for running the configured CI
+runtime. Java 21 was downloaded from Adoptium, checksum-verified against its
+release metadata, and extracted inside ignored `.local-recovery/java21/`;
+no system Java or production Firebase configuration was changed.
+
+Logs are retained in ignored `.local-recovery/phase-2-unit.log`,
+`phase-2-browser.log`, `phase-2-rules.log`, `phase-2-build.log`,
+`phase-2-audit-final.json`, and `mutation-*.log`. HTML coverage is under
+`apps/current/coverage/`. The browser rerun was initially blocked by automatic
+approval review when account usage was exhausted; it subsequently completed
+after George asked to continue.
+
+### Remaining scope and release limits
+
+- **Signed-in restore needs another reliability package before release:** the
+  account decision still lives in provider memory. App-requested updates now
+  wait for it, but manual reloads/crashes can lose that pause. Make the pending
+  decision durable alongside activation, and verify remount, sign-in and incoming
+  cloud snapshots cannot bypass it. The current cloud component test establishes
+  cancellation of a scheduled upload and explicit resumption in one mounted
+  session only. It does not establish exact cloud-history replacement semantics.
+- Phase 2A remains: mobile layout, contrast, dialog focus/keyboard/inertness,
+  fretboard keyboard navigation, accessibility checks, fonts and learner copy.
+- Phase 2B remains: lint/format gates, remaining advisory review, Firebase lazy
+  loading, and startup/offline-cache policy. B23 and B30 are only partially met.
+- No CI job, physical Pixel, installed-PWA update, cross-tab update, real Google
+  sign-in or live hosting header has been verified here. Nothing was pushed or
+  deployed. These checks retain their explicit later gates.
+
+Next: durable restore-decision protection, then the remaining Phase 2 interface
+and loading work. Keep the rendered tests in the normal test command so fixes
+cannot silently become unwired again.
+
+---
+
+## Phase 2B-2 — the restore decision survives reloads
+
+Implemented 17 September 2026 (Codex session, after the 2B-1 entry above was
+written). Verified locally, and mutation-checked, in a later session the same
+day. Findings: B04 follow-up (restore versus account history), B03 (updates
+during work). Uncommitted, like 2B-1: see "Commit status" below.
+
+### What changed
+
+- **The pause is stored with the restored workspace.** Activation writes
+  `pendingRestoreId` in the same IndexedDB transaction that replaces the
+  workspace. Reloading, crashing, signing out and signing back in all reopen
+  the pause. It used to be provider memory.
+- **Confirmation is durable before sync resumes.** `confirmRestoreMerge` clears
+  the marker in its own transaction, only if it still names the same restore.
+  An older confirmation cannot clear a newer restore or another account's.
+  If writing the choice fails, sync stays paused and the choice can be retried.
+- **Sync is paused in both directions.** No Firestore subscription starts while
+  the marker is present. Late snapshots from a retired subscription are
+  ignored, and the reducer refuses `mergeCloud` while the marker is set.
+- **Write ordering.** Restore waits for in-flight autosaves before activating,
+  so an older save cannot land afterwards and replace the restored copy.
+  Activation refuses a preview prepared for a different workspace.
+- **The marker is device-only.** Exports strip it, `cloudProfile` omits it and
+  validation checks its shape.
+- **Copy corrected.** The notice says "Merge with my account" and explains that
+  this merges records by recency. It does not replace the account's history,
+  which is what the sync code actually does.
+
+### Verification
+
+Mutation checks: each defect was reintroduced on its own.
+
+| Defect reintroduced | Tests that failed |
+| --- | --- |
+| Activation does not persist the marker | 3 restore tests |
+| Restore does not wait for older autosaves | rendered restore-hold test |
+| A stale confirmation is accepted | older-confirmation test |
+| Subscription ignores the marker | 3 cloud provider tests |
+| Memory is cleared before the durable write | failed-confirmation test |
+| Activation ignores the expected workspace | workspace-mismatch test |
+| Export keeps the marker | archive test |
+| Reducer merges cloud data while paused | **none, at first** |
+
+The reducer guard had no test, because the subscription guard stopped every
+case the existing tests covered. That leaves a real gap: a `mergeCloud`
+dispatched in the same React update as the restore decision.
+`ignores cloud data dispatched after a restore decision, even in the same
+update` now covers it, and fails under that mutation.
+
+### Limitations
+
+- Only the emulated provider has tested this. Real Google sign-in and a
+  physical device reload have not been checked.
+- A guest workspace also keeps the marker, which surfaces once the learner
+  signs in. That is intended, but no learner has seen it yet.
+
+---
+
+## Phase 2A-1 — modal dialogs and a keyboard fretboard
+
+Verified locally 17 September 2026. Findings: **B13** (dialog focus, Escape,
+restoration, inertness) and **B14** (fretboard keyboard traversal). B15 is
+partly met: new browser checks exist, but nothing automated for contrast yet.
+Codex started this package, and it was completed in a later session. It was
+unfinished at handover: Settings failed its own new focus test, and the
+fretboard edit was partial.
+
+### What changed
+
+- **`Modal` wraps the native `<dialog>` with `showModal()`.** Settings and the
+  activity player use it. The browser keeps focus inside and makes the rest of
+  the page inert. Escape and backdrop presses are only *requests*, and the
+  owning component decides whether to close.
+- **Chromium can close a dialog without a `cancel` event.** It does this when
+  Escape is pressed repeatedly with no user activation in between. At handover,
+  three Escapes closed Settings with a restore still pending. The dialog
+  disappeared, the page stayed interactive, and React still considered it open.
+  An unrequested close now reopens the dialog and counts as a request. Removing
+  that handling fails the restore and reflection browser journeys.
+- **Initial focus is explicit.** Chromium focuses the first focusable
+  descendant, and in Settings that was the scrolling panel, not a control.
+  Controls marked `data-autofocus` (the close buttons) receive focus instead.
+  Focus returns to the trigger on close.
+- **Only Settings closes from its backdrop.** A backdrop press no longer moves
+  focus after the trigger has been refocused. The handover version also closed
+  an activity when its margin was pressed, which would lose work.
+- **React StrictMode remounts** used to leave a queued close event that shut
+  every dialog as it opened. Stale close events are now ignored.
+- **Escape keeps an activity open while a written reflection is unsaved.** A
+  notice names the explicit exit, Close activity, which still works. With no
+  draft, Escape closes. This follows the plan's "explicit safe exit when work
+  is in progress".
+- **The fretboard is one tab stop.** It uses roving `tabindex`: arrow keys move
+  between strings and frets, Home/End jump along a string, and Ctrl/Cmd+Home/End
+  jump to the corners. Tab leaves the grid, and focus returns to the last
+  position. Before this, all 96 frets were separate tab stops.
+- **Announcements.** Each cell reads string, fret, spelled pitch with octave,
+  then relationship, for example "String 2, fret 1, B#3, Key 7". Selection uses
+  `aria-selected`, and the grid is multi-selectable when a pitch class is
+  selected.
+- **Octaves are spelled correctly.** The handover code used
+  `floor(midi / 12) - 1`, which labels B#3 as "B#4" and Cb4 as "Cb3". The octave
+  number belongs to the letter, so the new `pitchWithOctave` in `theory.ts`
+  takes accidentals into account, with ten tests.
+- **Keyboard help matches what the fretboard does.** It appears only while
+  keyboard focus is on the neck and is always exposed through
+  `aria-describedby`. It says "selects", not "plays". A read-only fretboard
+  makes no promise about Enter.
+- **Test-helper race.** `completeDiagnostic` counted the onboarding heading
+  before the loading screen had finished. When startup was slow it skipped
+  onboarding, then timed out. This caused the intermittent failures
+  (1–3 per run) seen when this package was picked up. It now waits for either
+  screen first.
+
+### Verification
+
+Run in a Linux container from a copy of the working tree (Node 22.22.2, the CI
+line). The Mac's local shell was unavailable this session.
+
+| Check | Result |
+| --- | --- |
+| `npm run build` | Passed; existing large-chunk warning; 14 precache entries, 1030.37 KiB. |
+| `npm test` | 229 tests in 29 files passed. |
+| Browser journeys | 42 passed on desktop Chromium and Pixel 7 emulation, twice consecutively. The bundled Chromium build differs from Playwright 1.60's pinned one, so a local config override supplied `executablePath`. |
+| `npm run test:rules` | **Not run.** The container cannot download the Firestore emulator jar. This package does not touch rules; 2B-1's local run stands. |
+
+Mutation checks: each defect was reintroduced on its own, and the full unit
+suite plus the named browser journeys were rerun.
+
+| Defect reintroduced | Tests that failed |
+| --- | --- |
+| Browser chooses initial focus | 3 Modal unit tests; Settings journey (both viewports) |
+| Native close without cancel accepted | Modal unit test; restore and reflection journeys (both) |
+| Backdrop closes every dialog | Modal backdrop unit test |
+| Backdrop press moves focus | Settings journey (both) |
+| Stale StrictMode close treated as a request | Settings journey (both) |
+| App bypasses the player's guard | reflection journey (both) |
+| Player guard ignores drafts | Modal/activity unit test |
+| Every fret tabbable | 2 fretboard unit tests; Explore journey (both) |
+| Octave from `floor(midi / 12)` | 2 theory tests; fretboard announcement test |
+| Help promises selection when read-only | read-only fretboard test |
+| Settings closes during a pending restore | restore journey (both) |
+| Fret clamp removed | none: equivalent mutant (movement starts from the focused cell, and a missing cell is never focused) |
+
+### Limitations and findings
+
+- **Save failures are hidden during an activity (newly identified).**
+  `SaveFailureAlert` and the other notices live in `<main>`. The full-screen
+  activity dialog covers them, as its fixed overlay already did, and they are
+  now inert as well. Meanwhile the partial/retry completion screen says "The
+  evidence is saved" whatever the save outcome. This is a B02 truthfulness gap outside this
+  package, and it should come next rather than wait.
+- Screen-reader output has not been listened to. The announcements are checked
+  through accessible names in jsdom and Chromium, not with VoiceOver, TalkBack
+  or NVDA. B15's manual check is still outstanding.
+- Tab from a native modal's last control goes to the browser's own UI before
+  wrapping, and the journey asserts that. This is native `<dialog>` behaviour,
+  not a hand-rolled trap.
+- Only the v8 Explore fretboard is reachable. The older `src/features` screens
+  also render `Fretboard`, and they get the same behaviour, but they are
+  unreachable (B27).
+- Not addressed yet: B11, B12, B16, B17, and axe or contrast automation.
+
+---
+
+## Decisions on 2A-1, confirmed
+
+George was asked about the three judgement calls in 2A-1 and left them to the
+implementer. All three stand as implemented:
+
+- Escape keeps an activity open while a written reflection is unsaved.
+- Tab passes through the browser's own UI, as native `<dialog>` does, rather
+  than a hand-built focus wrap.
+- The hidden save-failure finding became the next package, ahead of B11/B12.
+
+---
+
+## Phase 2A-2 — urgent notices reach the learner, and records aren't called saved too early
+
+Verified locally 17 September 2026. Findings: **B02** (invisible local-save
+failure), whose 1A fix did not reach dialogs or onboarding; **B13** follow-up;
+the 1E principle "don't let the interface claim what the app doesn't do".
+
+### What was wrong
+
+1. **During an activity, save failures could not be seen or used.** The save
+   failure alert, the unreadable-workspace notice, the restore choice and the
+   update offer were all rendered inside `<main>`. The activity player (where
+   learners spend most of their time) and Settings are full-screen or backdrop
+   dialogs that cover `<main>`. Since 2A-1 they also make it inert.
+2. **The partial/retry completion screen said "The evidence is saved"** as soon
+   as the button was pressed, before any write had started, and whether or not
+   the write succeeded.
+3. **An unreadable workspace looked like a brand-new install.** This was not in
+   the original finding. An unreadable workspace loads default settings, and
+   default settings mean the onboarding screen, which rendered no notices at
+   all. That is exactly the case 1A set out to prevent: an empty app that looks
+   like total data loss, while saving is silently suspended. The recovery
+   notice's rendered test mounted the notice directly, so it never exercised
+   what the application actually shows.
+
+### What changed
+
+- **`NoticeHost` renders `AppNotices` in exactly one place.** While a dialog
+  that can host them is open, the notices appear at the top of that dialog and
+  step aside on the page. Each alert is announced once, and update holds are
+  not duplicated; `holdUpdates` already rechecks after React's effect handoff,
+  so moving them cannot trigger an update in the gap. Inside dialogs the
+  notices are in the normal flow, not sticky, so they never cover the dialog's
+  heading or close button. The Settings dialog is now a flex column: as a grid
+  row, its scrolling panel could shrink and slide underneath the notices on a
+  phone.
+- **Both onboarding screens now render `AppNotices`:** the diagnostic and the
+  account-history choice.
+- **`isEvidenceSaved(ids)` in the store** is true only once a *current*
+  (non-superseded) write that contained those observations has completed, in
+  the same workspace. It can say "not yet" about something already stored,
+  never the reverse. `RecordSaveStatus` uses it on both completion screens:
+  - "Saving on this device…"
+  - "Saved on this device." (or the limited-backup wording)
+  - "Not saved on this device yet…", pointing to the notice at the top
+  - "Not saved: … saving is paused", when the workspace is unreadable
+- **An unsaved written reflection holds updates.** An update reloads the page,
+  which would lose the draft just as Escape would.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run build` | Passed; 14 precache entries, 1032.96 KiB. |
+| `npm test` | 238 tests in 30 files passed. |
+| Browser journeys | 46 passed on desktop Chromium and Pixel 7 emulation. New: a save failure injected during an activity (IndexedDB and its localStorage fallback both refuse) is visible and operable inside the dialog, and the record reads "Not saved" until a retry succeeds; an unreadable stored workspace is explained on the first screen. |
+| Visual check | Screenshots at desktop and phone width of the failure inside an activity, inside Settings, and on onboarding. The first attempt showed sticky notices covering the activity heading and overlapping the Settings panel on a phone; both were fixed before this entry. |
+| `npm run test:rules` | Not run: the emulator download is blocked from this workspace, and this package does not touch rules. |
+
+Mutation checks: each defect was reintroduced on its own.
+
+| Defect reintroduced | Tests that failed |
+| --- | --- |
+| Dialogs never host notices | 3 rendered tests; activity-failure journey (both viewports) |
+| Page notices never step aside | 2 rendered tests; activity-failure journey (both), which counts one alert |
+| Onboarding without notices | unreadable-workspace journey (both) |
+| Record line trusts `save.status` | unrelated-save test |
+| Superseded write counts as durable | existing `save.test.ts` superseded-success test |
+| "The evidence is saved" copy restored | rendered retry test; activity-failure journey (both) |
+| Draft does not hold updates | draft update-hold test |
+| Record line ignores an unreadable workspace | unreadable-workspace record test |
+| Durable status not scoped to its workspace | workspace-switch test |
+| Durable ids read from current state rather than from the write | none: equivalent in practice, because a newer save always supersedes the older one |
+
+### Limitations
+
+- Notices move into a dialog only if its owner opts in through the app
+  shell's context. Both current dialogs do, and a future dialog added outside
+  the shell would not.
+- On a phone, a failure notice at the top of a long activity scrolls away with
+  the content, as it does on the page. The record's own status line repeats the
+  outcome where the learner is looking.
+- The Settings "Backup restored …" and cloud messages are unchanged. They report
+  operations that do complete before the message is set.
+- Screen-reader announcement order has not been checked with a real screen
+  reader.
+
+---
+
+## Phase 2A-3 — the phone layout and learner-facing copy
+
+Verified locally 17 September 2026. Findings: **B11** (mobile settings and
+new-sketch collision; cramped Learn tabs) and **B17** (internal version copy),
+plus a B02 gap on phones found while reproducing B11.
+
+### What was wrong (reproduced before changing anything)
+
+The screens were measured at 320×640, 390×844, 640×360 (a 1280×720 laptop at
+200% zoom) and 320×256.
+
+- **The floating settings button covered controls.** The ⚙ button was fixed
+  to the top right on phones and sat on top of Create's "+" new-sketch button,
+  the Strengthen tab, and the Explore and Play headings. It floated over
+  whatever was scrolled beneath it.
+- **The Learn tabs were cramped.** On phones each tab squeezed a 0.55rem
+  (8.8px) purpose line under its label, and at 390px the Strengthen label ran
+  under the settings button.
+- **Create overflowed at 320px.** The chord track header could not wrap, so its
+  "Add a chord…" select pushed the page 42px wider than the screen.
+- **Phones had no local save status.** The quiet save indicator lived only in
+  the desktop sidebar, which is hidden on phones, so its half of the 1A save
+  contract never appeared there.
+- **Internal language reached learners (B17):**
+  - the page title "Guitar Academy V8"
+  - the onboarding "A clean V8 beginning" and "Guitar Academy V8" mark
+  - the sidebar "Musical freedom · V8"
+  - backup errors saying "not a supported Guitar Academy V8 backup/archive"
+  - on builds without sync: "Firebase connection required", "Add the Firebase
+    web configuration to `.env.local`", "Cloud sync is ready for Firebase
+    configuration" and "Firebase is not configured yet"
+
+### What changed
+
+- **An in-flow top bar on phones replaces the floating button.** It holds the
+  brand, the local save indicator and a labelled Settings button (at least
+  44px). Because it scrolls with the page, nothing can sit on top of the page's
+  controls. The brand name hides below 380px, leaving the mark.
+- **Learn tabs on phones show their labels only.** The purpose line stays in
+  each tab's accessible name but no longer squeezes onto the screen. Tabs are
+  at least 44px tall.
+- **Create no longer overflows.** The chord track header wraps, the select is
+  capped at the container width, and headings break long words rather than
+  widening the page.
+- **Short screens get a compact bottom navigation.** When the height is at most
+  500px (for example a laptop at 200% zoom), the navigation shrinks from about
+  72px to 52px, and the page's bottom padding and Free Play's sticky footer
+  follow it.
+- **Copy.** The title and onboarding now say "Guitar Academy" and "Welcome to
+  Guitar Academy". Two onboarding promises were claims the app could not
+  always keep, so they now match what it does:
+  - "25-minute sessions" → "Sessions sized to your time"
+  - "Offline and synchronised" → a line that depends on whether sync exists
+    in the build
+
+  Settings no longer claims progress "synchronises after sign-in" when sync is
+  not set up. Its messages and errors now use learner language, for example
+  "Sync is not set up", or "Sharing recordings is not set up in this copy",
+  now separate from "Sign in before sharing a take". Backup errors read "This
+  file is not a Guitar Academy backup this version can read."
+- **Diagnostics are kept in Settings → About this app.** It shows the version
+  (from `package.json` through a Vite `define`), build mode, whether sync is
+  configured and why, and whether the window is installed or a browser tab.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run build` | Passed; 14 precache entries, 1036.35 KiB. |
+| `npm test` | 238 tests passed (no unit tests changed; this package is layout and copy). |
+| Browser journeys | 54 passed on desktop Chromium and Pixel 7 emulation. New: a phone-layout journey at 320×640, 390×844 and 640×360 across Continue, Course map, Strengthen, Play, Create (empty and with a long sketch name), Explore and Settings. On every screen it checks that there is no horizontal overflow and no control under the Settings button, that the last control scrolls clear of the bottom navigation, and that Learn tabs are at least 44px, unclipped and at least 12px text. It also checks that the save status is visible and that no learner-visible text matches `V<digit>`, `.env`, Firebase, IndexedDB or localStorage. That copy check now also runs on every journey's home screen at both viewports, and a new journey checks that About this app shows the version. |
+| Visual check | Before and after screenshots at the four sizes, and About this app on desktop. |
+
+Mutation checks: each defect was reintroduced on its own.
+
+| Defect reintroduced | Tests that failed |
+| --- | --- |
+| Settings button fixed over the page again | phone journey (both projects) |
+| Learn tab purpose text squeezed back onto phones | phone journey (both) |
+| Chord track header cannot wrap | small-phone journey (both) |
+| "A clean V8 beginning" restored | phone journey (both) |
+| "Guitar Academy V8" title restored | phone journey (both) |
+| "Firebase connection required" restored | phone journey (both) |
+| No bottom clearance for the navigation | phone journey (both) |
+| Save status removed from the phone top bar | phone journey (both) |
+| "Musical freedom · V8" restored in the sidebar | desktop navigation journey |
+| Version removed from About this app | About journey (both) |
+
+### Limitations
+
+- Emulated only. Real Pixel rendering, the on-screen keyboard over inputs,
+  safe-area insets and browser-level zoom rather than a reduced viewport are
+  not tested. B32 remains for Phase 7.
+- Small text elsewhere is untouched: the bottom navigation labels (0.58rem) and
+  the top bar's save status (0.6rem) are below 10px. That belongs with
+  contrast and typography in 2A-4, not here.
+- Two things seen but left alone: in Settings the "Reduce interface motion"
+  checkbox sits apart from its label, and the onboarding claims "48 connected
+  units". Both are out of scope: the first is a layout detail for 2A-4, and
+  the second is curriculum copy that Phase 3 revisits.
+- The version comes from `package.json` (0.8.0) and does not identify a
+  specific build. A commit hash would need the release workflow to supply one.
+
+---
+
+## Commit status
+
+Nothing has been committed since `d0cf81d` (1E, 14 September). 2B-1, 2B-2,
+2A-1, 2A-2 and 2A-3 are all in the working tree on `codex/public-hardening`. The shell
+on George's Mac was unavailable in the session that did 2A-1 to 2A-3, so they
+were built and verified on a copy and written back file by file.
+
+Several files carry changes from more than one package (`SettingsPanel.tsx`,
+`App.tsx`, `store.tsx`, `app.css`, the browser spec). Committing each package
+separately would mean inventing intermediate states that were never built or
+tested. The honest options are one commit naming all five packages, or two:
+2B-1+2B-2, then 2A-1 to 2A-3. The latter split is also only approximate for
+`SettingsPanel.tsx`. The earlier `.gitignore` and `scripts/publish-live.sh`
+changes are still waiting for George's review and must stay out; stage paths
+explicitly. Nothing has been pushed or deployed.
+
+## Next package
+
+**Phase 2A-4: contrast, legibility and automated accessibility checks (B12,
+B15).** Measure text, control and focus contrast against WCAG AA in both
+themes. Keep the palette and adjust colour roles. Include the sub-10px bottom
+navigation labels and top-bar status, and the Settings motion checkbox layout.
+Add axe (or an equivalent) to the browser journeys for the core screens and
+dialogs, and record a manual keyboard and screen-reader pass.
+
+Then 2A-5, fonts (B16).

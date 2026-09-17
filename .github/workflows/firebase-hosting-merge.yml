@@ -7,10 +7,16 @@ on:
     branches:
       - main
   workflow_dispatch:
+# Do not interrupt a deployment between rules and hosting. A final head check
+# rejects older reruns; queue order alone is not a release-order guarantee.
+concurrency:
+  group: guitar-academy-live
+  cancel-in-progress: false
 permissions:
   contents: read
 jobs:
   build_and_deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,7 +33,27 @@ jobs:
           distribution: temurin
           java-version: "21"
       - run: npm ci
-      - run: npm test
+      - run: npm run test:coverage
+      - name: Preserve critical-path coverage
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: critical-path-coverage
+          path: apps/current/coverage/
+          retention-days: 14
+      - name: Install Chromium and system libraries
+        run: PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright install --with-deps chromium
+      - name: Exercise desktop and phone journeys
+        run: npm run test:e2e
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: browser-evidence
+          path: |
+            apps/current/playwright-report/
+            apps/current/test-results/
+          retention-days: 14
       - run: npm run test:rules
       - name: Build Firebase-enabled application
         env:
@@ -55,6 +81,8 @@ jobs:
             fi
           done
           npm run build
+      - name: Refuse an outdated release
+        run: bash ../../scripts/check-release-head.sh
       - name: Authenticate for Firebase security-rule deployment
         uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
         with:

@@ -7,11 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest run src tests/hosting.test.ts",
+    "test": "vitest run src tests/hosting.test.ts tests/release.test.ts",
     "test:rules": "firebase emulators:exec --project demo-guitar-academy --only firestore,storage \"vitest run tests/firebaseRules.test.ts\"",
-    "test:watch": "vitest src tests/hosting.test.ts",
+    "test:watch": "vitest src tests/hosting.test.ts tests/release.test.ts",
     "test:e2e:install": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright install chromium",
-    "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test"
+    "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test",
+    "test:coverage": "vitest run src tests/hosting.test.ts tests/release.test.ts --coverage"
   },
   "dependencies": {
     "firebase": "^12.16.0",
@@ -21,15 +22,19 @@
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",
     "@playwright/test": "1.60.0",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.7",
     "@types/node": "^26.2.0",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
+    "@vitest/coverage-v8": "4.1.11",
     "fake-indexeddb": "^6.2.5",
     "firebase-tools": "^15.26.0",
+    "jsdom": "30.0.1",
     "typescript": "6.0.3",
     "vite": "8.0.16",
     "vite-plugin-pwa": "^1.3.0",
-    "vitest": "4.1.8"
+    "vitest": "4.1.11"
   }
 }

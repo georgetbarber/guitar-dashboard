@@ -69,6 +69,7 @@ function SketchEditor({ sketch }: { sketch: Sketch }) {
   const recorderRef = useRef<TakeRecorder | null>(null);
   const [recording, setRecording] = useState(false);
   const [pendingTake, setPendingTake] = useState<{ blob: Blob; url: string } | null>(null);
+  const [keepingTake, setKeepingTake] = useState(false);
   /*
    * Tempo is held as text while the field has focus. Committing on every
    * keystroke would put partial input through the reducer's clamp, so clearing
@@ -131,12 +132,23 @@ function SketchEditor({ sketch }: { sketch: Sketch }) {
     recorderRef.current = null; setRecording(false); setMessage("Temporary take ready, held only in this tab. Compare it now, then keep it on this device or discard it — closing or reloading this tab loses it.");
   };
   const keepPendingTake = async () => {
-    if (!pendingTake) return;
+    if (!pendingTake || keepingTake) return;
     const id = newId("take");
-    await saveBlob(id, pendingTake.blob);
-    update({ takes: [...sketch.takes, { id, blobId: id, name: `Take ${sketch.takes.length + 1}`, createdAt: new Date().toISOString(), note: "Kept on this device for intentional comparison." }], status: "compare" });
-    setPendingTake(null);
-    setMessage("Take retained privately on this device. Finish the project to make an explicit cross-device copy available.");
+    const takes = [...sketch.takes, { id, blobId: id, name: `Take ${sketch.takes.length + 1}`, createdAt: new Date().toISOString(), note: "Kept on this device for intentional comparison." }];
+    const decision = admitSketchEdit(sketch, { ...sketch, takes, status: "compare" });
+    if (decision.refused.length) {
+      setMessage(`This take could not be kept: ${describeExceedances(decision.refused)}. The temporary take is still in this tab.`);
+      return;
+    }
+    setKeepingTake(true);
+    try {
+      await saveBlob(id, pendingTake.blob);
+      update({ takes, status: "compare" });
+      setPendingTake(null);
+      setMessage("Take retained privately on this device. Finish the project to make an explicit cross-device copy available.");
+    } catch (error) {
+      setMessage(`This take could not be kept: ${error instanceof Error ? error.message : "This device refused the recording."} The temporary take is still in this tab. Try keeping it again before closing.`);
+    } finally { setKeepingTake(false); }
   };
   const visibleTakes = sketch.takes.filter((take) => take.blobId || take.cloud);
   return (
@@ -164,7 +176,7 @@ function SketchEditor({ sketch }: { sketch: Sketch }) {
       </section>
       <div className="studio-grid">
         <section className="card notes-panel"><span className="eyebrow">Arrangement and reflection</span><h2>Notes to your future self</h2><textarea maxLength={SKETCH_LIMITS.notes} value={sketch.notes} onChange={(event) => update({ notes: event.target.value })} placeholder="What should stay? What is the next deliberate change?" /><label>Ambiguity or alternate readings<textarea maxLength={SKETCH_LIMITS.ambiguityNotes} value={sketch.ambiguityNotes} onChange={(event) => update({ ambiguityNotes: event.target.value })} placeholder="Outside the key is information, not an error…" /></label></section>
-        <section className="card take-panel"><span className="eyebrow">Optional listening evidence</span><h2>{visibleTakes.length} retained takes</h2><p>{message}</p>{pendingTake && <div className="pending-take"><strong>Temporary take — held in this tab only, not stored</strong><audio controls src={pendingTake.url} /><div className="action-row"><button className="primary-action" onClick={() => void keepPendingTake()}>Keep on this device</button><button className="secondary-action" onClick={() => { setPendingTake(null); setMessage("Temporary take discarded. No storage was used."); }}>Discard</button></div><small>A kept take stays private unless you later finish the project and explicitly share that individual take.</small></div>}{visibleTakes.map((take) => <TakePlayer sketch={sketch} take={take} key={take.id} />)}{sketch.status !== "finished" && visibleTakes.length > 0 && <small>Finish this version before choosing any individual take to share across signed-in devices.</small>}<div className="revision-count"><strong>{sketch.revisions.length}</strong><span>preserved revisions</span></div></section>
+        <section className="card take-panel"><span className="eyebrow">Optional listening evidence</span><h2>{visibleTakes.length} retained takes</h2><p>{message}</p>{pendingTake && <div className="pending-take"><strong>Temporary take — held in this tab only, not stored</strong><audio controls src={pendingTake.url} /><div className="action-row"><button className="primary-action" disabled={keepingTake} onClick={() => void keepPendingTake()}>{keepingTake ? "Keeping…" : "Keep on this device"}</button><button className="secondary-action" disabled={keepingTake} onClick={() => { setPendingTake(null); setMessage("Temporary take discarded. No storage was used."); }}>Discard</button></div><small>A kept take stays private unless you later finish the project and explicitly share that individual take.</small></div>}{visibleTakes.map((take) => <TakePlayer sketch={sketch} take={take} key={take.id} />)}{sketch.status !== "finished" && visibleTakes.length > 0 && <small>Finish this version before choosing any individual take to share across signed-in devices.</small>}<div className="revision-count"><strong>{sketch.revisions.length}</strong><span>preserved revisions</span></div></section>
       </div>
       <footer className="studio-footer"><button className="danger-action" onClick={async () => { if (confirm(`Delete “${sketch.name}”? Its device recordings and any explicitly shared takes will also be deleted.`)) { try { await cloud.deleteUploadedTakes(sketch); await clearSketchRecordings(sketch); dispatch({ type: "deleteSketch", id: sketch.id }); } catch (error) { setMessage(error instanceof Error ? error.message : "The shared recordings could not be removed."); } } }}>Delete sketch</button><button className="primary-action" onClick={() => revise("Marked finished after comparative listening", { status: "finished" })}>Finish this version</button></footer>
     </div>

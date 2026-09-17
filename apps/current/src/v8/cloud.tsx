@@ -167,11 +167,11 @@ async function uploadChanges(database: Firestore, uid: string, state: V8State, c
 }
 
 export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
-  const { state, dispatch, hydrated, switchWorkspace, restoreHold } = useV8Store();
+  const { state, dispatch, hydrated, workspaceId, workspaceIssue, switchWorkspace, restoreHold } = useV8Store();
   const [user, setUser] = useState<User | null>(null);
   const [pendingUser, setPendingUser] = useState<User | null>(null);
   const [status, setStatus] = useState<SyncStatus>(CLOUD_CONFIGURED ? "signed-out" : "local-only");
-  const [message, setMessage] = useState(CLOUD_CONFIGURED ? "Sign in to synchronise devices." : "Cloud sync is ready for Firebase configuration.");
+  const [message, setMessage] = useState(CLOUD_CONFIGURED ? "Sign in to synchronise devices." : "Sync across devices is not set up in this copy of Guitar Academy. Your learning stays on this device; a complete backup moves it.");
   const [remoteReady, setRemoteReady] = useState(false);
   const [connectivityRevision, setConnectivityRevision] = useState(0);
   const cacheRef = useRef<SyncCache>(emptyCache());
@@ -237,7 +237,9 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   }, [switchWorkspace]);
 
   useEffect(() => {
-    if (!database || !user) return;
+    setRemoteReady(false);
+    if (!database || !user || !hydrated || workspaceId !== accountWorkspaceId(user.uid) || workspaceIssue || restoreHold) return;
+    let active = true;
     const loaded = new Set<string>();
     const subscriptions: Unsubscribe[] = [];
     /*
@@ -261,6 +263,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       setMessage(navigator.onLine ? "Progress synchronises across signed-in devices." : "Working offline. Changes will synchronise when connected.");
     };
     subscriptions.push(onSnapshot(doc(database, "users", user.uid), (snapshot) => {
+      if (!active) return;
       const { profile, reason } = acceptProfile(snapshot.exists() ? snapshot.data() : null);
       rejectedCounts.set("profile", reason ? 1 : 0);
       /*
@@ -276,6 +279,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       if (loaded.size === 3) reportIntake();
     }, handleError));
     subscriptions.push(onSnapshot(collection(database, "users", user.uid, "evidence"), (snapshot) => {
+      if (!active) return;
       const intake = acceptEvidence(snapshot.docs.map((item) => ({ id: item.id, data: item.data() })));
       rejectedCounts.set("evidence", intake.rejected.length);
       // Only accepted ids enter the cache, so a local copy of a rejected record is
@@ -286,6 +290,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       if (loaded.size === 3) reportIntake();
     }, handleError));
     subscriptions.push(onSnapshot(collection(database, "users", user.uid, "sketches"), (snapshot) => {
+      if (!active) return;
       const intake = acceptSketches(snapshot.docs.map((item) => ({ id: item.id, data: item.data() })));
       rejectedCounts.set("sketches", intake.rejected.length);
       cacheRef.current.sketchVersions = new Map(intake.accepted.map((sketch) => [sketch.id, sketch.updatedAt]));
@@ -294,11 +299,12 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       if (loaded.size === 3) reportIntake();
     }, handleError));
     function handleError(error: Error) {
+      if (!active) return;
       setStatus("error");
       setMessage(error.message || "Cloud sync is unavailable. Local work remains safe.");
     }
-    return () => subscriptions.forEach((unsubscribe) => unsubscribe());
-  }, [user?.uid, dispatch]);
+    return () => { active = false; subscriptions.forEach((unsubscribe) => unsubscribe()); };
+  }, [user?.uid, dispatch, hydrated, workspaceId, workspaceIssue, restoreHold]);
 
   useEffect(() => {
     const online = () => {
@@ -312,12 +318,18 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    if (!database || !user || !hydrated || !remoteReady) return;
-    if (restoreHold) {
-      setStatus("restore-hold");
-      setMessage("A backup was restored on this device. Your account has not been changed — choose whether it should be.");
+    if (!database || !user || !hydrated || workspaceId !== accountWorkspaceId(user.uid)) return;
+    if (workspaceIssue) {
+      setStatus("error");
+      setMessage("The saved workspace could not be read. Account sync is paused while you recover it.");
       return;
     }
+    if (restoreHold) {
+      setStatus("restore-hold");
+      setMessage("Account sync is paused for this restored backup. Choose whether to merge it with your account.");
+      return;
+    }
+    if (!remoteReady) return;
     if (!navigator.onLine) {
       setStatus("offline");
       setMessage("Saved offline; waiting for a connection.");
@@ -347,7 +359,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         });
     }, 650);
     return () => clearTimeout(timer);
-  }, [state, user?.uid, hydrated, remoteReady, connectivityRevision, restoreHold]);
+  }, [state, user?.uid, hydrated, workspaceId, workspaceIssue, remoteReady, connectivityRevision, restoreHold]);
 
   const value = useMemo<CloudValue>(() => ({
     configured: CLOUD_CONFIGURED,
@@ -356,7 +368,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     message,
     accountChoice: pendingUser ? { email: pendingUser.email ?? "the selected Google account" } : null,
     signIn: async () => {
-      if (!auth) throw new Error("Firebase is not configured yet.");
+      if (!auth) throw new Error("Sync across devices is not set up in this copy of Guitar Academy.");
       await signInWithPopup(auth, new GoogleAuthProvider());
     },
     signOut: async () => { if (auth) await firebaseSignOut(auth); },
@@ -384,7 +396,8 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       location.reload();
     },
     uploadFinishedTake: async (sketchId, takeId) => {
-      if (!user || !recordingStorage) throw new Error("Sign in with recording storage configured before sharing a take.");
+      if (!user) throw new Error("Sign in before sharing a take.");
+      if (!recordingStorage) throw new Error("Sharing recordings is not set up in this copy of Guitar Academy. The take remains on this device.");
       if (!navigator.onLine) throw new Error("Reconnect before sharing a take. The private device copy remains safe.");
       const sketch = state.sketches.find((item) => item.id === sketchId);
       if (!sketch || sketch.status !== "finished") throw new Error("Only a take from a finished project can be shared across devices.");

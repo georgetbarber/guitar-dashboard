@@ -1,8 +1,9 @@
 import "fake-indexeddb/auto";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   activateRestore,
   cancelRestore,
+  confirmRestoreMerge,
   discardIncompleteStaging,
   exportArchive,
   loadBlob,
@@ -43,6 +44,59 @@ async function archiveOf(state: V8State): Promise<File> {
 
 describe("a restore is staged and activated, never written live (B04)", () => {
   beforeEach(resetDatabase);
+
+  it("retains the durable pause when saving the confirmation runs out of space", async () => {
+    const preview = await prepareRestore(await archiveOf(stateWith([], "held")), "account:learner");
+    await activateRestore(preview.operationId);
+    const put = vi.spyOn(IDBObjectStore.prototype, "put").mockImplementationOnce(() => { throw new DOMException("Full", "QuotaExceededError"); });
+    try { await expect(confirmRestoreMerge("account:learner", preview.operationId)).rejects.toThrow("Full"); }
+    finally { put.mockRestore(); }
+    const reopened = await loadWorkspace("account:learner");
+    expect(reopened.status === "ok" && reopened.state.pendingRestoreId).toBe(preview.operationId);
+  });
+
+  it("commits the pending account decision with the restore and retains it through ordinary saves", async () => {
+    const preview = await prepareRestore(await archiveOf(stateWith([], "restored locally")), "account:learner");
+    const restored = await activateRestore(preview.operationId, "account:learner");
+    expect(restored.pendingRestoreId).toBe(preview.operationId);
+    let reopened = await loadWorkspace("account:learner");
+    expect(reopened.status === "ok" && reopened.state.pendingRestoreId).toBe(preview.operationId);
+    await savePersistedState({ ...restored, lastReflection: "edited while paused" }, "account:learner");
+    reopened = await loadWorkspace("account:learner");
+    expect(reopened.status === "ok" && reopened.state.pendingRestoreId).toBe(preview.operationId);
+    await confirmRestoreMerge("account:learner", preview.operationId);
+    reopened = await loadWorkspace("account:learner");
+    expect(reopened.status === "ok" && reopened.state.pendingRestoreId).toBeUndefined();
+    expect(reopened.status === "ok" && reopened.state.lastReflection).toBe("edited while paused");
+  });
+
+  it("does not let an older confirmation clear a newer restore or another account", async () => {
+    const first = await prepareRestore(await archiveOf(stateWith([], "first")), "account:learner");
+    await activateRestore(first.operationId);
+    const next = await prepareRestore(await archiveOf(stateWith([], "next")), "account:learner");
+    await activateRestore(next.operationId);
+    await expect(confirmRestoreMerge("account:learner", first.operationId)).rejects.toThrow(/changed/);
+    await expect(confirmRestoreMerge("account:other", next.operationId)).rejects.toThrow();
+    const reopened = await loadWorkspace("account:learner");
+    expect(reopened.status === "ok" && reopened.state.pendingRestoreId).toBe(next.operationId);
+  });
+
+  it("rejects activation in a workspace different from the preview", async () => {
+    const preview = await prepareRestore(await archiveOf(stateWith([], "backup")), "account:one");
+    await expect(activateRestore(preview.operationId, "account:two")).rejects.toThrow(/another workspace/);
+    expect((await loadWorkspace("account:one")).status).toBe("empty");
+    await activateRestore(preview.operationId, "account:one");
+  });
+
+  it("does not transfer the device decision inside an exported archive", async () => {
+    const blob = await exportArchive({ ...DEFAULT_STATE, pendingRestoreId: "private-local-decision" });
+    const prefix = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
+    const length = new DataView(prefix.buffer).getUint32(8, true);
+    const header = JSON.parse(await blob.slice(12, 12 + length).text());
+    expect(header.state.pendingRestoreId).toBeUndefined();
+    const preview = await prepareRestore(new File([blob], "copy.guitar-academy"), "account:learner");
+    expect((await activateRestore(preview.operationId)).pendingRestoreId).toBe(preview.operationId);
+  });
 
   it("round-trips an exported backup, recordings and all", async () => {
     await saveBlob("take-a", new Blob(["first take"], { type: "audio/webm" }));

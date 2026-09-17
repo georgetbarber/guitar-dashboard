@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { CURRICULUM } from "./curriculum";
 import { completedActivityIdsFromEvidence } from "./learning";
-import { activeWorkspaceId, discardIncompleteStaging, exportArchive, loadWorkspace, moveWorkspace, newSketch, savePersistedState, setActiveWorkspace } from "./repository";
+import { activateRestore, activeWorkspaceId, confirmRestoreMerge, discardIncompleteStaging, exportArchive, loadWorkspace, moveWorkspace, newSketch, savePersistedState, setActiveWorkspace } from "./repository";
 import type { WorkspaceId } from "./repository";
 import { IDLE_SAVE, runSave } from "./saveState";
 import type { LocalSaveState } from "./saveState";
+import { holdUpdates } from "./updates";
 import { clampSketchTempo } from "./limits";
 import { mergeCloudSnapshot } from "./sync";
 import type { CloudSnapshot } from "./sync";
@@ -78,6 +79,8 @@ type Action =
   | { type: "clearRecordings" }
   | { type: "setActiveSketch"; id: string }
   | { type: "mergeCloud"; snapshot: CloudSnapshot }
+  | { type: "setRestoreDecision"; id?: string }
+  | { type: "confirmRestoreDecision"; id: string }
   | { type: "replaceState"; state: V8State };
 
 function withSketchFieldTimes(state: V8State): V8State {
@@ -103,7 +106,18 @@ function reducer(state: V8State, action: Action): V8State {
   switch (action.type) {
     case "hydrate": return preparePersistedState({ ...DEFAULT_STATE, ...action.state, deletedSketchIds: action.state.deletedSketchIds ?? {}, route: routeFromLocation() });
     case "replaceState": return preparePersistedState({ ...DEFAULT_STATE, ...action.state, deletedSketchIds: action.state.deletedSketchIds ?? {}, route: routeFromLocation(), updatedAt: changedAt });
-    case "mergeCloud": return withSketchFieldTimes(mergeCloudSnapshot(state, action.snapshot));
+    case "mergeCloud": return state.pendingRestoreId ? state : withSketchFieldTimes(mergeCloudSnapshot(state, action.snapshot));
+    case "setRestoreDecision": {
+      const next = { ...state, pendingRestoreId: action.id };
+      if (!action.id) delete next.pendingRestoreId;
+      return next;
+    }
+    case "confirmRestoreDecision": {
+      if (state.pendingRestoreId !== action.id) return state;
+      const next = { ...state };
+      delete next.pendingRestoreId;
+      return next;
+    }
     case "navigate": return { ...state, route: action.route, activeActivityId: null };
     case "openUnit": return { ...state, route: "path", activeUnitId: action.unitId, activeActivityId: null, updatedAt: changedAt };
     case "openActivity": return {
@@ -206,10 +220,16 @@ interface StoreValue {
   discardUnreadableWorkspace: () => void;
   /** True while a local restore is waiting for the learner to say whether it should reach their account. Uploading is paused. */
   restoreHold: boolean;
-  /** Called after a restore activates, so the restored workspace cannot reach the account without being asked for. */
-  holdRestoreFromAccount: () => void;
-  /** The learner has chosen to update their account from the restored workspace. */
-  releaseRestoreToAccount: () => void;
+  restoreWorkspace: (operationId: string) => Promise<V8State>;
+  /** Persist this decision before allowing normal account merging to resume. */
+  releaseRestoreToAccount: () => Promise<void>;
+  /**
+   * True only once a write containing every one of these observations has
+   * completed in the current workspace. A superseded write does not count, so
+   * this can say "not yet" about something that is in fact stored, never the
+   * reverse.
+   */
+  isEvidenceSaved: (evidenceIds: readonly string[]) => boolean;
 }
 const Store = createContext<StoreValue | null>(null);
 
@@ -218,9 +238,13 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [workspaceId, setWorkspaceId] = useState<WorkspaceId>("anonymous");
   const [save, setSave] = useState<LocalSaveState>(IDLE_SAVE);
+  const [durable, setDurable] = useState<{ workspace: WorkspaceId; evidenceIds: ReadonlySet<string> } | null>(null);
   const [workspaceIssue, setWorkspaceIssue] = useState<{ reason: string } | null>(null);
   const unreadableRef = useRef<unknown>(null);
-  const [restoreHold, setRestoreHold] = useState(false);
+  const restoreHold = Boolean(state.pendingRestoreId);
+  const restoringRef = useRef(false);
+  const [restoring, setRestoring] = useState(false);
+  const pendingSavesRef = useRef(new Set<Promise<void>>());
   const switchingRef = useRef(false);
   const switchQueueRef = useRef(Promise.resolve());
   /*
@@ -231,6 +255,7 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
   const saveRevisionRef = useRef(0);
   /* The exact state that has not reached the device, so a retry resends it rather than a newer partial. */
   const unsavedRef = useRef<V8State | null>(null);
+  const saveUpdateHoldRef = useRef<(() => void) | null>(null);
   const stateRef = useRef(state);
   const workspaceRef = useRef(workspaceId);
   useEffect(() => { stateRef.current = state; }, [state]);
@@ -238,16 +263,35 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
 
   const persist = useCallback(async (next: V8State, workspace: WorkspaceId) => {
     const revision = ++saveRevisionRef.current;
+    // Acquire this at the write boundary, before React renders "saving". A
+    // kept take releases its temporary hold in the same render; relying on the
+    // later status render leaves a gap where a queued update can lose its link.
+    const previousHold = saveUpdateHoldRef.current;
+    saveUpdateHoldRef.current = holdUpdates("your work to finish saving");
+    previousHold?.();
     // Held before the write starts, so a failure leaves the learner's edits in
     // hand rather than only on screen: nothing durable is lost, and the retry
     // resends exactly this state.
     unsavedRef.current = next;
-    await runSave(next, workspace, {
+    const operation = runSave(next, workspace, {
       write: savePersistedState,
       isCurrent: () => revision === saveRevisionRef.current,
       apply: setSave,
-      onDurable: () => { unsavedRef.current = null; }
+      onDurable: () => {
+        setDurable({ workspace, evidenceIds: new Set(next.evidence.map((item) => item.id)) });
+        unsavedRef.current = null;
+        saveUpdateHoldRef.current?.();
+        saveUpdateHoldRef.current = null;
+      }
     });
+    pendingSavesRef.current.add(operation);
+    try { await operation; } finally { pendingSavesRef.current.delete(operation); }
+  }, []);
+
+  useEffect(() => () => {
+    saveRevisionRef.current += 1;
+    saveUpdateHoldRef.current?.();
+    saveUpdateHoldRef.current = null;
   }, []);
 
   const retrySave = useCallback(async () => {
@@ -274,8 +318,47 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
    * with no way back. So uploading pauses until the learner says which they
    * meant.
    */
-  const holdRestoreFromAccount = useCallback(() => setRestoreHold(true), []);
-  const releaseRestoreToAccount = useCallback(() => setRestoreHold(false), []);
+  const restoreWorkspace = useCallback(async (operationId: string) => {
+    if (restoringRef.current || switchingRef.current) throw new Error("Wait for the current workspace operation to finish.");
+    const workspace = workspaceRef.current;
+    const previousDecision = stateRef.current.pendingRestoreId;
+    restoringRef.current = true;
+    setRestoring(true);
+    dispatch({ type: "setRestoreDecision", id: operationId });
+    const releaseUpdate = holdUpdates("a backup you are restoring");
+    try {
+      // Otherwise an older autosave could finish after activation and replace it.
+      await Promise.all(pendingSavesRef.current);
+      const restored = await activateRestore(operationId, workspace);
+      unreadableRef.current = null;
+      setWorkspaceIssue(null);
+      dispatch({ type: "replaceState", state: restored });
+      return restored;
+    } catch (error) {
+      dispatch({ type: "setRestoreDecision", id: previousDecision });
+      throw error;
+    } finally {
+      restoringRef.current = false;
+      setRestoring(false);
+      releaseUpdate();
+    }
+  }, []);
+
+  const releaseRestoreToAccount = useCallback(async () => {
+    const operationId = stateRef.current.pendingRestoreId;
+    if (!operationId) return;
+    if (restoringRef.current || switchingRef.current) throw new Error("Wait for the current workspace operation to finish.");
+    restoringRef.current = true;
+    setRestoring(true);
+    try {
+      await Promise.all(pendingSavesRef.current);
+      await confirmRestoreMerge(workspaceRef.current, operationId);
+      dispatch({ type: "confirmRestoreDecision", id: operationId });
+    } finally {
+      restoringRef.current = false;
+      setRestoring(false);
+    }
+  }, []);
 
   const discardUnreadableWorkspace = useCallback(() => {
     unreadableRef.current = null;
@@ -313,7 +396,7 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
   useEffect(() => {
-    if (!hydrated || switchingRef.current) return;
+    if (!hydrated || switchingRef.current || restoringRef.current) return;
     /*
      * Saving is suspended while a workspace is unreadable. The default state is
      * what is on screen, and writing it would overwrite the only copy of the
@@ -327,7 +410,7 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.dataset.theme = state.settings.theme;
     document.documentElement.dataset.motion = state.settings.reducedMotion ? "reduced" : "full";
     void persist(state, workspaceId);
-  }, [state, hydrated, workspaceId, persist, workspaceIssue]);
+  }, [state, hydrated, workspaceId, persist, workspaceIssue, restoring]);
   useEffect(() => {
     replaceLegacyLocation(routeFromLocation());
     const listener = () => {
@@ -340,6 +423,7 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
   const switchWorkspace = useCallback(async (nextWorkspace: WorkspaceId, options?: { moveAnonymousHistory?: boolean }) => {
     const operation = switchQueueRef.current.then(async () => {
+      if (restoringRef.current) throw new Error("Wait for the backup operation to finish before changing workspace.");
       if (!options?.moveAnonymousHistory && activeWorkspaceId() === nextWorkspace) return;
       switchingRef.current = true;
       setHydrated(false);
@@ -359,10 +443,9 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
          */
         saveRevisionRef.current += 1;
         unsavedRef.current = null;
+        saveUpdateHoldRef.current?.();
+        saveUpdateHoldRef.current = null;
         setSave(IDLE_SAVE);
-        // Signing in or out changes which account is at stake, so a hold from the
-        // previous workspace cannot carry over.
-        setRestoreHold(false);
       } finally {
         switchingRef.current = false;
         setHydrated(true);
@@ -371,14 +454,17 @@ export function V8StoreProvider({ children }: { children: React.ReactNode }) {
     switchQueueRef.current = operation.catch(() => undefined);
     return operation;
   }, []);
+  const isEvidenceSaved = useCallback((evidenceIds: readonly string[]) =>
+    Boolean(durable && durable.workspace === workspaceId && evidenceIds.every((id) => durable.evidenceIds.has(id))),
+  [durable, workspaceId]);
   const value = useMemo(
     () => ({
       state, dispatch, hydrated, workspaceId, switchWorkspace, save, retrySave, downloadRecoveryArchive,
       workspaceIssue, downloadUnreadableWorkspace, discardUnreadableWorkspace,
-      restoreHold, holdRestoreFromAccount, releaseRestoreToAccount
+      restoreHold, restoreWorkspace, releaseRestoreToAccount, isEvidenceSaved
     }),
     [state, hydrated, workspaceId, switchWorkspace, save, retrySave, downloadRecoveryArchive, workspaceIssue,
-     downloadUnreadableWorkspace, discardUnreadableWorkspace, restoreHold, holdRestoreFromAccount, releaseRestoreToAccount]
+     downloadUnreadableWorkspace, discardUnreadableWorkspace, restoreHold, restoreWorkspace, releaseRestoreToAccount, isEvidenceSaved]
   );
   return <Store.Provider value={value}>{children}</Store.Provider>;
 }

@@ -377,6 +377,7 @@ export async function exportArchive(state: V8State): Promise<Blob> {
       })
     }))
   };
+  delete exportState.pendingRestoreId;
   const header: ArchiveHeader = {
     format: "guitar-academy",
     archiveVersion: 2,
@@ -557,10 +558,12 @@ export async function prepareRestore(file: File, workspaceId: WorkspaceId = acti
  * staged recording, replacing the state and deleting the staging generation, so
  * the workspace either becomes the restored one or is left entirely untouched.
  */
-export async function activateRestore(operationId: string): Promise<V8State> {
+export async function activateRestore(operationId: string, expectedWorkspace?: WorkspaceId): Promise<V8State> {
   const manifest = await readManifest(operationId);
   if (!manifest) throw new Error("That restore is no longer staged on this device. Prepare it again.");
   if (manifest.status !== "ready") throw new Error("That restore did not finish staging. Prepare it again.");
+  if (expectedWorkspace && manifest.workspaceId !== expectedWorkspace) throw new Error("This backup was prepared for another workspace. Prepare it again here.");
+  const restored: V8State = { ...manifest.state, pendingRestoreId: operationId };
 
   const existing = await loadWorkspace(manifest.workspaceId);
   const superseded = existing.status === "ok" ? referencedBlobIds(existing.state) : new Set<string>();
@@ -578,7 +581,7 @@ export async function activateRestore(operationId: string): Promise<V8State> {
     cursor.delete();
     cursor.continue();
   });
-  transaction.objectStore(STATE_STORE).put(manifest.state, stateKey(manifest.workspaceId));
+  transaction.objectStore(STATE_STORE).put(restored, stateKey(manifest.workspaceId));
   transaction.objectStore(STAGING_STORE).delete(operationId);
   await new Promise<void>((resolve, reject) => {
     transaction.addEventListener("complete", () => resolve());
@@ -598,7 +601,32 @@ export async function activateRestore(operationId: string): Promise<V8State> {
   const removable = [...superseded].filter((id) => !stillReferenced.has(id));
   if (removable.length) await deleteWorkspaceBlobs(manifest.workspaceId, removable).catch(() => undefined);
 
-  return manifest.state;
+  return restored;
+}
+
+/** A choice is durable before cloud sync resumes; stale confirmations fail closed. */
+export async function confirmRestoreMerge(workspaceId: WorkspaceId, operationId: string): Promise<void> {
+  const database = await openDatabase();
+  try {
+    const transaction = database.transaction(STATE_STORE, "readwrite");
+    await new Promise<void>((resolve, reject) => {
+      let failure: unknown;
+      transaction.addEventListener("complete", () => resolve());
+      transaction.addEventListener("abort", () => reject(failure ?? transaction.error ?? new Error("The restore choice could not be saved.")));
+      transaction.addEventListener("error", () => reject(transaction.error));
+      const states = transaction.objectStore(STATE_STORE);
+      const request = states.get(stateKey(workspaceId));
+      request.addEventListener("success", () => {
+        try {
+          validateState(request.result);
+          if (request.result.pendingRestoreId !== operationId) throw new Error("The restored workspace changed. Reopen it before choosing whether to sync.");
+          const next = { ...request.result };
+          delete next.pendingRestoreId;
+          states.put(next, stateKey(workspaceId));
+        } catch (error) { failure = error; transaction.abort(); }
+      });
+    });
+  } finally { database.close(); }
 }
 
 async function deleteWorkspaceBlobs(workspaceId: WorkspaceId, ids: string[]): Promise<void> {
@@ -649,7 +677,7 @@ async function readBinaryArchive(file: File, prefix: Uint8Array): Promise<Parsed
 
 function validateArchiveHeader(header: ArchiveHeader) {
   if (header.format !== "guitar-academy" || header.archiveVersion !== 2 || header.stateVersion !== 8 || header.state?.version !== 8) {
-    throw new Error("This is not a supported Guitar Academy V8 backup.");
+    throw new Error("This file is not a Guitar Academy backup this version can read.");
   }
   if (!Array.isArray(header.recordings)) throw new Error("This backup is missing its recording index.");
   /*
@@ -673,9 +701,9 @@ function validateArchiveHeader(header: ArchiveHeader) {
 async function readLegacyArchive(file: File): Promise<ParsedArchive> {
   let archive: LegacyArchive;
   try { archive = JSON.parse(await file.text()) as LegacyArchive; }
-  catch { throw new Error("This is not a supported Guitar Academy backup."); }
+  catch { throw new Error("This file is not a Guitar Academy backup this version can read."); }
   if (archive?.format !== "guitar-academy" || archive.version !== 8 || archive.state?.version !== 8) {
-    throw new Error("This is not a supported Guitar Academy V8 archive.");
+    throw new Error("This file is not a Guitar Academy backup this version can read.");
   }
   validateState(archive.state);
   const recordings = (archive.recordings ?? []).map((recording) => ({ id: recording.id, blob: dataToBlob(recording.data) }));

@@ -22,6 +22,7 @@ APPS=(
   "04-connected-dashboard"
   "05-learning-platform"
   "06-playing-learning"
+  "07-practice-first"
 )
 
 for app in "${APPS[@]}"; do

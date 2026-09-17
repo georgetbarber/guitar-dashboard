@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MutableRefObject } from "react";
 import { playHarmonicRelationship, playMelodicRelationship } from "../../audio/engine";
 import { createContext, normalize } from "../../core/music/theory";
 import { activityById, unitById, CURRICULUM } from "../curriculum";
@@ -8,6 +8,8 @@ import { useV8Store } from "../store";
 import type { ActivityDefinition, Assistance, CompetencyEvidence, EvidenceOutcome } from "../types";
 import { MicroStudy } from "./MicroStudy";
 import { RhythmNotation } from "./RhythmNotation";
+import { RecordSaveStatus } from "./SaveStatus";
+import { useUpdateHold } from "./UpdateNotice";
 
 const OUTCOMES: Array<{ value: EvidenceOutcome; label: string; description: string }> = [
   { value: "retry", label: "Needs another pass", description: "Not yet — I couldn’t do the success action above this time." },
@@ -28,7 +30,12 @@ function earCaption(semitones: number, harmonic: boolean): string {
   return harmonic ? `You should hear home and ${name} sounding together.` : `You should hear home, then ${name}.`;
 }
 
-export function ActivityPlayer({ activityId, onClose }: { activityId: string; onClose?: () => void }) {
+export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
+  activityId: string;
+  onClose?: () => void;
+  /** Set by the player so Escape can be refused while a written reflection is unsaved. */
+  requestCloseRef?: MutableRefObject<(() => void) | null>;
+}) {
   const { state, dispatch } = useV8Store();
   const activity = activityById(activityId);
   const [assistance, setAssistance] = useState<Assistance>("none");
@@ -42,6 +49,18 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
   const [justCompleted, setJustCompleted] = useState<EvidenceOutcome | null>(null);
   const [justRecorded, setJustRecorded] = useState<CompetencyEvidence[]>([]);
   const unit = useMemo(() => unitById(activity?.unitId ?? state.activeUnitId), [activity?.unitId, state.activeUnitId]);
+  const [keepDraftNotice, setKeepDraftNotice] = useState(false);
+  const unsavedReflection = !justCompleted && reflection.trim().length > 0;
+  // Applying an update reloads the page, which would lose the draft as surely as Escape.
+  useUpdateHold(unsavedReflection, "the reflection you are writing");
+  useEffect(() => {
+    if (!requestCloseRef) return;
+    requestCloseRef.current = () => {
+      if (unsavedReflection) setKeepDraftNotice(true);
+      else onClose?.();
+    };
+    return () => { requestCloseRef.current = null; };
+  }, [requestCloseRef, unsavedReflection, onClose]);
   if (!activity) return null;
   const originLabel = state.activityOrigin === "practice" ? "Strengthen"
     : state.activityOrigin === "path" ? "Course map"
@@ -151,10 +170,11 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
     return (
       <section className="activity-player activity-done" aria-labelledby="activity-title">
         <header className="activity-header">
-          <button className="icon-button" onClick={onClose} aria-label="Close activity">←</button>
+          <button className="icon-button" onClick={onClose} aria-label="Close activity" data-autofocus>←</button>
           <div><span>{originLabel} · {unit.title}</span><h1 id="activity-title">{successful ? "Completed" : "Attempt logged"}: {activity.title}</h1><p>{successful
             ? `Recorded as “${outcomeLabel}”, on your own report. This activity is complete; independent mastery still depends on unassisted success across days and contexts.`
-            : `Recorded as “${outcomeLabel}”, on your own report. The evidence is saved, but this activity remains in your guided path until its success action is achieved.`}</p></div>
+            : `Recorded as “${outcomeLabel}”, on your own report. This activity remains in your guided path until its success action is achieved.`}</p>
+            <RecordSaveStatus evidenceIds={justRecorded.map((item) => item.id)} /></div>
         </header>
         <div className="done-panel card">
           <span className="done-check" aria-hidden="true">{successful ? "✓" : "↻"}</span>
@@ -191,9 +211,10 @@ export function ActivityPlayer({ activityId, onClose }: { activityId: string; on
   return (
     <section className="activity-player" aria-labelledby="activity-title">
       <header className="activity-header">
-        <button className="icon-button" onClick={onClose} aria-label="Close activity">←</button>
+        <button className="icon-button" onClick={onClose} aria-label="Close activity" data-autofocus>←</button>
         <div><span>{originLabel} · {unit.title} · {activity.minutes} minutes</span><h1 id="activity-title">{activity.title}</h1><p>{activity.why}</p></div>
       </header>
+      {keepDraftNotice && unsavedReflection && <p className="activity-draft-notice" role="status">Your written reflection has not been saved, so Escape kept this activity open. Save it below, or choose Close activity to leave without it.</p>}
 
       <div className="activity-grid">
         <article className="activity-main card">

@@ -86,6 +86,15 @@ function spellName(letter: (typeof LETTERS)[number], pitchClass: PitchClass): st
   return `${letter}${accidental > 0 ? "#".repeat(accidental) : "b".repeat(-accidental)}`;
 }
 
+/**
+ * Scientific pitch name for a spelled note. The octave number belongs to the
+ * letter, so B#3 and Cb4 sound as C4 and B3 — not what floor(midi / 12) gives.
+ */
+export function pitchWithOctave(name: string, midi: number): string {
+  const accidentals = [...name.slice(1)].reduce((sum, mark) => sum + (mark === "#" ? 1 : mark === "b" ? -1 : 0), 0);
+  return `${name}${Math.floor((midi - accidentals) / 12) - 1}`;
+}
+
 export function intervalLabel(semitones: number): string {
   return INTERVAL_LABELS[normalize(semitones)];
 }

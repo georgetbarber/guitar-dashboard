@@ -1,3 +1,4 @@
+import { useId, useState, type KeyboardEvent } from "react";
 import { buildFretboard, coordinate, STANDARD_GUITAR } from "../core/instrument/guitar";
 import type { FretPosition, GuitarShape } from "../core/instrument/guitar";
 import {
@@ -5,7 +6,8 @@ import {
   displayRelationshipLabel,
   intervalLabel,
   noteName,
-  normalize
+  normalize,
+  pitchWithOctave
 } from "../core/music/theory";
 import type { Chord, PitchClass, ScaleTone } from "../core/music/types";
 
@@ -44,9 +46,31 @@ export function Fretboard({
   const chordMap = new Map(chord?.tones.map((tone) => [tone.pitchClass, tone]) ?? []);
   const shapeSet = new Set(shape?.positions.map(coordinate) ?? []);
   const frets = Array.from({ length: fretEnd - fretStart + 1 }, (_, index) => fretStart + index);
+  const helpId = useId();
+  const [focus, setFocus] = useState(selectedPosition ?? { string: 0, fret: fretStart });
+  const focusFret = Math.max(fretStart, Math.min(fretEnd, focus.fret));
+  const moveFocus = (event: KeyboardEvent<HTMLButtonElement>, position: FretPosition) => {
+    let string = position.string;
+    let fret = position.fret;
+    switch (event.key) {
+      case "ArrowRight": fret++; break;
+      case "ArrowLeft": fret--; break;
+      case "ArrowDown": string++; break;
+      case "ArrowUp": string--; break;
+      case "Home": fret = fretStart; if (event.ctrlKey || event.metaKey) string = 0; break;
+      case "End": fret = fretEnd; if (event.ctrlKey || event.metaKey) string = STANDARD_GUITAR.openMidi.length - 1; break;
+      default: return;
+    }
+    event.preventDefault();
+    string = Math.max(0, Math.min(STANDARD_GUITAR.openMidi.length - 1, string));
+    fret = Math.max(fretStart, Math.min(fretEnd, fret));
+    setFocus({ string, fret });
+    event.currentTarget.closest('[role="grid"]')?.querySelector<HTMLButtonElement>(`[data-string="${string}"][data-fret="${fret}"]`)?.focus();
+  };
 
   return (
     <div className="fretboard-scroll">
+      <p className="fretboard-keyboard-help" id={helpId}>Arrow keys move between strings and frets; Home and End jump along the string.{onPosition ? " Enter or Space selects the focused position." : ""} Tab leaves the fretboard.</p>
       <div className="fretboard-key">
         {relationshipRoot !== undefined
           ? <span><b>Interval</b> measured from the selected physical root</span>
@@ -59,17 +83,19 @@ export function Fretboard({
         className="fretboard"
         role="grid"
         aria-label={`${STANDARD_GUITAR.name} fretboard`}
+        aria-describedby={helpId}
+        aria-multiselectable={selectedPitch !== undefined || undefined}
         style={{ "--fret-count": frets.length } as React.CSSProperties}
       >
         <div className="fretboard-row fretboard-header" role="row">
-          <span />
+          <span role="columnheader" aria-label="String" />
           {frets.map((fret) => (
-            <span className={MARKERS.has(fret) ? "has-marker" : ""} key={fret}>{fret}</span>
+            <span role="columnheader" className={MARKERS.has(fret) ? "has-marker" : ""} key={fret}>{fret}</span>
           ))}
         </div>
         {STANDARD_GUITAR.openMidi.map((_, string) => (
           <div className="fretboard-row string-row" role="row" key={string}>
-            <span className="string-label"><b>{string + 1}</b>{STANDARD_GUITAR.stringLabels[string]}</span>
+            <span className="string-label" role="rowheader"><b>{string + 1}</b>{STANDARD_GUITAR.stringLabels[string]}</span>
             {buildFretboard()
               .filter((position) =>
                 position.string === string &&
@@ -107,8 +133,13 @@ export function Fretboard({
                   <button
                     type="button"
                     role="gridcell"
-                    aria-pressed={isSelectedPosition}
-                    aria-label={`String ${string + 1}, fret ${position.fret}, ${absoluteName}, ${primary}`}
+                    aria-selected={isSelectedPosition || isSelectedPitch}
+                    aria-label={`String ${string + 1}, fret ${position.fret}, ${pitchWithOctave(absoluteName, position.midi)}, ${primary}`}
+                    tabIndex={focus.string === string && focusFret === position.fret ? 0 : -1}
+                    data-string={string}
+                    data-fret={position.fret}
+                    onFocus={() => setFocus({ string, fret: position.fret })}
+                    onKeyDown={(event) => moveFocus(event, position)}
                     className={[
                       "fret",
                       shouldShow ? "is-visible" : "",

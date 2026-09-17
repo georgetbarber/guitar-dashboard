@@ -1,12 +1,12 @@
 # Guitar Academy improvement plan
 
-**Status: draft for review. No implementation has started under this plan.**
+**Status (17 September 2026): Phases 0 and 1 implemented; Phase 2 in progress. Done locally so far: 2B-1 (rendered reliability tests and release checks), 2B-2 (durable restore decision), 2A-1 (modal dialogs and keyboard fretboard) 2A-2 (urgent notices inside dialogs and onboarding; truthful record save status) and 2A-3 (phone layout and learner-facing copy). See [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) for verified results and remaining limits.**
 
 Prepared 10 September 2026. Covers the supplied engineering audit and the [design and learning audit](/Users/georgethomasbarber/Developer/guitar-dashboard/docs/reviews/2026-09-10-design-and-learning-audit.md). The existing [Learning Effectiveness Backlog](/Users/georgethomasbarber/Developer/guitar-dashboard/docs/LEARNING_EFFECTIVENESS_BACKLOG.md) supplies additional content acceptance criteria.
 
 The intended outcome is a dependable guitar-learning companion that helps George hear something he wants to make, learn it with useful support, understand its relationships, develop his own version, and retain the ability later.
 
-This is the proposed implementation sequence, not a claim that the existing roadmap or application has already changed. All work below is pending. Each audit finding has an explicit destination in the coverage register near the end.
+This remains the full implementation sequence. Phases 3–8 and the unfinished parts of Phase 2 are pending. The implementation log distinguishes completed local work from CI, device and deployment evidence. Each audit finding has an explicit destination in the coverage register near the end.
 
 ## 1. Scope and delivery approach
 
@@ -18,7 +18,7 @@ Ship the work in small, independently verifiable increments. One teaching episod
 
 “Fix everything” includes verification, recovery, accessibility, content quality and clear documentation. It does not mean implementing every speculative future feature. Optional ideas from the design audit have explicit evaluation points in Phase 8. A full DAW, unreliable chord recognition, a general chat tutor, leaderboards and hundreds of generated lessons remain outside the recommendation.
 
-Drafting this plan changes documentation only. Implementation, commits and publication are separate actions. Do not push or deploy without George's explicit instruction.
+Implementation, local commits and publication are separate actions. Do not push or deploy without George's explicit instruction.
 
 ## 2. Milestones and dependencies
 
@@ -353,4 +353,4 @@ For each work package keep: scope, linked B/D finding IDs, dependencies, changed
 
 “Implemented” does not close a finding that still needs its relevant verification. Each implementation session should leave a runnable app and update this record with what changed, what passed and the exact next package. Keep local documentation and release claims aligned with that evidence.
 
-The next executable package, once George asks to begin, is **Phase 0 followed by Phase 1A: establish the baseline, then make saving status and failure recovery trustworthy**. That provides a safer foundation for every subsequent change.
+The next package is **Phase 2A-4: contrast, legibility and automated accessibility checks (B12, B15)**. After that, continue the remaining Phase 2 work recorded in [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md): fonts, lint/format gates, guest loading and cache size. Phases 0–1 are not to be repeated from scratch.

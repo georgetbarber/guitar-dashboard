@@ -111,6 +111,7 @@ export function validateProfile(value: unknown): asserts value is CloudProfile {
 /** Structural validation preserves oversized legacy music. Cloud limits are separate. */
 export function validateState(value: unknown): asserts value is V8State {
   const v = object(value, "workspace"); if (v.version !== 8 || v.syncVersion !== 1) fail("workspace version");
+  if (v.pendingRestoreId !== undefined) id(v.pendingRestoreId, "pending restore");
   settings(v.settings, "settings"); date(v.updatedAt, "workspace date"); date(v.settingsUpdatedAt, "settings date");
   choice(v.route, ROUTES, "route"); id(v.activeUnitId, "active unit");
   for (const key of ["activeActivityId", "resumeActivityId", "activeSketchId"]) nullable(v[key], id, key);

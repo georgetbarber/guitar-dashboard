@@ -4,7 +4,7 @@ This is iteration 07 (V7), the active product and the only application that
 should receive new feature development. It evolved from iteration 06 without
 discarding its tested music, guitar, learning, or playing foundations.
 
-For the full journey, read [Project History](../../docs/PROJECT_HISTORY.md).
+For the full journey, read [Project History](../../../docs/PROJECT_HISTORY.md).
 
 ## Product Focus
 
@@ -78,7 +78,7 @@ src/
 tests/e2e/      Desktop and mobile browser workflows
 ```
 
-See [Current Architecture](../../docs/ARCHITECTURE.md) for ownership and data
+See [Current Architecture](../../../docs/ARCHITECTURE.md) for ownership and data
 flow, and [`docs/`](docs/) for feature-specific diagnostics.
 
 ## Honest Limits

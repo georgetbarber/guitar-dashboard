@@ -26,7 +26,7 @@ describe("an update never interrupts work in flight (B03)", () => {
     expect(activate).toHaveBeenCalledOnce();
   });
 
-  it("queues rather than interrupting a recording", () => {
+  it("queues rather than interrupting a recording", async () => {
     const activate = vi.fn();
     noteUpdateReady(activate);
     const release = holdUpdates("a recording in progress");
@@ -38,10 +38,11 @@ describe("an update never interrupts work in flight (B03)", () => {
     expect(updateHoldReasons()).toEqual(["a recording in progress"]);
 
     release();
+    await Promise.resolve();
     expect(activate).toHaveBeenCalledOnce();
   });
 
-  it("waits for the last hold, not the first", () => {
+  it("waits for the last hold, not the first", async () => {
     const activate = vi.fn();
     noteUpdateReady(activate);
     const releaseRecording = holdUpdates("a recording in progress");
@@ -51,6 +52,7 @@ describe("an update never interrupts work in flight (B03)", () => {
     releaseRecording();
     expect(activate).not.toHaveBeenCalled();
     releaseSave();
+    await Promise.resolve();
     expect(activate).toHaveBeenCalledOnce();
   });
 
@@ -77,13 +79,14 @@ describe("an update never interrupts work in flight (B03)", () => {
     expect(activate).toHaveBeenCalledOnce();
   });
 
-  it("ignores a hold released twice rather than double-applying", () => {
+  it("ignores a hold released twice rather than double-applying", async () => {
     const activate = vi.fn();
     noteUpdateReady(activate);
     const release = holdUpdates("a recording in progress");
     requestUpdate();
     release();
     release();
+    await Promise.resolve();
     expect(activate).toHaveBeenCalledOnce();
   });
 
