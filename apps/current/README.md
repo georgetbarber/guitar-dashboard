@@ -7,7 +7,7 @@ find it on the instrument, vary it deliberately, and turn it into original music
 ## Product shape
 
 - **Learn** groups three related views: **Continue** presents the next balanced
-  25-minute session, **Course map** locates it within 48 units across eight
+  session fitted to the practice duration in Settings, **Course map** locates it within 48 units across eight
   stages, and **Strengthen** offers focused review from learning evidence.
   Continue names the current stage and unit; Course map uses status labels and
   keeps the activity detail for later units folded away until it is available.
@@ -50,14 +50,22 @@ multiple possible meanings rather than being labelled wrong.
 
 ## Run and verify
 
+Use Node 22 (22.22.2 or newer in that release line) and Java 21 for the Firebase emulator checks. CI configures both explicitly.
+
 ```bash
-npm install
+npm ci
 npm run dev
 npm test
+npm run test:coverage
+npm run test:rules
 npm run build
 npm run test:e2e:install
 npm run test:e2e
 ```
+
+Coverage reports are written to `coverage/` for the save, restore, sync and related interface code. The rendered tests use synthetic workspaces and mocked storage/SDK boundaries; the separate emulator and browser suites exercise the actual rules and browser persistence.
+
+Both hosting workflows run the desktop and phone browser journeys before publication. The live workflow serialises publication without cancelling an active deployment and refuses a checkout that is no longer current `main`. These configured checks do not constitute evidence of a successful CI run.
 
 The app runs at [http://localhost:4184](http://localhost:4184).
 

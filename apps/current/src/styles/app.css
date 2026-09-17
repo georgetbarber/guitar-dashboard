@@ -447,6 +447,36 @@ textarea { min-height: 92px; resize: vertical; }
 .privacy-message { margin: .8rem 0 0; font-size: .7rem; }
 .offline-banner { position: sticky; z-index: 45; top: .35rem; width: min(1540px, calc(100% - 1rem)); margin: 0 auto .6rem; padding: .55rem .75rem; border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--line)); border-radius: 10px; color: var(--ink); background: color-mix(in srgb, var(--gold) 14%, var(--paper)); box-shadow: var(--shadow); font-size: .68rem; }
 
+
+/* Local save status. Deliberately distinct from .sync-panel: this reports the
+   device, that reports the account, and they fail independently. */
+.save-indicator { display: flex; align-items: center; gap: .35rem; margin: .5rem 0 0; color: #83978f; font-size: .62rem; }
+.save-indicator::before { width: .4rem; height: .4rem; flex: 0 0 auto; border-radius: 50%; background: currentColor; content: ""; }
+.save-indicator[data-status="saving"] { color: #9fb0a8; }
+.save-indicator[data-status="saved"] { color: var(--moss); }
+.save-indicator[data-status="failed"] { color: var(--coral); font-weight: 600; }
+
+.save-failure { position: sticky; z-index: 46; top: .35rem; display: grid; gap: .6rem; width: min(1540px, calc(100% - 1rem)); margin: 0 auto .6rem; padding: .85rem 1rem; border: 1px solid color-mix(in srgb, var(--danger) 55%, var(--line)); border-radius: 12px; background: color-mix(in srgb, var(--danger) 12%, var(--paper)); box-shadow: var(--shadow); }
+.save-failure-copy { display: grid; gap: .3rem; }
+.save-failure strong { color: var(--ink); font-size: .82rem; }
+.save-failure p { max-width: 74ch; margin: 0; color: var(--ink); font-size: .7rem; }
+.save-failure-detail { color: var(--danger); }
+.save-failure small { color: var(--muted); font-size: .62rem; }
+.save-failure-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.workspace-recovery { position: sticky; z-index: 47; top: .35rem; display: grid; gap: .6rem; width: min(1540px, calc(100% - 1rem)); margin: 0 auto .6rem; padding: .85rem 1rem; border: 1px solid var(--danger); border-radius: 12px; background: color-mix(in srgb, var(--danger) 16%, var(--paper)); box-shadow: var(--shadow); }
+.workspace-recovery strong { color: var(--ink); font-size: .82rem; }
+.workspace-recovery p { max-width: 74ch; margin: 0; color: var(--ink); font-size: .7rem; }
+.workspace-recovery small { color: var(--muted); font-size: .62rem; }
+.restore-preview { display: grid; gap: .7rem; padding: .85rem 1rem; border: 1px solid color-mix(in srgb, var(--blue) 55%, var(--line)); border-radius: 12px; background: var(--blue-soft); }
+.restore-preview h3 { margin: .1rem 0 .35rem; font-size: .9rem; }
+.restore-preview p { max-width: 70ch; margin: 0 0 .3rem; color: var(--ink); font-size: .68rem; }
+.restore-hold { position: sticky; z-index: 46; top: .35rem; display: grid; gap: .6rem; width: min(1540px, calc(100% - 1rem)); margin: 0 auto .6rem; padding: .85rem 1rem; border: 1px solid color-mix(in srgb, var(--gold) 65%, var(--line)); border-radius: 12px; background: color-mix(in srgb, var(--gold) 14%, var(--paper)); box-shadow: var(--shadow); }
+.restore-hold strong { color: var(--ink); font-size: .82rem; }
+.restore-hold p { max-width: 74ch; margin: 0; color: var(--ink); font-size: .7rem; }
+.update-notice { display: grid; gap: .5rem; width: min(1540px, calc(100% - 1rem)); margin: 0 auto .6rem; padding: .7rem 1rem; border: 1px solid color-mix(in srgb, var(--moss) 50%, var(--line)); border-radius: 12px; background: var(--moss-soft); }
+.update-notice strong { color: var(--ink); font-size: .78rem; }
+.update-notice p { max-width: 74ch; margin: 0; color: var(--ink); font-size: .68rem; }
+
 .play-page { width: min(1540px, 100%); }
 .play-hero { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 2rem; min-height: 440px; padding: clamp(1.8rem, 5vw, 5rem); border-radius: 30px; color: #f2f5f1; background: radial-gradient(circle at 82% 25%, rgba(240,160,132,.18), transparent 18rem), radial-gradient(circle at 15% 100%, rgba(101,184,147,.16), transparent 22rem), var(--night); overflow: hidden; }
 .play-hero::after { position: absolute; right: -8rem; bottom: -15rem; width: 34rem; height: 34rem; border: 1px solid rgba(255,255,255,.06); border-radius: 50%; content: ""; }
@@ -685,3 +715,69 @@ textarea { min-height: 92px; resize: vertical; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
 :root[data-motion="reduced"] *, :root[data-motion="reduced"] *::before, :root[data-motion="reduced"] *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+
+/* Native dialogs provide focus containment and background inertness. */
+.app-dialog {
+  width: 100%; height: 100dvh; max-width: none; max-height: none;
+  margin: 0; border: 0; box-sizing: border-box; color: var(--ink);
+  overscroll-behavior: contain;
+}
+.app-dialog:not([open]) { display: none; }
+.app-dialog.activity-overlay { padding: 0; }
+.app-dialog::backdrop { background: transparent; }
+/* Shown while keyboard focus is on the neck; always available to assistive technology through aria-describedby. */
+.fretboard-keyboard-help { margin: 0 0 .65rem; font-size: .8rem; color: var(--ink); }
+.fretboard-scroll:not(:has(:focus-visible)) .fretboard-keyboard-help { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.activity-draft-notice { margin: 0 0 .8rem; padding: .6rem .8rem; border: 1px solid color-mix(in srgb, var(--gold) 65%, var(--line)); border-radius: 10px; color: var(--ink); background: color-mix(in srgb, var(--gold) 14%, var(--paper)); font-size: .72rem; }
+.fret:focus-visible { position: relative; z-index: 1; outline: 3px solid var(--ink); outline-offset: -3px; }
+
+/* Urgent notices follow the learner into an open dialog or onto the onboarding screens. */
+/* In flow rather than sticky: a floating notice would cover the dialog's own heading and controls. */
+.dialog-notices { display: grid; gap: .4rem; width: min(1300px, 100%); margin: 0 auto; padding: .35rem clamp(.7rem, 2vw, 1.5rem) 0; box-sizing: border-box; }
+.dialog-notices:empty, .diagnostic-notices:empty { display: none; }
+.dialog-notices > section { position: static; width: 100%; margin: 0; }
+/* A column, not a grid: a grid row lets the scrolling panel shrink under the notices and overlap them. */
+.app-dialog.settings-backdrop { display: flex; flex-direction: column; align-items: center; justify-content: safe center; overflow-y: auto; }
+.app-dialog.settings-backdrop:not([open]) { display: none; }
+.app-dialog.settings-backdrop > .settings-panel { flex: 0 0 auto; }
+.settings-backdrop .dialog-notices { width: min(720px, 100%); margin-bottom: .6rem; padding: 0; }
+.diagnostic { align-content: safe center; }
+.diagnostic-notices { display: grid; gap: .5rem; width: min(940px, 100%); margin-bottom: .75rem; }
+.diagnostic-notices > section { width: 100%; margin: 0; }
+.record-save-status { margin: .5rem 0 0; font-size: .72rem; font-weight: 700; color: var(--ink); }
+.record-save-status[data-status="failed"] { color: var(--danger); }
+
+/* Settings → About this app: diagnostics kept out of learner-facing copy (B17). */
+.about-app { margin-top: .8rem; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: 10px; font-size: .68rem; color: var(--ink); }
+.about-app summary { cursor: pointer; font-weight: 700; }
+.about-app dl { display: grid; gap: .3rem; margin: .6rem 0 0; }
+.about-app dl > div { display: grid; grid-template-columns: minmax(7rem, auto) 1fr; gap: .6rem; }
+.about-app dt { color: var(--muted); }
+.about-app dd { margin: 0; overflow-wrap: anywhere; }
+
+/* Phone layout (B11): an in-flow top bar replaces the floating settings button. */
+.mobile-topbar { display: none; }
+@media (max-width: 700px) {
+  .mobile-topbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .5rem; align-items: center; padding: .5rem .6rem 0; }
+  .mobile-brand { display: flex; gap: .45rem; align-items: center; min-height: 44px; padding: 0; border: 0; color: var(--ink); background: transparent; }
+  .mobile-brand > span { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; color: #e7eee9; background: var(--night); font-size: .7rem; font-weight: 800; }
+  .mobile-brand strong { font-size: .78rem; }
+  .mobile-topbar .save-indicator { margin: 0; justify-self: end; text-align: right; color: var(--muted); font-size: .6rem; line-height: 1.25; }
+  .mobile-topbar .save-indicator[data-status="failed"] { color: var(--danger); font-weight: 700; }
+  .mobile-settings-button { position: static; display: inline-flex; gap: .35rem; align-items: center; width: auto; min-width: 44px; height: auto; min-height: 44px; padding: 0 .8rem; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--paper); box-shadow: none; backdrop-filter: none; font-size: .72rem; font-weight: 700; }
+  .learn-tabs button { min-height: 44px; place-content: center; text-align: center; }
+  .learn-tabs small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .chord-track > header { flex-wrap: wrap; }
+  .chord-track select { max-width: 100%; }
+  h1, h2, h3 { overflow-wrap: anywhere; }
+}
+@media (max-width: 380px) {
+  .mobile-brand strong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+/* Short viewports, including a laptop at 200% zoom: keep the fixed navigation from taking a fifth of the screen. */
+@media (max-width: 700px) and (max-height: 500px) {
+  .v8-shell { padding-bottom: 52px; }
+  .mobile-nav { bottom: .25rem; padding: .2rem; }
+  .mobile-nav button { display: flex; gap: .35rem; align-items: center; justify-content: center; min-height: 40px; }
+  .play-session-footer { bottom: 52px; }
+}

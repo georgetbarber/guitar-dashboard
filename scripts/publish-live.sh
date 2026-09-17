@@ -107,6 +107,24 @@ echo "Firebase cloud sync settings are ready."
 
 created_release=0
 if [ -n "$(git -C "$ROOT" status --porcelain)" ]; then
+  # This repository is public, and the line below stages everything without
+  # review. `.env.local` is ignored today, but an ignore rule is the only thing
+  # standing between a credential file at a new path and a public commit, so the
+  # names are checked here as well. Calm Week's deploy script does the same.
+  changed_files="$(
+    {
+      git -C "$ROOT" diff --name-only
+      git -C "$ROOT" diff --cached --name-only
+      git -C "$ROOT" ls-files --others --exclude-standard
+    } | sort -u
+  )"
+  blocked_files="$(printf '%s\n' "$changed_files" | grep -E '(^|/)\.env($|\.)|keystore\.properties$|\.(jks|keystore|pem|p12)$|serviceAccount.*\.json$' | grep -Ev '(^|/)\.env\.example$|keystore\.properties\.example$' || true)"
+  if [ -n "$blocked_files" ]; then
+    echo "Refusing to commit files that may contain secrets or signing material:" >&2
+    printf '%s\n' "$blocked_files" >&2
+    exit 1
+  fi
+
   git -C "$ROOT" add -A
   git -C "$ROOT" diff --cached --check
   echo

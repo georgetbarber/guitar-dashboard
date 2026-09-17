@@ -1,3 +1,5 @@
+import { noteUpdateReady } from "./updates";
+
 export interface InstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
@@ -29,20 +31,54 @@ export function subscribeStandaloneMode(listener: (standalone: boolean) => void)
 
 if (typeof window !== "undefined") {
   if ("serviceWorker" in navigator) {
-    let refreshing = false;
-    const requestUpdate = () => {
+    let reloading = false;
+    /*
+     * Reload only for an update this tab asked for. A controllerchange can also
+     * come from another tab applying the update, and reloading on that would
+     * reintroduce exactly the interruption this phase removes — in the tab that
+     * never consented, quite possibly mid-recording.
+     */
+    let requestedHere = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!requestedHere || reloading) return;
+      reloading = true;
+      location.reload();
+    });
+
+    const offerWaiting = (worker: ServiceWorker | null | undefined) => {
+      if (!worker) return;
+      noteUpdateReady(() => {
+        requestedHere = true;
+        // generateSW is built with skipWaiting false, so it hands over only when
+        // asked. This message is that request.
+        worker.postMessage({ type: "SKIP_WAITING" });
+      });
+    };
+
+    void navigator.serviceWorker.getRegistration().then((registration) => {
+      if (!registration) return;
+      offerWaiting(registration.waiting);
+      registration.addEventListener("updatefound", () => {
+        const installing = registration.installing;
+        if (!installing) return;
+        installing.addEventListener("statechange", () => {
+          // A controller already present means this is an update rather than the
+          // first install, which needs no offer and no reload.
+          if (installing.state === "installed" && navigator.serviceWorker.controller) {
+            offerWaiting(registration.waiting ?? installing);
+          }
+        });
+      });
+    }).catch(() => undefined);
+
+    const checkForUpdate = () => {
       void navigator.serviceWorker.getRegistration()
         .then((registration) => registration?.update())
         .catch(() => undefined);
     };
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (refreshing) return;
-      refreshing = true;
-      location.reload();
-    });
-    addEventListener("focus", requestUpdate);
+    addEventListener("focus", checkForUpdate);
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") requestUpdate();
+      if (document.visibilityState === "visible") checkForUpdate();
     });
   }
   addEventListener("beforeinstallprompt", (event) => {

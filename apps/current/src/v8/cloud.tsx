@@ -23,9 +23,9 @@ import {
 } from "firebase/firestore";
 import { deleteObject, getBlob, getStorage, ref, uploadBytes } from "firebase/storage";
 import { accountWorkspaceId, eraseAllDeviceData, loadBlob, workspaceExists, workspaceHasLearningData } from "./repository";
-import { cloudProfile, cloudSketch } from "./sync";
-import type { CloudProfile } from "./sync";
-import type { CompetencyEvidence, RecordedTake, Sketch, V8State } from "./types";
+import { acceptEvidence, acceptProfile, acceptSketches, cloudProfile, commitIsolating, describeRejected, describeWithheld, screenEvidence, screenProfile, screenSketch } from "./sync";
+import type { CloudProfile, PendingWrite, Withheld } from "./sync";
+import type { RecordedTake, Sketch, V8State } from "./types";
 import { useV8Store } from "./store";
 
 const firebaseConfig = {
@@ -52,7 +52,7 @@ const auth = app ? getAuth(app) : null;
 const database = app ? getFirestore(app) : null;
 const recordingStorage = app && firebaseConfig.storageBucket ? getStorage(app) : null;
 
-export type SyncStatus = "local-only" | "signed-out" | "account-choice" | "syncing" | "synced" | "offline" | "error";
+export type SyncStatus = "local-only" | "signed-out" | "account-choice" | "restore-hold" | "syncing" | "synced" | "offline" | "error";
 
 interface CloudValue {
   configured: boolean;
@@ -89,51 +89,89 @@ function profileSignature(profile: CloudProfile): string {
   return JSON.stringify(profile);
 }
 
-async function commitInChunks(database: Firestore, operations: Array<(batch: ReturnType<typeof writeBatch>) => void>) {
-  for (let index = 0; index < operations.length; index += 400) {
-    const batch = writeBatch(database);
-    for (const operation of operations.slice(index, index + 400)) operation(batch);
-    await batch.commit();
-  }
-}
-
-async function uploadChanges(database: Firestore, uid: string, state: V8State, cache: SyncCache) {
+async function uploadChanges(database: Firestore, uid: string, state: V8State, cache: SyncCache): Promise<Withheld[]> {
+  const withheld: Withheld[] = [];
   const profile = cloudProfile(state);
   const signature = profileSignature(profile);
   if (state.updatedAt >= cache.profileUpdatedAt && signature !== cache.profileSignature) {
-    await setDoc(doc(database, "users", uid), profile);
-    cache.profileUpdatedAt = profile.updatedAt;
-    cache.profileSignature = signature;
+    const refused = screenProfile(state, profile);
+    if (refused) {
+      // Not cached as sent, so a later edit that brings the profile back within
+      // range uploads it rather than being skipped as unchanged.
+      withheld.push(refused);
+    } else {
+      await setDoc(doc(database, "users", uid), profile);
+      cache.profileUpdatedAt = profile.updatedAt;
+      cache.profileSignature = signature;
+    }
   }
 
-  const operations: Array<(batch: ReturnType<typeof writeBatch>) => void> = [];
-  for (const evidence of state.evidence) {
-    if (cache.evidenceIds.has(evidence.id)) continue;
-    operations.push((batch) => batch.set(doc(database, "users", uid, "evidence", evidence.id), evidence));
-  }
-  for (const sketch of state.sketches) {
-    const remoteVersion = cache.sketchVersions.get(sketch.id);
-    if (remoteVersion && remoteVersion >= sketch.updatedAt) continue;
-    operations.push((batch) => batch.set(doc(database, "users", uid, "sketches", sketch.id), cloudSketch(sketch)));
-  }
-  await commitInChunks(database, operations);
-  for (const evidence of state.evidence) cache.evidenceIds.add(evidence.id);
-  for (const sketch of state.sketches) cache.sketchVersions.set(sketch.id, sketch.updatedAt);
-
+  /*
+   * Deletions run before the batch, not after it. A rejected batch throws out of
+   * this function, and when the deletions were last they were simply skipped —
+   * so a sketch the learner deleted on one device stayed in Firestore and was
+   * re-materialised on the next by mergeCloudSnapshot. Removing a document the
+   * learner has already deleted locally is safe to do first: the worst case is
+   * that a later upload recreates it, which the deletion version guard prevents.
+   */
   for (const [id, deletedAt] of Object.entries(state.deletedSketchIds)) {
     if ((cache.deletionVersions.get(id) ?? "") >= deletedAt) continue;
     await deleteDoc(doc(database, "users", uid, "sketches", id));
     cache.deletionVersions.set(id, deletedAt);
     cache.sketchVersions.delete(id);
   }
+
+  const deleted = new Set(Object.keys(state.deletedSketchIds));
+  const writes: Array<PendingWrite<ReturnType<typeof writeBatch>>> = [];
+  const sent = { evidence: new Set<string>(), sketches: new Map<string, string>() };
+
+  for (const evidence of state.evidence) {
+    if (cache.evidenceIds.has(evidence.id)) continue;
+    const refused = screenEvidence(evidence);
+    if (refused) { withheld.push(refused); continue; }
+    const reference = doc(database, "users", uid, "evidence", evidence.id);
+    writes.push({
+      kind: "evidence", id: evidence.id,
+      apply: (batch) => batch.set(reference, evidence),
+      alone: () => setDoc(reference, evidence)
+    });
+    sent.evidence.add(evidence.id);
+  }
+
+  for (const sketch of state.sketches) {
+    if (deleted.has(sketch.id)) continue;
+    const remoteVersion = cache.sketchVersions.get(sketch.id);
+    if (remoteVersion && remoteVersion >= sketch.updatedAt) continue;
+    const { document, withheld: refused } = screenSketch(sketch);
+    if (refused) { withheld.push(refused); continue; }
+    const reference = doc(database, "users", uid, "sketches", sketch.id);
+    writes.push({
+      kind: "sketch", id: sketch.id,
+      apply: (batch) => batch.set(reference, document),
+      alone: () => setDoc(reference, document)
+    });
+    sent.sketches.set(sketch.id, sketch.updatedAt);
+  }
+
+  await commitIsolating(writes, () => writeBatch(database), withheld);
+
+  /*
+   * Only what was actually accepted enters the cache. Marking a withheld record
+   * as sent would hide it from every later upload, so a sketch that the learner
+   * later trims back within range would never reach the cloud.
+   */
+  const refusedIds = new Set(withheld.map((item) => item.id));
+  for (const id of sent.evidence) if (!refusedIds.has(id)) cache.evidenceIds.add(id);
+  for (const [id, updatedAt] of sent.sketches) if (!refusedIds.has(id)) cache.sketchVersions.set(id, updatedAt);
+  return withheld;
 }
 
 export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
-  const { state, dispatch, hydrated, switchWorkspace } = useV8Store();
+  const { state, dispatch, hydrated, workspaceId, workspaceIssue, switchWorkspace, restoreHold } = useV8Store();
   const [user, setUser] = useState<User | null>(null);
   const [pendingUser, setPendingUser] = useState<User | null>(null);
   const [status, setStatus] = useState<SyncStatus>(CLOUD_CONFIGURED ? "signed-out" : "local-only");
-  const [message, setMessage] = useState(CLOUD_CONFIGURED ? "Sign in to synchronise devices." : "Cloud sync is ready for Firebase configuration.");
+  const [message, setMessage] = useState(CLOUD_CONFIGURED ? "Sign in to synchronise devices." : "Sync across devices is not set up in this copy of Guitar Academy. Your learning stays on this device; a complete backup moves it.");
   const [remoteReady, setRemoteReady] = useState(false);
   const [connectivityRevision, setConnectivityRevision] = useState(0);
   const cacheRef = useRef<SyncCache>(emptyCache());
@@ -199,43 +237,74 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   }, [switchWorkspace]);
 
   useEffect(() => {
-    if (!database || !user) return;
+    setRemoteReady(false);
+    if (!database || !user || !hydrated || workspaceId !== accountWorkspaceId(user.uid) || workspaceIssue || restoreHold) return;
+    let active = true;
     const loaded = new Set<string>();
     const subscriptions: Unsubscribe[] = [];
+    /*
+     * Counted per collection rather than summed, so a snapshot that re-delivers
+     * the same bad document does not inflate the number the learner is shown.
+     */
+    const rejectedCounts = new Map<string, number>();
+    const reportIntake = () => {
+      const total = [...rejectedCounts.values()].reduce((sum, count) => sum + count, 0);
+      if (!total) return false;
+      setStatus("error");
+      setMessage(describeRejected(total));
+      return true;
+    };
     const markLoaded = (part: string) => {
       loaded.add(part);
-      if (loaded.size === 3) {
-        setRemoteReady(true);
-        setStatus(navigator.onLine ? "synced" : "offline");
-        setMessage(navigator.onLine ? "Progress synchronises across signed-in devices." : "Working offline. Changes will synchronise when connected.");
-      }
+      if (loaded.size < 3) return;
+      setRemoteReady(true);
+      if (reportIntake()) return;
+      setStatus(navigator.onLine ? "synced" : "offline");
+      setMessage(navigator.onLine ? "Progress synchronises across signed-in devices." : "Working offline. Changes will synchronise when connected.");
     };
     subscriptions.push(onSnapshot(doc(database, "users", user.uid), (snapshot) => {
-      const profile = snapshot.exists() ? snapshot.data() as CloudProfile : null;
+      if (!active) return;
+      const { profile, reason } = acceptProfile(snapshot.exists() ? snapshot.data() : null);
+      rejectedCounts.set("profile", reason ? 1 : 0);
+      /*
+       * A rejected profile leaves the cache signature empty, so the next upload
+       * rewrites the account profile from this device's valid copy rather than
+       * treating the unreadable one as current.
+       */
       cacheRef.current.profileUpdatedAt = profile?.updatedAt ?? "";
       cacheRef.current.profileSignature = profile ? profileSignature(profile) : "";
       for (const [id, deletedAt] of Object.entries(profile?.deletedSketchIds ?? {})) cacheRef.current.deletionVersions.set(id, deletedAt);
       dispatch({ type: "mergeCloud", snapshot: { profile } });
       markLoaded("profile");
+      if (loaded.size === 3) reportIntake();
     }, handleError));
     subscriptions.push(onSnapshot(collection(database, "users", user.uid, "evidence"), (snapshot) => {
-      const evidence = snapshot.docs.map((item) => item.data() as CompetencyEvidence);
-      cacheRef.current.evidenceIds = new Set(evidence.map((item) => item.id));
-      dispatch({ type: "mergeCloud", snapshot: { evidence } });
+      if (!active) return;
+      const intake = acceptEvidence(snapshot.docs.map((item) => ({ id: item.id, data: item.data() })));
+      rejectedCounts.set("evidence", intake.rejected.length);
+      // Only accepted ids enter the cache, so a local copy of a rejected record is
+      // uploaded again and repairs it rather than being skipped as already present.
+      cacheRef.current.evidenceIds = new Set(intake.accepted.map((item) => item.id));
+      dispatch({ type: "mergeCloud", snapshot: { evidence: intake.accepted } });
       markLoaded("evidence");
+      if (loaded.size === 3) reportIntake();
     }, handleError));
     subscriptions.push(onSnapshot(collection(database, "users", user.uid, "sketches"), (snapshot) => {
-      const sketches = snapshot.docs.map((item) => item.data() as Sketch);
-      cacheRef.current.sketchVersions = new Map(sketches.map((sketch) => [sketch.id, sketch.updatedAt]));
-      dispatch({ type: "mergeCloud", snapshot: { sketches } });
+      if (!active) return;
+      const intake = acceptSketches(snapshot.docs.map((item) => ({ id: item.id, data: item.data() })));
+      rejectedCounts.set("sketches", intake.rejected.length);
+      cacheRef.current.sketchVersions = new Map(intake.accepted.map((sketch) => [sketch.id, sketch.updatedAt]));
+      dispatch({ type: "mergeCloud", snapshot: { sketches: intake.accepted } });
       markLoaded("sketches");
+      if (loaded.size === 3) reportIntake();
     }, handleError));
     function handleError(error: Error) {
+      if (!active) return;
       setStatus("error");
       setMessage(error.message || "Cloud sync is unavailable. Local work remains safe.");
     }
-    return () => subscriptions.forEach((unsubscribe) => unsubscribe());
-  }, [user?.uid, dispatch]);
+    return () => { active = false; subscriptions.forEach((unsubscribe) => unsubscribe()); };
+  }, [user?.uid, dispatch, hydrated, workspaceId, workspaceIssue, restoreHold]);
 
   useEffect(() => {
     const online = () => {
@@ -249,7 +318,18 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    if (!database || !user || !hydrated || !remoteReady) return;
+    if (!database || !user || !hydrated || workspaceId !== accountWorkspaceId(user.uid)) return;
+    if (workspaceIssue) {
+      setStatus("error");
+      setMessage("The saved workspace could not be read. Account sync is paused while you recover it.");
+      return;
+    }
+    if (restoreHold) {
+      setStatus("restore-hold");
+      setMessage("Account sync is paused for this restored backup. Choose whether to merge it with your account.");
+      return;
+    }
+    if (!remoteReady) return;
     if (!navigator.onLine) {
       setStatus("offline");
       setMessage("Saved offline; waiting for a connection.");
@@ -260,7 +340,12 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       uploadingRef.current = true;
       setStatus(navigator.onLine ? "syncing" : "offline");
       void uploadChanges(database, user.uid, state, cacheRef.current)
-        .then(() => {
+        .then((withheld) => {
+          if (withheld.length) {
+            setStatus("error");
+            setMessage(describeWithheld(withheld));
+            return;
+          }
           setStatus(navigator.onLine ? "synced" : "offline");
           setMessage(navigator.onLine ? "All progress is synchronised." : "Saved offline; waiting for a connection.");
         })
@@ -274,7 +359,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         });
     }, 650);
     return () => clearTimeout(timer);
-  }, [state, user?.uid, hydrated, remoteReady, connectivityRevision]);
+  }, [state, user?.uid, hydrated, workspaceId, workspaceIssue, remoteReady, connectivityRevision, restoreHold]);
 
   const value = useMemo<CloudValue>(() => ({
     configured: CLOUD_CONFIGURED,
@@ -283,7 +368,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     message,
     accountChoice: pendingUser ? { email: pendingUser.email ?? "the selected Google account" } : null,
     signIn: async () => {
-      if (!auth) throw new Error("Firebase is not configured yet.");
+      if (!auth) throw new Error("Sync across devices is not set up in this copy of Guitar Academy.");
       await signInWithPopup(auth, new GoogleAuthProvider());
     },
     signOut: async () => { if (auth) await firebaseSignOut(auth); },
@@ -311,7 +396,8 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       location.reload();
     },
     uploadFinishedTake: async (sketchId, takeId) => {
-      if (!user || !recordingStorage) throw new Error("Sign in with recording storage configured before sharing a take.");
+      if (!user) throw new Error("Sign in before sharing a take.");
+      if (!recordingStorage) throw new Error("Sharing recordings is not set up in this copy of Guitar Academy. The take remains on this device.");
       if (!navigator.onLine) throw new Error("Reconnect before sharing a take. The private device copy remains safe.");
       const sketch = state.sketches.find((item) => item.id === sketchId);
       if (!sketch || sketch.status !== "finished") throw new Error("Only a take from a finished project can be shared across devices.");

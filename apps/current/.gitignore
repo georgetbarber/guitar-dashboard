@@ -9,3 +9,4 @@ playwright-report/
 .env.*.local
 .firebaserc
 *-debug.log
+/coverage/

@@ -1,4 +1,5 @@
 import { ACTIVITIES, CURRICULUM, activityById, unitById } from "./curriculum";
+import { newId } from "./identity";
 import { COMPETENCY_STRANDS } from "./types";
 import type {
   Assistance,
@@ -23,18 +24,46 @@ function contextKey(context: EvidenceContext): string {
 }
 
 /**
+ * The observations that still stand.
+ *
+ * Records are never edited or removed: a mistaken report is corrected by
+ * appending a retraction that names it. So every progress calculation starts
+ * here, by setting aside the retractions themselves and whatever they retract.
+ * The full history remains in state, which is what makes the correction
+ * auditable rather than a quiet rewrite.
+ */
+export function liveObservations(evidence: CompetencyEvidence[]): CompetencyEvidence[] {
+  const retracted = new Set(evidence.flatMap((item) => (item.retracts ? [item.retracts] : [])));
+  return evidence.filter((item) => !item.retracts && !retracted.has(item.id));
+}
+
+/**
+ * Build the records that retract these observations. Each mirrors its original
+ * so the history stays readable, and carries `retracts` so nothing it named
+ * counts any more.
+ */
+export function retractObservations(observations: CompetencyEvidence[], occurredAt = new Date().toISOString()): CompetencyEvidence[] {
+  return observations.map((observation) => ({
+    ...observation,
+    id: newId("evidence"),
+    occurredAt,
+    retracts: observation.id
+  }));
+}
+
+/**
  * Activity completion means the learner achieved the activity's observable
  * action at least once. Retry and partial evidence remains valuable practice
  * history, but must not advance the guided path.
  */
 export function completedActivityIdsFromEvidence(evidence: CompetencyEvidence[]): string[] {
-  return [...new Set(evidence
+  return [...new Set(liveObservations(evidence)
     .filter((item) => item.outcome === "successful")
     .map((item) => item.activityId))];
 }
 
 export function masteryFor(competencyId: string, evidence: CompetencyEvidence[]): MasterySummary {
-  const relevant = evidence.filter((item) => item.competencyId === competencyId);
+  const relevant = liveObservations(evidence).filter((item) => item.competencyId === competencyId);
   const independent = relevant.filter((item) => item.assistance === "none" && item.outcome === "successful");
   const successfulDays = new Set(independent.map((item) => day(item.occurredAt))).size;
   const contextCount = new Set(independent.map((item) => contextKey(item.context))).size;
@@ -121,19 +150,87 @@ function sessionItem(activityId: string, minutes: number): SessionItem {
   return { activityId, title: activity.title, purpose: activity.why, minutes, kind: activity.kind };
 }
 
+/**
+ * THE SESSION IS BUILT TO THE LENGTH THE LEARNER CHOSE.
+ *
+ * The planner used to hard-code five items totalling 25 minutes, while
+ * settings.dailyMinutes was settable from 10 to 90 and displayed on the Learn
+ * screen as though it applied. Someone with fifteen minutes was handed a
+ * twenty-five minute session, and someone with an hour was handed the same.
+ *
+ * This is an interim correction, not the session design: it keeps the existing
+ * five-part shape and simply fits it honestly to the available time. The real
+ * design — recall, targeted work, musical use, capture, a clear ending — arrives
+ * in Phase 4A.
+ */
+const SESSION_SHAPE = [
+  { kinds: ["listen-compare", "sing-predict"] as const, fallback: 0, minimum: 3, share: 3 },
+  { kinds: ["technique", "rhythm"] as const, fallback: 2, minimum: 4, share: 5 },
+  { kinds: ["relationship"] as const, fallback: 4, minimum: 4, share: 6 },
+  { kinds: ["variation", "transfer"] as const, fallback: 5, minimum: 4, share: 6 },
+  { kinds: ["creative", "reflection"] as const, fallback: 6, minimum: 3, share: 5 }
+];
+
+export const SESSION_MINUTES_MIN = 10;
+export const SESSION_MINUTES_MAX = 90;
+
+/**
+ * Spread the minutes left after every chosen slot has its minimum, by share,
+ * giving whole minutes only. The largest remainders take the leftover, so the
+ * parts always add up to the budget exactly — a session that says 40 minutes
+ * must be 40 minutes.
+ */
+function distribute(budget: number, minimums: number[], shares: number[]): number[] {
+  const spare = budget - minimums.reduce((sum, value) => sum + value, 0);
+  const total = shares.reduce((sum, value) => sum + value, 0);
+  const exact = shares.map((share) => (spare * share) / total);
+  const whole = exact.map(Math.floor);
+  let remaining = spare - whole.reduce((sum, value) => sum + value, 0);
+  const order = exact
+    .map((value, index) => ({ index, remainder: value - Math.floor(value) }))
+    .sort((a, b) => b.remainder - a.remainder);
+  for (const entry of order) {
+    if (remaining <= 0) break;
+    whole[entry.index] += 1;
+    remaining -= 1;
+  }
+  return minimums.map((minimum, index) => minimum + whole[index]);
+}
+
 export function buildSession(state: V8State, now = new Date()): SessionPlan {
   const unit = nextUnit(state);
+  const budget = Math.min(SESSION_MINUTES_MAX, Math.max(SESSION_MINUTES_MIN, Math.round(state.settings.dailyMinutes)));
+
+  /*
+   * Only as many parts as the time can actually hold, in priority order. Ten
+   * minutes cannot honestly contain five activities, and padding it out with
+   * one-minute items would be the same overstatement in a different form.
+   */
+  const chosen: typeof SESSION_SHAPE = [];
+  let committed = 0;
+  for (const slot of SESSION_SHAPE) {
+    if (committed + slot.minimum > budget) break;
+    chosen.push(slot);
+    committed += slot.minimum;
+  }
+
+  // Each part is a different activity: the old planner could select the same one
+  // for two slots, so a "five-part session" was sometimes three.
+  const taken = new Set<string>();
   const unfinished = unit.activities.filter((activity) => !state.completedActivityIds.includes(activity.id));
-  const choose = (kinds: typeof unit.activities[number]["kind"][], fallback: number) =>
-    unfinished.find((activity) => kinds.includes(activity.kind)) ?? unit.activities[fallback];
-  const selections: Array<[ReturnType<typeof choose>, number]> = [
-    [choose(["listen-compare", "sing-predict"], 0), 3],
-    [choose(["technique", "rhythm"], 2), 5],
-    [choose(["relationship"], 4), 6],
-    [choose(["variation", "transfer"], 5), 6],
-    [choose(["creative", "reflection"], 6), 5]
-  ];
-  const items = selections.map(([activity, minutes]) => sessionItem(activity.id, minutes));
+  const select = (kinds: readonly string[], fallback: number) => {
+    const preferred = unfinished.find((activity) => kinds.includes(activity.kind) && !taken.has(activity.id))
+      ?? unit.activities.find((activity) => kinds.includes(activity.kind) && !taken.has(activity.id))
+      ?? unfinished.find((activity) => !taken.has(activity.id))
+      ?? unit.activities.find((activity) => !taken.has(activity.id))
+      ?? unit.activities[fallback];
+    taken.add(preferred.id);
+    return preferred;
+  };
+
+  const minutes = distribute(budget, chosen.map((slot) => slot.minimum), chosen.map((slot) => slot.share));
+  const items = chosen.map((slot, index) => sessionItem(select(slot.kinds, slot.fallback).id, minutes[index]));
+
   return {
     id: `session-${now.toISOString().slice(0, 10)}-${unit.id}`,
     unitId: unit.id,
@@ -152,17 +249,22 @@ export function createEvidence(
   assistance: Assistance,
   outcome: EvidenceOutcome,
   context: EvidenceContext,
-  occurredAt = new Date().toISOString()
+  occurredAt = new Date().toISOString(),
+  artifactId?: string
 ): CompetencyEvidence[] {
-  return competencyIds.map((competencyId, index) => ({
-    id: `${occurredAt}-${activityId}-${index}`,
+  return competencyIds.map((competencyId) => ({
+    id: newId("evidence"),
     competencyId,
     source,
     assistance,
     context,
     outcome,
     occurredAt,
-    activityId
+    activityId,
+    // Recorded on every observation because it is true of every observation the
+    // app can currently make. When something is measured, it will say so.
+    method: "self-reported" as const,
+    ...(artifactId ? { artifactId } : {})
   }));
 }
 

@@ -6,9 +6,10 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment
 } from "@firebase/rules-unit-testing";
-import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, setDoc, writeBatch } from "firebase/firestore";
 import { getMetadata, ref, uploadBytes } from "firebase/storage";
-import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { commitIsolating, type PendingWrite, type Withheld } from "../src/v8/sync";
 
 let environment: RulesTestEnvironment;
 
@@ -84,6 +85,21 @@ beforeEach(async () => {
 afterAll(async () => environment.cleanup());
 
 describe("Firestore tenant rules", () => {
+  it("isolates a rules-refused sketch so another valid sketch still uploads", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    const valid = doc(database, "users/learner-a/sketches/valid");
+    const refused = doc(database, "users/learner-a/sketches/refused");
+    const writes: PendingWrite<ReturnType<typeof writeBatch>>[] = [
+      { kind: "sketch", id: "valid", apply: (batch) => batch.set(valid, { ...sketch, id: "valid" }), alone: () => setDoc(valid, { ...sketch, id: "valid" }) },
+      { kind: "sketch", id: "refused", apply: (batch) => batch.set(refused, { ...sketch, id: "refused", unexpected: true }), alone: () => setDoc(refused, { ...sketch, id: "refused", unexpected: true }) },
+    ];
+    const withheld: Withheld[] = [];
+    await commitIsolating(writes, () => writeBatch(database), withheld);
+    expect((await getDoc(valid)).exists()).toBe(true);
+    expect((await getDoc(refused)).exists()).toBe(false);
+    expect(withheld).toEqual([expect.objectContaining({ id: "refused", kind: "sketch" })]);
+  });
+
   it("allows a valid owner profile and append-only evidence", async () => {
     const database = environment.authenticatedContext("learner-a").firestore();
     await assertSucceeds(setDoc(doc(database, "users/learner-a"), profile));
@@ -104,7 +120,38 @@ describe("Firestore tenant rules", () => {
     const database = environment.authenticatedContext("learner-a").firestore();
     await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/evidence-1"), evidence));
     await assertFails(setDoc(doc(database, "users/learner-a/evidence/evidence-1"), { ...evidence, outcome: "retry" }));
+    // Delete stays available for erasing an account's history on request. It is
+    // a deliberate, whole-history operation, never a way to amend one record.
     await assertSucceeds(deleteDoc(doc(database, "users/learner-a/evidence/evidence-1")));
+  });
+
+  it("takes a correction as a new retraction record rather than an edit", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/evidence-1"), evidence));
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/evidence-2"), {
+      ...evidence,
+      id: "evidence-2",
+      method: "self-reported",
+      retracts: "evidence-1"
+    }));
+    // Both halves survive: that is what makes the correction auditable.
+    await assertSucceeds(getDoc(doc(database, "users/learner-a/evidence/evidence-1")));
+  });
+
+  it("accepts an observation that names how it was established, and only honestly", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/evidence-3"), {
+      ...evidence, id: "evidence-3", method: "self-reported", artifactId: "sketch-1"
+    }));
+    // Nothing in the app measures a performance, so nothing may claim to.
+    await assertFails(setDoc(doc(database, "users/learner-a/evidence/evidence-4"), {
+      ...evidence, id: "evidence-4", method: "measured"
+    }));
+  });
+
+  it("still accepts a record written before those fields existed", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/evidence-5"), { ...evidence, id: "evidence-5" }));
   });
 
   it("allows a bounded composition sketch and rejects an oversized one", async () => {

@@ -3,6 +3,9 @@
 
 name: Deploy to Firebase Hosting on PR
 on: pull_request
+concurrency:
+  group: guitar-academy-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 permissions:
   checks: write
   contents: read
@@ -26,7 +29,27 @@ jobs:
           distribution: temurin
           java-version: "21"
       - run: npm ci
-      - run: npm test
+      - run: npm run test:coverage
+      - name: Preserve critical-path coverage
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: critical-path-coverage
+          path: apps/current/coverage/
+          retention-days: 14
+      - name: Install Chromium and system libraries
+        run: PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright install --with-deps chromium
+      - name: Exercise desktop and phone journeys
+        run: npm run test:e2e
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: browser-evidence
+          path: |
+            apps/current/playwright-report/
+            apps/current/test-results/
+          retention-days: 14
       - run: npm run test:rules
       - name: Build Firebase-enabled application
         env:
