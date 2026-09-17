@@ -48,7 +48,10 @@ maintenance or recreating the deployment.
 4. In **Authentication → Sign-in method**, enable Google.
 5. Create a Cloud Firestore database. The repository's `firestore.rules` ensures
    each authenticated account can access only its own `/users/{uid}` data.
-6. Enable Firebase Storage. The repository's `storage.rules` restricts each take
+6. *Optional; needs the Blaze plan.* Enable Firebase Storage only if finished takes
+   should be shareable across devices, and then set `VITE_RECORDING_SHARING=enabled`
+   (see `docs/PUBLISHING.md`). Without it, recordings stay on each device. The
+   repository's `storage.rules` restricts each take
    to its authenticated owner, enforces audio content and caps it at 50 MB.
    Apply `storage.cors.json` to the bucket once so authenticated browser playback
    can read the audio as a private blob rather than creating a public download
@@ -64,7 +67,7 @@ maintenance or recreating the deployment.
    npm install --global firebase-tools
    firebase login
    npm run build
-   firebase deploy --only hosting,firestore,storage
+   firebase deploy --only hosting,firestore        # add ,storage if Storage is enabled
    ```
 
 The Firebase web configuration is an application identifier and is safe to ship

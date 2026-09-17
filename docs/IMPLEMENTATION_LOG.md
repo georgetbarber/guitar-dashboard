@@ -936,9 +936,86 @@ Mutation checks: each defect was reintroduced on its own.
 
 ---
 
+## Release attempt, 17 September 2026 — first CI run, and a project with no Storage
+
+George committed 2B-1 to 2A-3 as `c514a47` on `codex/public-hardening`, merged it
+into `main` as `601fec9`, and ran the publisher. It pushed and triggered the live
+workflow.
+
+### First CI evidence
+
+On GitHub (Node 22, Temurin 21), runs 35226754514 and 35226754904 passed:
+
+- `test:coverage`
+- the desktop and Pixel 7 browser journeys
+- `test:rules` against the emulators
+- the Firebase-enabled build
+- the release-head check
+
+This is the first CI execution of anything since 1A. **B21 is verified in CI**
+for this revision, and B31's rules evidence now exists in CI as well as
+locally.
+
+### Why nothing deployed
+
+1. **The first failure was a permission error.** "Deploy tested Firestore and
+   Storage rules" got a 403 on `firebasestorage.defaultBucket.get`. The GitHub
+   deploy service account had only Hosting roles. George added **Firebase Rules
+   Admin** and **Cloud Storage for Firebase Viewer**.
+2. **The rerun reached the real problem:** "Firebase Storage has not been set up
+   on project 'learn-the-guitar'." Both failures happened before any rules
+   release, so live rules and hosting were unchanged.
+3. **The August merge had also failed.** Its run, 31817680675, failed, so the
+   live site was still July's "v8 curriculum" build. bb8e04c's rule hardening
+   had never gone live either.
+
+Cross-device take sharing had therefore never worked live. The app offered a
+"Share this take across devices" button because a bucket *name* was configured,
+but no bucket existed. New default buckets require the Blaze plan (Firebase FAQ
+on the September 2024 Storage changes).
+
+### Decision (George, 17 September 2026): deploy without Storage
+
+- **Sharing is an explicit opt-in.** `cloud.tsx` creates Storage only when
+  `VITE_RECORDING_SHARING=enabled` *and* a bucket name is set, and exposes
+  `sharingAvailable`. Create offers no share or remove control without it.
+  Settings says "Recordings never leave this device", and About this app
+  reports that recording sharing is not enabled.
+- **The live workflow deploys `firestore:rules` only.** It adds `storage` when
+  the repository variable `VITE_RECORDING_SHARING` is `enabled`. Both workflows
+  pass that variable to the build.
+- **Docs updated.** `.env.example`, `PUBLISHING.md` and the Pixel setup guide now
+  describe the opt-in, the Blaze requirement, the US-only always-free regions,
+  and the service-account roles.
+- **Tests.** Rendered tests check that a bucket name alone does not enable
+  sharing, that the finished-take control appears only when sharing is
+  available, and that the workflow adds storage rules only under the variable.
+  Each was mutation-checked by re-enabling sharing from the bucket name,
+  ungating the button, and making storage unconditional.
+- **Local verification.** Build passed (1023.35 KiB precache; the disabled
+  Storage path is now dropped from the build). 244 unit and interface tests and
+  54 browser journeys passed.
+
+### Still to do for this release
+
+- Commit and push. The live run must still pass "Deploy tested security rules"
+  with Firestore only, then Hosting.
+- Watch the first live load. This deploy takes the site from July to Phase 2A-3
+  in one step, including the Firestore rules written since August. The rules
+  tests include pre-change records, but George's real account data has not been
+  exercised against them.
+- **Cloud Storage for Firebase Viewer** is no longer needed while storage rules
+  are not deployed, and can be removed to keep the deploy account minimal.
+- CI warnings to address with B30: several pinned actions still target Node 20,
+  and `setup-java` v4 is deprecated.
+
+---
+
 ## Commit status
 
-Nothing has been committed since `d0cf81d` (1E, 14 September). 2B-1, 2B-2,
+**Superseded 17 September 2026:** 2B-1 to 2A-3 were committed as `c514a47` and merged to `main` as `601fec9`; see the release attempt above. The paragraphs below record the situation before that.
+
+Nothing had been committed since `d0cf81d` (1E, 14 September). 2B-1, 2B-2,
 2A-1, 2A-2 and 2A-3 are all in the working tree on `codex/public-hardening`. The shell
 on George's Mac was unavailable in the session that did 2A-1 to 2A-3, so they
 were built and verified on a copy and written back file by file.
@@ -951,6 +1028,23 @@ tested. The honest options are one commit naming all five packages, or two:
 `SettingsPanel.tsx`. The earlier `.gitignore` and `scripts/publish-live.sh`
 changes are still waiting for George's review and must stay out; stage paths
 explicitly. Nothing has been pushed or deployed.
+
+**Publisher, 17 September 2026.** George ran `PUBLISH_LIVE.command` from
+`codex/public-hardening`. `publish-live.sh` correctly refused, because
+publishing is only allowed from `main`, so nothing was committed, pushed or
+deployed. The wrapper then failed with `read-only variable: status`, because zsh
+reserves `status`. That aborted the window before it could report the outcome or
+wait for Return. The variable is now `publish_status`, checked under zsh with
+both a failing and a succeeding step.
+
+Publishing this work needs three things. First, commit it on the branch. Then
+merge it into `main`, which is a clean merge because `main`'s tree equals
+`6d4e5bf`, the base these commits build on. Finally, run the publisher, which
+also runs `test:rules` and so needs Java 21 on the path it sets (Homebrew's
+`openjdk@21`); the Java that 2B-1 downloaded lives only in `.local-recovery/`.
+The pending root `.gitignore` change is what keeps `.local-recovery/` (a JDK
+download, logs, `firebase-config/`, `phase-01-start/`) out of a public commit.
+It must be kept before anything runs `git add -A`, which the publisher does.
 
 ## Next package
 

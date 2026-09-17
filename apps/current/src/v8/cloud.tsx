@@ -50,12 +50,22 @@ if (app && firebaseConfig.appCheckSiteKey) {
 }
 const auth = app ? getAuth(app) : null;
 const database = app ? getFirestore(app) : null;
-const recordingStorage = app && firebaseConfig.storageBucket ? getStorage(app) : null;
+/*
+ * Sharing a finished take needs a provisioned Cloud Storage bucket, which the
+ * live project does not have (new default buckets require the Blaze plan). A
+ * configured bucket name is not evidence that the bucket exists, so sharing is
+ * an explicit opt-in: set VITE_RECORDING_SHARING=enabled once Storage is set up
+ * and its rules are deployed. Until then no sharing control is offered.
+ */
+export const RECORDING_SHARING = import.meta.env.VITE_RECORDING_SHARING === "enabled";
+const recordingStorage = app && firebaseConfig.storageBucket && RECORDING_SHARING ? getStorage(app) : null;
 
 export type SyncStatus = "local-only" | "signed-out" | "account-choice" | "restore-hold" | "syncing" | "synced" | "offline" | "error";
 
 interface CloudValue {
   configured: boolean;
+  /** True only when this build opted in to Storage-backed take sharing. */
+  sharingAvailable: boolean;
   user: User | null;
   status: SyncStatus;
   message: string;
@@ -363,6 +373,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<CloudValue>(() => ({
     configured: CLOUD_CONFIGURED,
+    sharingAvailable: Boolean(recordingStorage),
     user,
     status,
     message,

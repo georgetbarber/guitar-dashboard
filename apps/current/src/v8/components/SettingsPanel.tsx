@@ -18,8 +18,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const cloud = useCloudSync();
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState(cloud.configured
-    ? "Progress stays local first and synchronises after sign-in. Recordings stay private unless you explicitly share one finished-project take."
-    : "Progress stays on this device. Recordings stay private.");
+    ? "Progress stays local first and synchronises after sign-in."
+    : "Progress stays on this device.");
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(currentInstallPrompt());
   const [standalone, setStandalone] = useState(currentStandaloneMode());
   useEffect(() => subscribeInstallPrompt(setInstallPrompt), []);
@@ -147,7 +147,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             }}>{restoreBusy === "cancelling" ? "Cancelling…" : "Cancel"}</button>
           </div>
         </section>}
-        <p className="privacy-message">{message} Audio uploads only when you choose one retained take from a finished project; other recordings never synchronise. Account and guest workspaces stay separate on this device.</p>
+        <p className="privacy-message">{message} {cloud.sharingAvailable ? "Audio uploads only when you choose one retained take from a finished project; other recordings never synchronise." : "Recordings never leave this device."} Account and guest workspaces stay separate on this device.</p>
         {/* Diagnostics live here, not in learner-facing copy. */}
         <details className="about-app">
           <summary>About this app</summary>
@@ -155,6 +155,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             <div><dt>Version</dt><dd>{__APP_VERSION__}</dd></div>
             <div><dt>Build</dt><dd>{import.meta.env.MODE}</dd></div>
             <div><dt>Sync across devices</dt><dd>{cloud.configured ? "Configured in this build" : "Not configured: this build has no Firebase web configuration"}</dd></div>
+            <div><dt>Recording sharing</dt><dd>{cloud.sharingAvailable ? "Enabled in this build" : "Not enabled: recordings stay on each device"}</dd></div>
             <div><dt>Window</dt><dd>{standalone ? "Installed app window" : "Browser tab"}</dd></div>
           </dl>
         </details>

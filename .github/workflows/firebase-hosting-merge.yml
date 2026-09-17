@@ -64,6 +64,7 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
           VITE_FIREBASE_APP_CHECK_SITE_KEY: ${{ vars.VITE_FIREBASE_APP_CHECK_SITE_KEY }}
+          VITE_RECORDING_SHARING: ${{ vars.VITE_RECORDING_SHARING }}
         run: |
           required=(
             VITE_FIREBASE_API_KEY
@@ -87,8 +88,17 @@ jobs:
         uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LEARN_THE_GUITAR }}
-      - name: Deploy tested Firestore and Storage rules
-        run: npx firebase deploy --only firestore:rules,storage --project learn-the-guitar --non-interactive
+      # Storage rules deploy only once Firebase Storage exists and sharing is
+      # switched on. The project has no Storage bucket (new ones require the
+      # Blaze plan), and deploying storage rules without one fails the release.
+      - name: Deploy tested security rules
+        env:
+          VITE_RECORDING_SHARING: ${{ vars.VITE_RECORDING_SHARING }}
+        run: |
+          targets="firestore:rules"
+          if [ "$VITE_RECORDING_SHARING" = "enabled" ]; then targets="$targets,storage"; fi
+          echo "Deploying: $targets"
+          npx firebase deploy --only "$targets" --project learn-the-guitar --non-interactive
       - uses: FirebaseExtended/action-hosting-deploy@500ac625ca2dd40cbd15f7659af953801858032a # v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

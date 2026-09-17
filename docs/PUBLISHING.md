@@ -42,16 +42,33 @@ Hosting deployment. It downloads updates automatically after publishing and
 reloads when the new service worker takes control. Bringing an already-open app
 back to the foreground is enough to let the update complete.
 
-Recordings remain device-only by default. Application code uploads audio only when
-the signed-in learner explicitly selects one retained take from a finished project.
+Recordings remain device-only. Cross-device sharing of a finished take is off
+unless the repository variable `VITE_RECORDING_SHARING` is `enabled`. The live
+project `learn-the-guitar` has **no Firebase Storage bucket**, and a new default
+bucket requires the pay-as-you-go Blaze plan, so the variable is unset. With it
+unset, the app offers no sharing control and the release deploys Firestore rules
+only. Deploying storage rules to a project without Storage fails the whole
+release, as it did on 17 September 2026.
+
+To turn sharing on later: move the project to Blaze and set a budget alert.
+Then open Firebase console → Storage → Get started; Google's always-free
+Storage tier applies only in US-CENTRAL1, US-EAST1 and US-WEST1. Next, apply
+`storage.cors.json` as below and set `VITE_RECORDING_SHARING=enabled` in both
+`.env.local` and the GitHub repository variables. The next release then also
+deploys `storage.rules`.
+
+The GitHub deploy service account needs **Firebase Hosting Admin** and **Firebase
+Rules Admin**. **Cloud Storage for Firebase Viewer** is needed only once storage
+rules are deployed; the CLI reads the default bucket first.
 
 If deployment fails, the publisher keeps the window open and displays the failed
 step. Correct it and publish again. Pull requests run local Firestore and Storage
 rule tests. The protected `main` workflow deploys those tested rules before
 Hosting, so a frontend that depends on a rule change cannot silently go live while
-old permissions remain active. Apply `apps/current/storage.cors.json` to the
-bucket once as described in the Pixel setup guide; this permits authenticated
-in-browser blob playback without issuing a public download link.
+old permissions remain active. If Storage is enabled, apply
+`apps/current/storage.cors.json` to the bucket once as described in the Pixel setup
+guide; this permits authenticated in-browser blob playback without issuing a
+public download link.
 
 The workflow references every third-party GitHub Action by a full reviewed commit
 SHA. Keep the readable version comment, and update a SHA only through a reviewed

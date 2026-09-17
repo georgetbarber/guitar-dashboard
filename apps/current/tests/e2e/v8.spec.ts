@@ -204,7 +204,7 @@ test("exports a complete local backup", async ({ page }) => {
   await page.getByRole("button", { name: "Export complete backup" }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.guitar-academy$/);
-  await expect(page.getByText(/Audio uploads only when you choose one retained take/)).toBeVisible();
+  await expect(page.getByText(/Recordings never leave this device/)).toBeVisible();
 });
 
 test("previews and cancels a backup, then restores it durably after confirmation", async ({ page }, testInfo) => {

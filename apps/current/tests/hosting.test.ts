@@ -37,3 +37,14 @@ describe("the service worker is cached under the name the build emits (B20)", ()
     }
   });
 });
+
+describe("a release deploys storage rules only where Firebase Storage exists", () => {
+  const workflow = readFileSync(`${root}../../.github/workflows/firebase-hosting-merge.yml`, "utf8");
+  it("never deploys storage rules unconditionally", () => {
+    expect(workflow).not.toMatch(/--only\s+[^\n]*storage/);
+  });
+  it("adds storage only when the recording-sharing variable is enabled", () => {
+    expect(workflow).toContain('targets="firestore:rules"');
+    expect(workflow).toMatch(/if \[ "\$VITE_RECORDING_SHARING" = "enabled" \]; then targets="\$targets,storage"; fi/);
+  });
+});
