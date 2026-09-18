@@ -1063,6 +1063,33 @@ closed and reopened.
 
 ---
 
+## Sign-in policy fix, verified live (18 September 2026)
+
+Run 35337753164 deployed `4cb8bc1`. The live policy now reads
+`script-src ... https://apis.google.com ...` and
+`frame-src https://learn-the-guitar.firebaseapp.com https://www.google.com`.
+Checked from a separate browser against the live site: the Google API loader
+loads (`window.gapi` is an object), the auth domain's iframe loads, and no
+`securitypolicyviolation` events fire. Before the deploy the same check
+reported both as blocked.
+
+**A header change does not reach a device until that device applies the
+update.** The first check after this deploy still reported the old policy: the
+service worker was serving the cached page, and a cached response carries the
+headers it was stored with. Unregistering the worker and reloading showed the
+new policy immediately. So for any header or CSP change:
+
+- a returning learner keeps the old headers until the new build is applied;
+- `/` is served `max-age=3600`, so an uncontrolled browser can hold the old
+  headers for up to an hour as well;
+- a header fix cannot be assumed live from the deploy alone — check it from a
+  browser that is not running the previous worker.
+
+Sign-in with a real Google account has still not been exercised; that needs
+George's account.
+
+---
+
 ## Commit status
 
 **Superseded 17 September 2026:** 2B-1 to 2A-3 were committed as `c514a47` and merged to `main` as `601fec9`; see the release attempt above. The paragraphs below record the situation before that.
