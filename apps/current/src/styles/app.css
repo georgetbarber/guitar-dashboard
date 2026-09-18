@@ -1,3 +1,20 @@
+/* B16: bundle the intended Latin faces locally so headings and controls do not
+   depend on fonts installed on the learner's device or a remote font service. */
+@font-face {
+  font-family: "DM Sans";
+  font-style: normal;
+  font-weight: 100 1000;
+  font-display: swap;
+  src: url("@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("@fontsource/instrument-serif/files/instrument-serif-latin-400-normal.woff2") format("woff2");
+}
+
 :root {
   font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   color: #22221f;

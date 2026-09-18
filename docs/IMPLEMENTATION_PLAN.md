@@ -353,4 +353,4 @@ For each work package keep: scope, linked B/D finding IDs, dependencies, changed
 
 “Implemented” does not close a finding that still needs its relevant verification. Each implementation session should leave a runnable app and update this record with what changed, what passed and the exact next package. Keep local documentation and release claims aligned with that evidence.
 
-The next package is **Phase 2A-4: contrast, legibility and automated accessibility checks (B12, B15)**. After that, continue the remaining Phase 2 work recorded in [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md): fonts, lint/format gates, guest loading and cache size. Phases 0–1 are not to be repeated from scratch.
+Phase 2A-4 and 2A-5 are implemented and locally verified in the [accessibility](reviews/2026-09-18-phase-2a4-accessibility.md) and [font](reviews/2026-09-18-phase-2a5-fonts.md) reviews. A human keyboard and screen-reader pass, plus a real-phone check, remain open for 2A. The next engineering packages are the remaining Phase 2 work in [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md): lint/format gates, guest loading and cache size. Phases 0–1 are not to be repeated from scratch.

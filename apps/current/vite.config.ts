@@ -35,7 +35,8 @@ export default defineConfig({
       workbox: {
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/__\//],
-        globPatterns: ["**/*.{js,css,html,svg,png,woff2,webmanifest}"],
+        // Keep the two OFL notices with their offline font files.
+        globPatterns: ["**/*.{js,css,html,svg,png,woff2,txt,webmanifest}"],
         cleanupOutdatedCaches: true,
         /*
          * A new worker installs and then WAITS. clientsClaim and skipWaiting

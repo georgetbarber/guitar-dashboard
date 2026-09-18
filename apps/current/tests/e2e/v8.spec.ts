@@ -410,6 +410,8 @@ for (const [width, height, label] of [[320, 640, "small phone"], [390, 844, "pho
     const nav = page.getByRole("navigation", { name: "Mobile learning navigation" });
     const settings = page.getByRole("button", { name: "Open settings and data" });
     const check = async (screen: string) => {
+      // Measure the actual bundled faces, not only the fallback shown before they load.
+      await page.evaluate(async () => { await document.fonts.ready; });
       const result = await page.evaluate(() => {
         const box = (element: Element) => element.getBoundingClientRect();
         const overlaps = (a: DOMRect, b: DOMRect) => a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1;
