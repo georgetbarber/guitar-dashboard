@@ -38,9 +38,11 @@ checks them before building. If one is absent, publishing stops rather than
 replacing the live site with a local-only build.
 
 The Pixel installation is a Progressive Web App served by the same Firebase
-Hosting deployment. It downloads updates automatically after publishing and
-reloads when the new service worker takes control. Bringing an already-open app
-back to the foreground is enough to let the update complete.
+Hosting deployment. It downloads an update in the background and then offers it:
+the learner chooses "Update now", and nothing reloads on its own (B03). Updating
+from a build released before 14 September 2026 is the exception — those builds
+cannot ask, so the waiting version only takes over once every window of the app
+is fully closed and reopened.
 
 Recordings remain device-only. Cross-device sharing of a finished take is off
 unless the repository variable `VITE_RECORDING_SHARING` is `enabled`. The live

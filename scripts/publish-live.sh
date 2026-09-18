@@ -177,5 +177,6 @@ gh run watch "$run_id" --repo "$REPOSITORY" --exit-status
 
 echo
 echo "Published successfully: $LIVE_URL"
-echo "Your phone will download the new version automatically. If the app was already"
-echo "open, bring it to the foreground; it will reload when the update is ready."
+echo "The app downloads the new version in the background and then OFFERS it:"
+echo "open Guitar Academy and choose \"Update now\" when the notice appears. It never"
+echo "reloads on its own, so nothing is interrupted mid-recording or mid-edit."

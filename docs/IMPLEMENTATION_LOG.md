@@ -1011,6 +1011,58 @@ on the September 2024 Storage changes).
 
 ---
 
+## Live at last, and what the live site showed (17–18 September 2026)
+
+Run 35231938517 deployed `3298963`. Every step passed, including the browser
+journeys, the rules tests and, for the first time, "Deploy tested security
+rules" (Firestore only) and Hosting. https://learn-the-guitar.web.app serves the
+new build: its title is "Guitar Academy" and its bundle is `index-DDRljqpO.js`.
+
+### Verified on the live site
+
+Checked from a separate browser, against the real deployment:
+
+| Check | Result |
+| --- | --- |
+| `/sw.js` cache header | `Cache-Control: no-cache`. **B20 is verified live**, on the filename the build actually emits. |
+| Security headers | CSP, `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` are present on the page, the worker and the manifest. |
+| Page cache header | `/` is served `max-age=3600`. The worker serves navigations from its precache, so this does not delay an update, but an hour of browser caching on the shell is worth revisiting with B19. |
+
+### The CSP blocks Google sign-in (found live, not by any test)
+
+August's hardening added a Content-Security-Policy that had never been deployed
+until today. Firebase Auth's popup flow needs two things the policy forbids:
+
+- `https://apis.google.com/js/api.js`, the loader the SDK injects — blocked by
+  `script-src-elem`.
+- an iframe on the auth domain, `https://learn-the-guitar.firebaseapp.com` —
+  blocked by `frame-src`.
+
+Both were confirmed on the live page by loading each resource and catching the
+`securitypolicyviolation` events. `VITE_FIREBASE_AUTH_DOMAIN` is
+`learn-the-guitar.firebaseapp.com`, so the iframe host is that project domain.
+Signing in again would fail. An existing signed-in session keeps working:
+token refresh and Firestore both use `*.googleapis.com`, which the policy allows.
+
+No test caught this. The rules tests use the emulator, the browser journeys never
+sign in to a real account, and nothing asserted the policy against Firebase
+Auth's requirements. `hosting.test.ts` now checks that the policy admits the
+Google API loader, the auth domain's iframe and the token endpoints; each
+assertion fails against the deployed policy.
+
+**Prepared for the next release:** `firebase.json` adds those two hosts, and
+nothing else. A deploy is needed before sign-in works again.
+
+### Also corrected
+
+The publisher and `PUBLISHING.md` still said the phone reloads itself when an
+update arrives. Since 1D it does not: the app offers the update and waits (B03).
+Both now say so, and note the one exception — a build older than 1D cannot ask,
+so the first update from July's build only takes effect once every window is
+closed and reopened.
+
+---
+
 ## Commit status
 
 **Superseded 17 September 2026:** 2B-1 to 2A-3 were committed as `c514a47` and merged to `main` as `601fec9`; see the release attempt above. The paragraphs below record the situation before that.

@@ -48,3 +48,18 @@ describe("a release deploys storage rules only where Firebase Storage exists", (
     expect(workflow).toMatch(/if \[ "\$VITE_RECORDING_SHARING" = "enabled" \]; then targets="\$targets,storage"; fi/);
   });
 });
+
+describe("the content security policy leaves Google sign-in working", () => {
+  const policy = hosting.headers.flatMap((entry) => entry.headers).find((header) => header.key === "Content-Security-Policy")?.value ?? "";
+  const directive = (name: string) => policy.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${name} `)) ?? "";
+  it("allows the Google API loader that Firebase Auth's popup flow injects", () => {
+    expect(directive("script-src")).toContain("https://apis.google.com");
+  });
+  it("allows the auth domain's helper iframe", () => {
+    expect(directive("frame-src")).toContain("https://learn-the-guitar.firebaseapp.com");
+  });
+  it("allows the Firebase Auth token endpoints", () => {
+    expect(directive("connect-src")).toContain("https://*.googleapis.com");
+  });
+});
+
