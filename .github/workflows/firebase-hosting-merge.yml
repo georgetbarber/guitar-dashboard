@@ -89,6 +89,7 @@ jobs:
             fi
           done
           npm run build
+      - run: npm run check:guest-bundle
       - name: Refuse an outdated release
         run: bash ../../scripts/check-release-head.sh
       - name: Authenticate for Firebase security-rule deployment

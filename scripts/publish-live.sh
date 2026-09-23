@@ -86,7 +86,7 @@ fi
 
 echo
 echo "Running style, application, Firebase-rule, and production checks..."
-(cd "$APP" && npm run lint && npm run format:check && npm run test:coverage && npm run test:rules && npm run build)
+(cd "$APP" && npm run lint && npm run format:check && npm run test:coverage && npm run test:rules && npm run build && npm run check:guest-bundle)
 
 echo
 echo "Keeping Firebase cloud sync configured..."

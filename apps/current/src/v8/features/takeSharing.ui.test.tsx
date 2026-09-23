@@ -10,7 +10,7 @@ vi.mock("../repository", async (original) => ({
   ...await original<typeof import("../repository")>(),
   loadWorkspace: vi.fn(), savePersistedState: vi.fn(), discardIncompleteStaging: vi.fn(), loadBlob: vi.fn()
 }));
-vi.mock("../cloud", () => ({
+vi.mock("../cloudFacade", () => ({
   useCloudSync: () => ({ user: { uid: "learner", email: "learner@example.test" }, status: "synced", sharingAvailable: cloud.sharingAvailable, uploadedTakeBlob: vi.fn() })
 }));
 vi.mock("../../audio/microphone", () => ({ openMicrophone: vi.fn(), startTakeRecording: vi.fn() }));

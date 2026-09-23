@@ -1,6 +1,6 @@
 # Guitar Academy improvement plan
 
-**Status (23 September 2026): Phases 0 and 1 implemented; Phase 2 in progress. Packages 2B-1 to 2B-3 and 2A-1 to 2A-5 are implemented and locally checked. Guest loading, offline-cache policy, remaining dependency review, and manual device/accessibility checks remain. See [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) for evidence and limits.**
+**Status (23 September 2026): Phases 0 and 1 implemented; Phase 2 in progress. Packages 2B-1 to 2B-4 and 2A-1 to 2A-5 are implemented and locally checked. Offline-cache policy, remaining dependency review, and manual device/accessibility checks remain. See [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) for evidence and limits.**
 
 Prepared 10 September 2026. Covers the supplied engineering audit and the [design and learning audit](/Users/georgethomasbarber/Developer/guitar-dashboard/docs/reviews/2026-09-10-design-and-learning-audit.md). The existing [Learning Effectiveness Backlog](/Users/georgethomasbarber/Developer/guitar-dashboard/docs/LEARNING_EFFECTIVENESS_BACKLOG.md) supplies additional content acceptance criteria.
 
@@ -353,4 +353,4 @@ For each work package keep: scope, linked B/D finding IDs, dependencies, changed
 
 “Implemented” does not close a finding that still needs its relevant verification. Each implementation session should leave a runnable app and update this record with what changed, what passed and the exact next package. Keep local documentation and release claims aligned with that evidence.
 
-Phase 2A-4 and 2A-5 are implemented and locally verified in the [accessibility](reviews/2026-09-18-phase-2a4-accessibility.md) and [font](reviews/2026-09-18-phase-2a5-fonts.md) reviews. Phase 2B-3's lint, format and coverage gates are recorded in the [implementation log](IMPLEMENTATION_LOG.md). A human keyboard and screen-reader pass, plus a real-phone check, remain open for 2A. The next engineering packages are guest loading, offline-cache policy and remaining dependency review. Phases 0–1 are not to be repeated from scratch.
+Phase 2A-4 and 2A-5 are implemented and locally verified in the [accessibility](reviews/2026-09-18-phase-2a4-accessibility.md) and [font](reviews/2026-09-18-phase-2a5-fonts.md) reviews. Phase 2B-3's quality gates and 2B-4's guest module boundary are recorded in the [implementation log](IMPLEMENTATION_LOG.md). A human keyboard and screen-reader pass, plus a real-phone check, remain open for 2A. The next engineering packages are offline-cache policy and remaining dependency review. Phases 0–1 are not to be repeated from scratch.

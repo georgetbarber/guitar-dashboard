@@ -1175,3 +1175,44 @@ therefore not claimed as verified by this entry.
 reconcile the remaining development advisories (B30). The manual keyboard,
 screen-reader and real-phone checks from Phase 2A remain open. Do not treat
 coverage percentages or browser emulation as proof of those experiences.
+
+---
+
+## Phase 2B-4 — defer account code on guest startup (23 September 2026)
+
+**Status: verified locally for the startup module graph; offline-cache transfer
+remains open under B19.** The app now uses a small cloud facade for guests.
+Firebase and account sync load only after sign-in is prepared, when a retained
+account hint exists, or when a one-time check finds an account workspace or
+earlier guest learning from an older installation. The hint is only a loading choice: Firebase still
+verifies the account, and guest/account workspaces remain separate.
+
+The first guest sign-in is deliberately two taps: **Prepare Google sign-in**
+loads the SDK, then **Open Google sign-in** opens the existing popup from a new
+user gesture. This avoids relying on popup permission surviving an asynchronous
+download. Redirect sign-in was considered and rejected for this package:
+Firebase's guidance requires additional domain setup for `web.app` hosting.
+An account restored on this device opens the SDK automatically; a signed-out
+guest no longer pays that load on later visits. The facade also owns the guest
+connection notice so going offline still remains visible without Firebase.
+
+| Check | Result |
+| --- | --- |
+| `npm run test:coverage` | 253 tests in 33 files passed; 69.50% statements, 55.71% branches, 77.77% lines. |
+| `npm run lint` and `npm run format:check` | Passed. |
+| Firebase-configured production build and `npm run check:guest-bundle` | Passed with non-secret placeholder configuration. The initial static graph contains two JavaScript files and no cloud or Firebase chunk. The deferred account chunk imports Firebase. |
+| Browser journeys | 58 of 60 passed initially; the two offline-notice failures were fixed and both then passed. Welcome and automated accessibility journeys also passed after the last copy change. |
+| Account boundary tests | A new guest does not import the account module; first sign-in prepares it, then popup opening occurs on the next click; a retained account or pre-hint workspace/guest history loads it. Existing restore and sync provider tests pass through the facade. |
+
+The configured build's entry graph is **372.6 KiB uncompressed**; Firebase is a
+deferred **594.8 KiB uncompressed** chunk. These are bundle file sizes, not a
+measured mobile transfer or time-to-interaction improvement. The current PWA
+service worker still precaches all JavaScript: **19 entries, 1108.36 KiB**,
+including cloud and Firebase. That preserves a returning signed-in learner's
+offline startup after an update, but means the browser may still download
+account code in the background. B19 must design and verify a smaller cache
+without hiding signed-in offline work. Real Google sign-in, installed-PWA
+updates, physical-phone behavior and CI remain unverified here.
+
+**Next:** B19 startup transfer/offline-cache policy, including a safe account
+offline path, then remaining development dependency advisories (B30).

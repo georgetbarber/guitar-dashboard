@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { cancelRestore, clearStoredRecordings, exportArchive, prepareRestore, requestPersistentStorage, retainedRecordingBytes, storageEstimate, storagePersistenceStatus } from "../repository";
 import type { RestorePreview } from "../repository";
-import { useCloudSync } from "../cloud";
+import { useCloudSync } from "../cloudFacade";
 import { currentInstallPrompt, currentStandaloneMode, showInstallPrompt, subscribeInstallPrompt, subscribeStandaloneMode, type InstallPromptEvent } from "../install";
 import { useV8Store } from "../store";
 import { MODE_OPTIONS, TONAL_ROOTS } from "../validation";
@@ -57,7 +57,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         <header><div><span>Device and account settings</span><h2 id="settings-title">Your instrument, sync and storage</h2></div><button className="icon-button" onClick={close} aria-label="Close settings" data-autofocus>×</button></header>
         <section className={`sync-panel sync-${cloud.status}`} aria-label="Device synchronisation">
           <div><span className="eyebrow">Across your devices</span><h3>{cloud.user ? `Signed in as ${cloud.user.email ?? "your Google account"}` : cloud.configured ? "Sign in to synchronise" : "Sync is not set up"}</h3><p>{cloud.message}</p></div>
-          {cloud.user ? <button className="secondary-action" disabled={Boolean(restore || restoreBusy)} onClick={() => { if (confirm("Sign out and open this device's separate guest workspace? The signed-in account's offline history will remain isolated on this device.")) void cloud.signOut(); }}>Sign out</button> : cloud.configured ? <button className="primary-action" disabled={Boolean(restore || restoreBusy)} onClick={() => void cloud.signIn()}>Continue with Google</button> : null}
+          {cloud.user ? <button className="secondary-action" disabled={Boolean(restore || restoreBusy)} onClick={() => { if (confirm("Sign out and open this device's separate guest workspace? The signed-in account's offline history will remain isolated on this device.")) void cloud.signOut(); }}>Sign out</button> : cloud.configured ? <button className="primary-action" disabled={Boolean(restore || restoreBusy)} onClick={() => void cloud.signIn().catch(() => undefined)}>{cloud.signInReady ? "Open Google sign-in" : "Prepare Google sign-in"}</button> : null}
         </section>
         <section className="install-panel" aria-label="Install Guitar Academy">
           <div><span className="eyebrow">Pixel and offline use</span><h3>{standalone ? "Opened in app mode" : "Install Guitar Academy"}</h3><p>The app shell works offline. Learning changes queue safely and synchronise when the connection returns.</p></div>

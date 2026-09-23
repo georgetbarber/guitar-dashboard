@@ -12,6 +12,7 @@
     "test:watch": "vitest src tests/hosting.test.ts tests/release.test.ts",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "format:check": "node scripts/check-format.mjs",
+    "check:guest-bundle": "node scripts/check-guest-bundle.mjs",
     "test:e2e:install": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright install chromium",
     "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test",
     "test:coverage": "vitest run src tests/hosting.test.ts tests/release.test.ts --coverage"

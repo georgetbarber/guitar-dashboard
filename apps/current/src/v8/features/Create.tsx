@@ -6,7 +6,7 @@ import { buildChords, createContext } from "../../core/music/theory";
 import { generateShapes } from "../../core/instrument/guitar";
 import { newId } from "../identity";
 import { clearSketchRecordings, loadBlob, saveBlob } from "../repository";
-import { useCloudSync } from "../cloud";
+import { useCloudSync } from "../cloudFacade";
 import { SKETCH_LIMITS, admitSketchEdit, boundTempo, describeExceedances } from "../limits";
 import { MODE_OPTIONS, TONAL_ROOTS } from "../validation";
 import { useV8Store } from "../store";

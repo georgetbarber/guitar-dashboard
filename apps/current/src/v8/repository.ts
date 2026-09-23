@@ -181,6 +181,29 @@ export async function workspaceExists(workspaceId: WorkspaceId): Promise<boolean
   return (await loadWorkspace(workspaceId)).status !== "empty";
 }
 
+/** Used once when upgrading an older installation that has no cloud-loading hint. */
+export async function hasAccountWorkspace(): Promise<boolean> {
+  let indexedDbAvailable = false;
+  try {
+    const database = await openDatabase();
+    const transaction = database.transaction(STATE_STORE, "readonly");
+    const keys = await requestResult(transaction.objectStore(STATE_STORE).getAllKeys());
+    database.close();
+    indexedDbAvailable = true;
+    if (keys.some((key) => typeof key === "string" && key.startsWith("account:"))) return true;
+  } catch {
+    // Check the compatibility copy before falling back to an eager auth check.
+  }
+  try {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      if (localStorage.key(index)?.startsWith(`${LOCAL_FALLBACK}:account:`)) return true;
+    }
+  } catch {
+    return true;
+  }
+  return !indexedDbAvailable;
+}
+
 export async function workspaceHasLearningData(workspaceId: WorkspaceId): Promise<boolean> {
   const load = await loadWorkspace(workspaceId);
   if (load.status === "unreadable") return true;

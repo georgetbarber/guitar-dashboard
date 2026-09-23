@@ -16,7 +16,7 @@ vi.mock("../repository", async (original) => ({
   ...await original<typeof import("../repository")>(),
   loadWorkspace: vi.fn(), savePersistedState: vi.fn(), discardIncompleteStaging: vi.fn(), exportArchive: vi.fn()
 }));
-vi.mock("../cloud", () => ({ useCloudSync: () => ({ user: null, status: "local" }) }));
+vi.mock("../cloudFacade", () => ({ useCloudSync: () => ({ user: null, status: "local" }) }));
 vi.mock("../../audio/engine", () => ({ playHarmonicRelationship: vi.fn(), playMelodicRelationship: vi.fn() }));
 
 function deferred<T>() {

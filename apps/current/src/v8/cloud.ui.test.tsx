@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { CloudSyncProvider, useCloudSync } from "./cloud";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { CloudSyncProvider, useCloudSync } from "./cloudFacade";
+import { beginPreparedSignIn } from "./cloud";
 import { DEFAULT_STATE, V8StoreProvider, useV8Store } from "./store";
 import { RestoreHoldNotice } from "./components/SaveStatus";
 import * as repository from "./repository";
 import { setDoc } from "firebase/firestore";
+import { signInWithPopup } from "firebase/auth";
 import { resetUpdateStateForTests } from "./updates";
 
 // Only the external SDK and device I/O are replaced. Both React providers,
@@ -22,7 +24,7 @@ vi.mock("firebase/app", () => ({ getApps: () => [{}], initializeApp: vi.fn() }))
 vi.mock("firebase/auth", () => ({
   getAuth: () => ({}), getRedirectResult: async () => null,
   onAuthStateChanged: (_auth: unknown, callback: typeof firebase.authChanged) => { firebase.authChanged = callback; return vi.fn(); },
-  GoogleAuthProvider: vi.fn(), signInWithPopup: vi.fn(), signOut: vi.fn(),
+  GoogleAuthProvider: vi.fn(), signInWithPopup: vi.fn(), signInWithRedirect: vi.fn(async () => {}), signOut: vi.fn(),
 }));
 vi.mock("firebase/firestore", () => ({
   getFirestore: () => ({}), doc: (_db: unknown, ...path: string[]) => path.join("/"),
@@ -56,17 +58,45 @@ function Controls() {
   </>;
 }
 
+const stored = new Map<string, string>();
+const testStorage = {
+  getItem: (key: string) => stored.get(key) ?? null,
+  setItem: (key: string, value: string) => { stored.set(key, value); },
+  removeItem: (key: string) => { stored.delete(key); },
+  clear: () => { stored.clear(); },
+  key: (index: number) => [...stored.keys()][index] ?? null,
+  get length() { return stored.size; }
+};
+const noAuthChange = () => {};
+
+async function waitForAuthListener() {
+  vi.useRealTimers();
+  try { await waitFor(() => expect(firebase.authChanged).not.toBe(noAuthChange)); }
+  finally { vi.useFakeTimers(); }
+}
+
 beforeEach(() => {
   vi.clearAllMocks(); vi.useFakeTimers(); resetUpdateStateForTests();
+  firebase.authChanged = noAuthChange;
+  Object.defineProperty(window, "localStorage", { value: testStorage, configurable: true });
+  vi.stubGlobal("localStorage", testStorage);
+  testStorage.setItem("guitar-academy-cloud-session", "account");
   repository.setActiveWorkspace("anonymous");
   vi.mocked(repository.loadWorkspace).mockResolvedValue({ status: "ok", state: structuredClone(DEFAULT_STATE) });
   vi.stubGlobal("confirm", vi.fn(() => true));
 });
-afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); resetUpdateStateForTests(); });
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); testStorage.clear(); resetUpdateStateForTests(); });
+
+it("uses a popup from a prepared user gesture and retains the account hint", async () => {
+  testStorage.setItem("guitar-academy-cloud-session", "guest");
+  await beginPreparedSignIn();
+  expect(signInWithPopup).toHaveBeenCalledOnce();
+  expect(testStorage.getItem("guitar-academy-cloud-session")).toBe("account");
+});
 
 it("cancels a scheduled upload on restore and resumes only after a confirmed account choice", async () => {
   render(<V8StoreProvider><CloudSyncProvider><Controls /><RestoreHoldNotice /></CloudSyncProvider></V8StoreProvider>);
-  await act(async () => {});
+  await waitForAuthListener();
   await act(async () => firebase.authChanged({ uid: "learner", email: "learner@example.test" }));
   expect(screen.getByTestId("account").textContent).toBe("account:learner");
   expect(firebase.snapshots.size).toBe(3);
@@ -109,8 +139,9 @@ it("reloads a held account without subscribing or uploading, including after sig
   vi.mocked(repository.loadWorkspace).mockImplementation(async (workspace) => ({ status: "ok", state: workspace === "account:learner" ? { ...DEFAULT_STATE, pendingRestoreId: "saved-restore", lastReflection: "My restored idea" } : structuredClone(DEFAULT_STATE) }));
   const mount = () => render(<V8StoreProvider><CloudSyncProvider><Controls /><RestoreHoldNotice /></CloudSyncProvider></V8StoreProvider>);
   for (let attempt = 0; attempt < 2; attempt++) {
+    firebase.authChanged = noAuthChange;
     const view = mount();
-    await act(async () => {});
+    await waitForAuthListener();
     await act(async () => firebase.authChanged({ uid: "learner" }));
     await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
     expect(screen.getByTestId("reflection").textContent).toBe("My restored idea");
@@ -127,7 +158,7 @@ it("reloads a held account without subscribing or uploading, including after sig
 
 it("ignores late snapshots from the subscription retired when a restore begins", async () => {
   render(<V8StoreProvider><CloudSyncProvider><Controls /><RestoreHoldNotice /></CloudSyncProvider></V8StoreProvider>);
-  await act(async () => {});
+  await waitForAuthListener();
   await act(async () => firebase.authChanged({ uid: "learner" }));
   await emitEmptyAccount();
   const lateSketches = firebase.snapshots.get("users/learner/sketches")!;
@@ -147,7 +178,7 @@ it("keeps sync paused and the choice retryable when persisting confirmation fail
   vi.mocked(repository.loadWorkspace).mockResolvedValue({ status: "ok", state: { ...DEFAULT_STATE, pendingRestoreId: "saved-restore" } });
   vi.mocked(repository.confirmRestoreMerge).mockRejectedValueOnce(new Error("Device refused the choice"));
   render(<V8StoreProvider><CloudSyncProvider><Controls /><RestoreHoldNotice /></CloudSyncProvider></V8StoreProvider>);
-  await act(async () => {});
+  await waitForAuthListener();
   await act(async () => firebase.authChanged({ uid: "learner" }));
   await act(async () => { fireEvent.click(screen.getByText("Merge with my account")); });
   expect(screen.getByText("Device refused the choice")).toBeTruthy();
@@ -164,7 +195,7 @@ it("keeps sync paused and the choice retryable when persisting confirmation fail
 it("does not subscribe or upload when the signed-in device workspace is unreadable", async () => {
   vi.mocked(repository.loadWorkspace).mockImplementation(async (workspace) => workspace === "account:learner" ? { status: "unreadable", reason: "Unknown format", raw: { version: 99 } } : { status: "ok", state: structuredClone(DEFAULT_STATE) });
   render(<V8StoreProvider><CloudSyncProvider><Controls /><RestoreHoldNotice /></CloudSyncProvider></V8StoreProvider>);
-  await act(async () => {});
+  await waitForAuthListener();
   await act(async () => firebase.authChanged({ uid: "learner" }));
   await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
   expect(screen.getByTestId("sync-status").textContent).toBe("error");

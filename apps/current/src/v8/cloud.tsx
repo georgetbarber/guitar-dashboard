@@ -27,19 +27,10 @@ import { acceptEvidence, acceptProfile, acceptSketches, cloudProfile, commitIsol
 import type { CloudProfile, PendingWrite, Withheld } from "./sync";
 import type { RecordedTake, Sketch, V8State } from "./types";
 import { useV8Store } from "./store";
+import { firebaseConfig, CLOUD_CONFIGURED, RECORDING_SHARING } from "./cloudConfig";
+import { writeCloudSessionHint } from "./cloudSessionHint";
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string | undefined,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID as string | undefined,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID as string | undefined,
-  appCheckSiteKey: import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY as string | undefined
-};
-
-export const CLOUD_CONFIGURED = Boolean(firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId && firebaseConfig.appId);
-export const APP_CHECK_CONFIGURED = Boolean(firebaseConfig.appCheckSiteKey);
+export { CLOUD_CONFIGURED, APP_CHECK_CONFIGURED, RECORDING_SHARING } from "./cloudConfig";
 
 const app = CLOUD_CONFIGURED ? (getApps()[0] ?? initializeApp(firebaseConfig)) : null;
 if (app && firebaseConfig.appCheckSiteKey) {
@@ -57,13 +48,20 @@ const database = app ? getFirestore(app) : null;
  * an explicit opt-in: set VITE_RECORDING_SHARING=enabled once Storage is set up
  * and its rules are deployed. Until then no sharing control is offered.
  */
-export const RECORDING_SHARING = import.meta.env.VITE_RECORDING_SHARING === "enabled";
 const recordingStorage = app && firebaseConfig.storageBucket && RECORDING_SHARING ? getStorage(app) : null;
+
+/** Called from a second user gesture after the account SDK has finished loading. */
+export async function beginPreparedSignIn(): Promise<void> {
+  if (!auth) throw new Error("Sync across devices is not set up in this copy of Guitar Academy.");
+  await signInWithPopup(auth, new GoogleAuthProvider());
+  writeCloudSessionHint("account");
+}
 
 export type SyncStatus = "local-only" | "signed-out" | "account-choice" | "restore-hold" | "syncing" | "synced" | "offline" | "error";
 
-interface CloudValue {
+export interface CloudValue {
   configured: boolean;
+  signInReady: boolean;
   /** True only when this build opted in to Storage-backed take sharing. */
   sharingAvailable: boolean;
   user: User | null;
@@ -195,7 +193,8 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Google sign-in could not finish.");
     });
-    return onAuthStateChanged(auth, (nextUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      writeCloudSessionHint(nextUser ? "account" : "guest");
       const revision = ++authRevisionRef.current;
       setRemoteReady(false);
       cacheRef.current = emptyCache();
@@ -244,6 +243,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         setMessage(error instanceof Error ? error.message : "This device workspace could not be opened safely.");
       });
     });
+    return unsubscribe;
   }, [switchWorkspace]);
 
   useEffect(() => {
@@ -373,16 +373,14 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<CloudValue>(() => ({
     configured: CLOUD_CONFIGURED,
+    signInReady: true,
     sharingAvailable: Boolean(recordingStorage),
     user,
     status,
     message,
     accountChoice: pendingUser ? { email: pendingUser.email ?? "the selected Google account" } : null,
-    signIn: async () => {
-      if (!auth) throw new Error("Sync across devices is not set up in this copy of Guitar Academy.");
-      await signInWithPopup(auth, new GoogleAuthProvider());
-    },
-    signOut: async () => { if (auth) await firebaseSignOut(auth); },
+    signIn: beginPreparedSignIn,
+    signOut: async () => { if (auth) await firebaseSignOut(auth); writeCloudSessionHint("guest"); },
     connectDeviceHistory: async () => {
       if (!pendingUser) throw new Error("No account is waiting for a device-history choice.");
       const nextUser = pendingUser;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCloudSync } from "../cloud";
+import { useCloudSync } from "../cloudFacade";
 import { useV8Store } from "../store";
 import { UpdateNotice, useUpdateHold } from "./UpdateNotice";
 

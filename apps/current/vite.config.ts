@@ -55,6 +55,7 @@ export default defineConfig({
     port: 4184
   },
   build: {
+    manifest: true,
     rolldownOptions: {
       output: {
         manualChunks(id) {

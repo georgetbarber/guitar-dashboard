@@ -61,6 +61,7 @@ npm test
 npm run test:coverage
 npm run test:rules
 npm run build
+npm run check:guest-bundle
 npm run test:e2e:install
 npm run test:e2e
 ```
@@ -70,6 +71,8 @@ Coverage reports are written to `coverage/` for the save, restore, sync and rela
 Lint checks the maintained application source and applies additional promise and unsafe-assignment rules to persistence and sync. Formatting checks newly added app code plus a small set of adopted critical files. Existing files outside that set keep their current layout until deliberately adopted; this prevents a repository-wide formatting change. Both checks run before the CI test suites and in the local publisher.
 
 Both hosting workflows run the desktop and phone browser journeys before publication. The live workflow serialises publication without cancelling an active deployment and refuses a checkout that is no longer current `main`. These configured checks do not constitute evidence of a successful CI run.
+
+The guest-bundle check follows the production manifest's static imports and fails if startup directly imports the account or Firebase chunk. An older installation with an account workspace or existing guest learning still checks for a retained login once; later signed-out visits skip that code. The service worker currently precaches all JavaScript, including account code; cache policy and transfer-size work remain in Phase 2B.
 
 The app runs at [http://localhost:4184](http://localhost:4184).
 

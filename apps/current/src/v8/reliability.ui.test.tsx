@@ -18,7 +18,7 @@ vi.mock("./repository", async (original) => ({
   exportArchive: vi.fn(), prepareRestore: vi.fn(), activateRestore: vi.fn(), cancelRestore: vi.fn(),
   saveBlob: vi.fn(), loadBlob: vi.fn(), confirmRestoreMerge: vi.fn(),
 }));
-vi.mock("./cloud", () => ({ useCloudSync: () => ({ user: { email: "learner@example.test" }, status: "synced", signOut: vi.fn() }) }));
+vi.mock("./cloudFacade", () => ({ useCloudSync: () => ({ user: { email: "learner@example.test" }, status: "synced", signOut: vi.fn() }) }));
 vi.mock("../audio/microphone", () => ({ openMicrophone: vi.fn(), startTakeRecording: vi.fn() }));
 vi.mock("../audio/engine", () => ({ stopAudio: vi.fn(), startVoicingProgression: vi.fn() }));
 

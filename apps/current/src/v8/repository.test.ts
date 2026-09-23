@@ -1,8 +1,9 @@
 import "fake-indexeddb/auto";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_STATE } from "./store";
 import {
   accountWorkspaceId,
+  hasAccountWorkspace,
   loadBlob,
   loadPersistedState,
   moveWorkspace,
@@ -25,6 +26,19 @@ async function resetDatabase() {
 
 describe("account-scoped device workspaces", () => {
   beforeEach(resetDatabase);
+
+  it("detects a retained account workspace without treating a guest copy as one", async () => {
+    vi.stubGlobal("localStorage", { length: 0, key: () => null });
+    try {
+      expect(await hasAccountWorkspace()).toBe(false);
+      await savePersistedState(DEFAULT_STATE, "anonymous");
+      expect(await hasAccountWorkspace()).toBe(false);
+      await savePersistedState(DEFAULT_STATE, accountWorkspaceId("learner-a"));
+      expect(await hasAccountWorkspace()).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 
   it("moves guest state and recordings into one account without leaving a guest copy", async () => {
     const guest = {
