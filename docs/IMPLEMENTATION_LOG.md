@@ -1135,3 +1135,43 @@ Add axe (or an equivalent) to the browser journeys for the core screens and
 dialogs, and record a manual keyboard and screen-reader pass.
 
 Then 2A-5, fonts (B16).
+
+---
+
+## Phase 2B-3 — lint, format and coverage visibility (23 September 2026)
+
+**Status: verified locally; CI and live release not verified here.** This
+package addresses the lint/format/coverage portion of B23. Phase 2A-4 and
+2A-5 were completed separately; their evidence is in the linked review notes
+from the implementation plan.
+
+ESLint now checks all current TypeScript source with recommended JavaScript and
+TypeScript rules. The save, restore, sync, cloud, validation, identity and
+update modules receive additional type-aware checks for floating and misused
+promises and unsafe assignments. The initial findings were fixed in the
+affected files. Prettier checks a small adopted set plus newly added app files;
+legacy files are intentionally not reformatted as a whole. Both Firebase
+Hosting workflows run lint and format checks before their existing tests and
+build. The local publisher runs lint, format and coverage checks before it can
+commit or push. Coverage is reported without a global percentage threshold.
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Passed. A deliberately dropped promise in a critical file failed the rule in a temporary mutation check. |
+| `npm run format:check` | Passed. A deliberately unformatted new file failed the gate in a temporary mutation check. |
+| `npm run test:coverage` | 247 tests in 32 files passed; 69.41% statements, 55.96% branches and 77.64% lines overall. `cloud.tsx` remains comparatively weak at 57.87% lines. |
+| `npm run test:e2e` | 60 desktop and phone browser checks passed. |
+| `npm run build` | Passed; the existing large Firebase chunk warning remains. |
+| Workflow and diff review | Both workflow files parsed as YAML; lint/format steps precede tests; `git diff --check` passed. |
+
+The changes were included in `11b22a1` on `main` by a separate publisher run
+while the browser suite was running. This session did not run the publisher or
+push. The checkout was clean and tracked `origin/main` after that commit. A
+GitHub run query was inconclusive: one query returned no run for that commit,
+and a later query could not reach `api.github.com`. CI and live behaviour are
+therefore not claimed as verified by this entry.
+
+**Next:** finish Phase 2B guest-loading and offline-cache work (B18/B19), then
+reconcile the remaining development advisories (B30). The manual keyboard,
+screen-reader and real-phone checks from Phase 2A remain open. Do not treat
+coverage percentages or browser emulation as proof of those experiences.
