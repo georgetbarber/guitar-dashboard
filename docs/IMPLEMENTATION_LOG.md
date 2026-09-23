@@ -1259,3 +1259,58 @@ update across versions, actual phone storage behavior and CI are still open.
 
 **Next:** reconcile remaining development dependency advisories (B30), then
 continue into Phase 3's teaching journey.
+
+---
+
+## Phase 2B-6 — current dependency review and compatible repairs (23 September 2026)
+
+**Status: locally verified; seven moderate development-tool paths remain under
+documented review.** A fresh `npm audit` reported 10 moderate, zero high and
+zero critical paths. `npm audit --omit=dev` reported zero. All 10 paths came
+through the development-only Firebase CLI, not the shipped browser app.
+
+I tested two candidates in temporary lockfiles before changing the project:
+updating Firebase CLI to 15.30.2 alone left all 10 paths, whereas a non-forced
+compatible audit fix reduced them to seven. The committed lockfile change is
+limited to `firebase-tools` 15.27.0 → 15.30.2, `express` 4.22.2 → 4.22.3,
+`body-parser` 1.20.6 → 1.20.8 and `qs` 6.15.3 → 6.16.0. This removes the
+`qs` advisory paths, including [GHSA-4mjr-xmp4-gh2g](https://github.com/advisories/GHSA-4mjr-xmp4-gh2g)
+and [GHSA-x5fp-wj9c-mxmx](https://github.com/advisories/GHSA-x5fp-wj9c-mxmx),
+without adding overrides or changing app dependencies. The Firebase CLI
+15.30.2 [release](https://github.com/firebase/firebase-tools/releases/tag/v15.30.2)
+stays within this project's declared `^15.26.0` range.
+
+The seven remaining npm paths include three affected parent packages
+(`firebase-tools`, `@google-cloud/pubsub`, `gaxios`) and four root advisories:
+
+| Root package in Firebase CLI | Locked version | Upstream issue |
+| --- | --- | --- |
+| `@opentelemetry/core` | 1.30.1 | [Inbound baggage allocation; fixed in 2.8.0](https://github.com/advisories/GHSA-8988-4f7v-96qf) |
+| `csv-parse` | 5.6.0 | [Prototype replacement in duplicate columns; fixed in 7.0.2](https://github.com/advisories/GHSA-8cw4-87c7-c6xx) |
+| `stream-json` | 1.9.1 | [Deeply nested filter CPU exhaustion; fixed in 3.5.0](https://github.com/advisories/GHSA-528h-pc64-c93x) |
+| `uuid` | 9.0.1 | [Buffer bounds for v3/v5/v6; fixed in 11.1.1](https://github.com/advisories/GHSA-w5hq-g745-h8pq) |
+
+Firebase CLI 15.30.2 still declares `@google-cloud/pubsub ^5.2.0`,
+`csv-parse ^5.0.4`, `stream-json ^1.7.3` and `gaxios ^6.7.0`; their nested
+requirements retain the older OpenTelemetry and uuid versions. Forcing the
+patched major versions would bypass the CLI's declared compatibility. npm's
+`--force` suggestion instead downgrades the CLI to 10.1.1, so it was not
+applied. These reports are a development-tool watchlist, not a claim of zero
+remaining advisories; recheck them when Firebase CLI updates its dependency
+ranges. A newer advisory or changed exposure should be assessed afresh.
+
+| Verification after `npm ci` | Result |
+| --- | --- |
+| Live audit | Seven moderate paths; zero high/critical; production-only audit zero. |
+| Coverage, lint, formatting | 256 tests in 34 files passed; lint and formatting passed. |
+| Build and bundle gates | Production build, guest-startup graph and offline-shell checks passed. |
+| Firebase rules | 10 tests passed with Firebase CLI 15.30.2, Java 21 and local emulators. |
+| Browser | 60 desktop/phone checks passed, two production-only checks skipped in the development run; both passed against the production preview. |
+
+Node 26 on this Mac elicits an engine warning from `superstatic@10` (which
+declares Node 20, 22 or 24). The checked workflows use Node 22, and all local
+checks above passed; no claim is made about a live deployment or CI run of
+this lockfile.
+
+**Next:** Phase 3's complete teaching journey, with the manual accessibility
+and physical-phone checks still outstanding from Phase 2.
