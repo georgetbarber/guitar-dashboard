@@ -8,7 +8,7 @@ import {
   buildScale,
   normalize
 } from "./theory";
-import type { Chord, ChordQuality, TonalContext } from "./types";
+import type { Chord, TonalContext } from "./types";
 
 export type ConnectionCategory = "diatonic" | "resolution" | "modal-rock" | "borrowed" | "blues";
 

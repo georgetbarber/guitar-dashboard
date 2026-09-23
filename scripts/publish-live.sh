@@ -85,8 +85,8 @@ if [ ! -d "$APP/node_modules" ]; then
 fi
 
 echo
-echo "Running music, application, Firebase-rule, and production checks..."
-(cd "$APP" && npm run test && npm run test:rules && npm run build)
+echo "Running style, application, Firebase-rule, and production checks..."
+(cd "$APP" && npm run lint && npm run format:check && npm run test:coverage && npm run test:rules && npm run build)
 
 echo
 echo "Keeping Firebase cloud sync configured..."

@@ -55,6 +55,8 @@ Use Node 22 (22.22.2 or newer in that release line) and Java 21 for the Firebase
 ```bash
 npm ci
 npm run dev
+npm run lint
+npm run format:check
 npm test
 npm run test:coverage
 npm run test:rules
@@ -64,6 +66,8 @@ npm run test:e2e
 ```
 
 Coverage reports are written to `coverage/` for the save, restore, sync and related interface code. The rendered tests use synthetic workspaces and mocked storage/SDK boundaries; the separate emulator and browser suites exercise the actual rules and browser persistence.
+
+Lint checks the maintained application source and applies additional promise and unsafe-assignment rules to persistence and sync. Formatting checks newly added app code plus a small set of adopted critical files. Existing files outside that set keep their current layout until deliberately adopted; this prevents a repository-wide formatting change. Both checks run before the CI test suites and in the local publisher.
 
 Both hosting workflows run the desktop and phone browser journeys before publication. The live workflow serialises publication without cancelling an active deployment and refuses a checkout that is no longer current `main`. These configured checks do not constitute evidence of a successful CI run.
 

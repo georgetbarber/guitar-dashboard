@@ -13,7 +13,11 @@ function object(value: unknown, path: string): ObjectValue {
   return value as ObjectValue;
 }
 function str(value: unknown, path: string) { if (typeof value !== "string") fail(path); }
-function id(value: unknown, path: string) { str(value, path); if (!value || (value as string).length > 160 || /[\/\u0000]/.test(value as string) || ["__proto__", "constructor", "prototype"].includes(value as string)) fail(path); }
+function id(value: unknown, path: string) {
+  str(value, path);
+  const text = value as string;
+  if (!text || text.length > 160 || text.includes("/") || text.includes("\u0000") || ["__proto__", "constructor", "prototype"].includes(text)) fail(path);
+}
 function date(value: unknown, path: string) { str(value, path); if (!/^\d{4}-\d\d-\d\dT/.test(value as string) || !Number.isFinite(Date.parse(value as string))) fail(path); }
 function number(value: unknown, path: string, min: number, max: number, integer = false) {
   if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max || (integer && !Number.isInteger(value))) fail(path);

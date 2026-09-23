@@ -70,7 +70,9 @@ export function updateApplying(): boolean {
 
 export function subscribeUpdates(listener: () => void): () => void {
   listeners.add(listener);
-  return () => { listeners.delete(listener); };
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 /** Called when a new build has installed and is waiting. `activate` hands control over. */

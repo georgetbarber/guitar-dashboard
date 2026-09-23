@@ -109,7 +109,7 @@ async function readStoredWorkspace(workspaceId: WorkspaceId): Promise<unknown> {
   try {
     const database = await openDatabase();
     const transaction = database.transaction(STATE_STORE, "readonly");
-    const value = await requestResult(transaction.objectStore(STATE_STORE).get(stateKey(workspaceId)));
+    const value: unknown = await requestResult(transaction.objectStore(STATE_STORE).get(stateKey(workspaceId)));
     database.close();
     if (value !== undefined && value !== null) return value;
   } catch {
@@ -274,7 +274,7 @@ export async function loadBlob(id: string): Promise<Blob | null> {
   try {
     const database = await openDatabase();
     const transaction = database.transaction(BLOB_STORE, "readonly");
-    const value = await requestResult(transaction.objectStore(BLOB_STORE).get(blobKey(activeWorkspace, id)));
+    const value: unknown = await requestResult(transaction.objectStore(BLOB_STORE).get(blobKey(activeWorkspace, id)));
     database.close();
     return value ? value as Blob : null;
   } catch {
@@ -442,7 +442,7 @@ function referencedBlobIds(state: V8State): Set<string> {
 async function readManifest(operationId: string): Promise<StagingManifest | null> {
   const database = await openDatabase();
   const transaction = database.transaction(STAGING_STORE, "readonly");
-  const value = await requestResult(transaction.objectStore(STAGING_STORE).get(operationId));
+  const value: unknown = await requestResult(transaction.objectStore(STAGING_STORE).get(operationId));
   database.close();
   return (value as StagingManifest) ?? null;
 }
