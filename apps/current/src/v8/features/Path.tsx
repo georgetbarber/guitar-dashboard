@@ -2,6 +2,7 @@ import { CURRICULUM, STAGES } from "../curriculum";
 import { nextUnit, unitProgress } from "../learning";
 import { useV8Store } from "../store";
 import type { ActivityKind, CurriculumUnit } from "../types";
+import { OfflineLessonStatus } from "../components/OfflineLessonStatus";
 
 const ACTIVITY_LABELS: Record<ActivityKind, string> = {
   "listen-compare": "Listen",
@@ -60,6 +61,7 @@ export function Path() {
               </section>
             : <section className="unit-detail card">
                 <header><div><span className="eyebrow">{active.id === current.id ? "Current unit" : "Selected unit"} · {unitProgress(state, active.id)}% complete</span><h2>{active.title}</h2><p>{active.outcome}</p></div><strong>{active.activities.length} activities</strong></header>
+                <OfflineLessonStatus />
                 <ol className="activity-list">{active.activities.map((activity) => {
                   const complete = state.completedActivityIds.includes(activity.id);
                   const label = ACTIVITY_LABELS[activity.kind];

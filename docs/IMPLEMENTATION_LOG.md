@@ -1216,3 +1216,46 @@ updates, physical-phone behavior and CI remain unverified here.
 
 **Next:** B19 startup transfer/offline-cache policy, including a safe account
 offline path, then remaining development dependency advisories (B30).
+
+---
+
+## Phase 2B-5 — deliberate offline shell and selected-unit readiness (23 September 2026)
+
+**Status: verified locally in a production preview; not verified on an installed
+Pixel or with a real signed-in account.** B19's cache policy is now an explicit
+allowlist of app code, styles, fonts, font notices and install icons. All built
+JavaScript remains precached, including the deferred cloud and Firebase chunks.
+Dropping those chunks without a version-safe replacement would hide a retained
+account workspace after an update while offline. No separate lesson media
+exists today: curriculum text is bundled and lesson sounds are synthesised in
+the browser. Future demonstration files belong under `lesson-media/` and must
+be fetched for a selected lesson rather than entering the install-time shell.
+The build gate rejects any unexpected precache URL, missing app asset or
+duplicate entry, with review thresholds of 420 KiB for the guest entry graph
+and 1280 KiB for the full raw shell.
+
+The selected unit in Course map now reports offline readiness only after it
+finds the current page's index, entry script and stylesheet together in an
+installed precache. A stale cache does not earn a ready label. The status
+claims the unit's activities and built-in sounds, not downloaded recordings or
+future demonstration media. On a browser without offline downloads it says so.
+The production-preview journey installs the worker, goes offline, reloads the
+unit and opens an activity at desktop and phone viewports. That journey and
+the shell gate are added to both Hosting workflows; the local publisher runs
+the shell gate too.
+
+| Measure | Result |
+| --- | --- |
+| Guest entry graph | 374.3 KiB uncompressed JavaScript; the account chunk remains deferred. |
+| Offline precache | 15 unique entries, 1110.2 KiB raw built files (1,136,893 bytes measured in Chromium CacheStorage); 381.7 KiB summed gzip estimates. The PWA plugin reports 1090.47 KiB, down from its prior 1108.36 KiB report after duplicate icon/manifest entries were removed. |
+| Local preview foreground first-page transfer | 191,232 bytes recorded by Chromium's Navigation and Resource Timing entries. This excludes background worker downloads and is a local-server measurement, not a mobile-network estimate. |
+| Verification | 256 unit/interface tests across 34 files, lint, format, build, guest/offline bundle gates, and two production-preview offline reload journeys passed. |
+
+The remaining B19 media work is conditional: when real demonstration assets
+are introduced in Phases 3 or 6, attach them to a unit, fetch/cache only that
+unit's selected assets, include those assets in the readiness check, and test
+eviction and interrupted downloads. Real Google sign-in, an installed-PWA
+update across versions, actual phone storage behavior and CI are still open.
+
+**Next:** reconcile remaining development dependency advisories (B30), then
+continue into Phase 3's teaching journey.

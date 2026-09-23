@@ -90,6 +90,9 @@ jobs:
           done
           npm run build
       - run: npm run check:guest-bundle
+      - run: npm run check:offline-shell
+      - name: Reopen a selected lesson offline from the production shell
+        run: PWA_PREVIEW=1 npm run test:e2e -- tests/e2e/offline-shell.spec.ts
       - name: Refuse an outdated release
         run: bash ../../scripts/check-release-head.sh
       - name: Authenticate for Firebase security-rule deployment

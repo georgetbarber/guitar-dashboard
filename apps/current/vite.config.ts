@@ -12,7 +12,6 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "prompt",
-      includeAssets: ["guitar-academy-icon.svg", "guitar-academy-icon-192.png", "guitar-academy-icon-512.png"],
       manifest: {
         name: "Guitar Academy",
         short_name: "Guitar Academy",
@@ -35,8 +34,18 @@ export default defineConfig({
       workbox: {
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/__\//],
-        // Keep the two OFL notices with their offline font files.
-        globPatterns: ["**/*.{js,css,html,svg,png,woff2,txt,webmanifest}"],
+        // Only the app's code, fonts, notices and install icons belong to the
+        // automatic offline shell. Put future lesson demonstrations under
+        // lesson-media/ and fetch them deliberately for a selected lesson;
+        // a broad **/* pattern would download every new media file on install.
+        // Account chunks stay here: a signed-in device must still open its
+        // local workspace after an offline update.
+        globPatterns: [
+          "index.html",
+          "registerSW.js",
+          "assets/*.{js,css,woff2}",
+          "fonts/*-OFL.txt"
+        ],
         cleanupOutdatedCaches: true,
         /*
          * A new worker installs and then WAITS. clientsClaim and skipWaiting

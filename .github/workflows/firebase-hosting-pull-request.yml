@@ -86,6 +86,9 @@ jobs:
           done
           npm run build
       - run: npm run check:guest-bundle
+      - run: npm run check:offline-shell
+      - name: Reopen a selected lesson offline from the production shell
+        run: PWA_PREVIEW=1 npm run test:e2e -- tests/e2e/offline-shell.spec.ts
       - uses: FirebaseExtended/action-hosting-deploy@500ac625ca2dd40cbd15f7659af953801858032a # v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
