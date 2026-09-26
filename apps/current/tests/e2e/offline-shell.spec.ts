@@ -46,7 +46,11 @@ test("a selected unit reports its offline copy and reopens after a disconnected 
   await page.locator(".activity-list li button").first().click();
   await expect(page.locator(".activity-header")).toBeVisible();
   await page.getByRole("button", { name: "Close activity" }).click();
-  await page.locator(".activity-list li").filter({ hasText: "Play a one-note question and answer" }).getByRole("button").click();
+  await page
+    .locator(".activity-list li")
+    .filter({ hasText: "Play a one-note question and answer" })
+    .getByRole("button")
+    .click();
   await expect(page.getByRole("heading", { name: "One-note question and answer" })).toBeVisible();
   await page.getByRole("button", { name: "Hear the exact phrase" }).click();
   await expect(page.getByText(/Count in:/)).toBeVisible();

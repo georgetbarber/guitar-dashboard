@@ -57,7 +57,10 @@ export function validateMaterial(material: MusicalMaterial): string[] {
   const totalBeats = material.bars * material.metre.numerator;
   if (!material.id || !Number.isInteger(material.version) || material.version < 1)
     errors.push("Material needs a stable ID and positive version.");
-  if (material.review.status === "reviewed" && (!material.review.reviewer || !Number.isFinite(Date.parse(material.review.reviewedAt))))
+  if (
+    material.review.status === "reviewed" &&
+    (!material.review.reviewer || !Number.isFinite(Date.parse(material.review.reviewedAt)))
+  )
     errors.push("Reviewed material needs a reviewer and date.");
   if (!Number.isInteger(material.bars) || material.bars < 1 || material.bars > 16)
     errors.push("Material has an invalid bar count.");

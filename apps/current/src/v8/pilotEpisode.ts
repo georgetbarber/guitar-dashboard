@@ -99,8 +99,7 @@ export const PILOT_EPISODE: EpisodeDefinition = {
   materialId: ONE_NOTE_QUESTION_ANSWER.id,
   materialVersion: ONE_NOTE_QUESTION_ANSWER.version,
   objective: "Make a short rhythmic question and answer with one open string, including the silences.",
-  successCriterion:
-    "Enter on count 1, stop each sound on the following beat, and keep the pulse through every rest.",
+  successCriterion: "Enter on count 1, stop each sound on the following beat, and keep the pulse through every rest.",
   capabilityIds: ["pulse.quarter-note.steady", "sound.release.to-rest", "phrase.question-answer.one-note"],
   moves: [
     {

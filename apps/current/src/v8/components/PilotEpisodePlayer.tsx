@@ -114,15 +114,18 @@ export function PilotEpisodePlayer({
     }
     if (!cursor) return;
     stop();
-    dispatch({ type: "openExploreFocus", focus: {
-      materialId: cursor.materialId,
-      materialVersion: cursor.materialVersion,
-      sectionId: cursor.sectionId,
-      tempo: cursor.tempo,
-      returnActivityId: RHYTHM_ACTIVITY_ID,
-      returnRoute: state.activityOrigin ?? state.route,
-      openedAt: new Date().toISOString(),
-    } });
+    dispatch({
+      type: "openExploreFocus",
+      focus: {
+        materialId: cursor.materialId,
+        materialVersion: cursor.materialVersion,
+        sectionId: cursor.sectionId,
+        tempo: cursor.tempo,
+        returnActivityId: RHYTHM_ACTIVITY_ID,
+        returnRoute: state.activityOrigin ?? state.route,
+        openedAt: new Date().toISOString(),
+      },
+    });
     history.pushState({}, "", "/explore");
   };
   useEffect(() => {
@@ -404,7 +407,9 @@ export function PilotEpisodePlayer({
             }
             conceal={check && cursor.assistance !== "reveal"}
           />
-          <button className="text-action" onClick={explorePhrase}>Explore why this phrase works →</button>
+          <button className="text-action" onClick={explorePhrase}>
+            Explore why this phrase works →
+          </button>
           <div className="pilot-controls">
             <label>
               Tempo{" "}
