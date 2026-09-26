@@ -96,6 +96,8 @@ export interface MicroStudy {
 
 export interface CurriculumUnit {
   id: string;
+  /** A fully authored episode can coexist with legacy templated activities during migration. */
+  episodeId?: string;
   stage: number;
   order: number;
   title: string;

@@ -1314,3 +1314,17 @@ this lockfile.
 
 **Next:** Phase 3's complete teaching journey, with the manual accessibility
 and physical-phone checks still outstanding from Phase 2.
+
+---
+
+## Phase 3A-1 — authored one-note pilot material (26 September 2026)
+
+**Status: first structured material and one visible lesson task, locally verified. Phase 3A and the Phase 3 gate remain open.**
+
+The first pilot is an open high-E rhythmic question and answer. Its two 4/4 bars at 60 BPM have explicit one-beat events: question **play, rest, play, rest**; answer **play, play, rest, play**. Each note is E4 on string 1, fret 0. A versioned material record owns tuning, tonal centre, tempo range, sections, durations, rests, note spelling, MIDI pitch and guitar position. Validation checks the event timeline, pitch/position agreement and section coverage. A separate versioned variation shifts the middle answer attack from count 2 to count 3 while preserving the other attacks and the pitch. Reviewed human-guitar reference media is modelled separately and remains empty.
+
+The episode definition names a learning objective, success criterion, three teaching moves, three specific obstacles with changed support, a variation and a later unaided check. These are authored content, not yet a functioning guided episode or evidence of mastery. Only the first unit's rhythm activity is connected to the phrase today: its instruction and visible two-bar count grid come from the pilot; the other early units keep their own tasks. The visible activity still uses self-reported outcomes, and the other activities in the first unit retain their legacy micro-study.
+
+Verification: 261 unit/interface tests across 35 files, typecheck and production build, lint, formatting, guest bundle and offline-shell gates passed. The new lesson journey passed in desktop and mobile Chromium at a 320px viewport, including the exact event order and no horizontal overflow. The guest entry graph is 379.4 KiB before compression, below its 420 KiB review threshold. No physical guitar review, independent learner test, real-phone check or deployed check has occurred.
+
+**Next:** persist the episode cursor and attempt identity with conservative legacy mapping; then build exact audio-clock playback and meaningful repair flows around this material. The Phase 3 gate remains unmet until the whole journey works and a learner can use it without outside coaching.

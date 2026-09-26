@@ -80,6 +80,13 @@ export function noteName(pitchClass: number, preferFlats = false): string {
   return (preferFlats ? FLATS : SHARPS)[normalize(pitchClass)];
 }
 
+export function spelledPitchClass(name: string): PitchClass | null {
+  if (!/^[A-G](?:#{1,2}|b{1,2})?$/.test(name)) return null;
+  const letter = name[0] as (typeof LETTERS)[number];
+  const alteration = [...name.slice(1)].reduce((sum, mark) => sum + (mark === "#" ? 1 : -1), 0);
+  return normalize(NATURAL[letter] + alteration);
+}
+
 function spellName(letter: (typeof LETTERS)[number], pitchClass: PitchClass): string {
   const upward = normalize(pitchClass - NATURAL[letter]);
   const accidental = upward > 6 ? upward - 12 : upward;

@@ -160,6 +160,19 @@ test("exposes all eight stages and a complete unit activity contract", async ({ 
   await expect(page.getByText("Move it somewhere new", { exact: true })).toBeVisible();
 });
 
+test("shows the exact two-bar pilot phrase without phone overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await completeDiagnostic(page);
+  await learnViews(page).getByRole("button", { name: /Course map/ }).click();
+  await page.locator(".activity-list li").filter({ hasText: "Play a one-note question and answer" }).getByRole("button").click();
+  await expect(page.getByRole("heading", { name: "Play a one-note question and answer" })).toBeVisible();
+  await expect(page.locator(".pilot-bar").first()).toContainText("Question");
+  await expect(page.locator(".pilot-bar").first().locator(".pilot-counts strong")).toHaveText(["Play E", "Rest", "Play E", "Rest"]);
+  await expect(page.locator(".pilot-bar").last().locator(".pilot-counts strong")).toHaveText(["Play E", "Play E", "Rest", "Play E"]);
+  await expect(page.locator(".pilot-study")).toContainText("High E string, open (E4) · 60 BPM · 4/4");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+});
+
 test("creates, revises, finishes and restores a local musical sketch", async ({ page }) => {
   await completeDiagnostic(page);
   await learningNav(page).getByRole("button", { name: /Create/ }).click();

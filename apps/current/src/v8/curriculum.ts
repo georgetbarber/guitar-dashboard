@@ -1,4 +1,5 @@
 import type { ActivityDefinition, ActivityKind, CompetencyStrand, CurriculumUnit, EvidenceSource, MicroStudy } from "./types";
+import { PILOT_EPISODE, validatePilotEpisode } from "./pilotEpisode";
 
 interface UnitSeed {
   title: string;
@@ -7,7 +8,7 @@ interface UnitSeed {
   strands: CompetencyStrand[];
   study: [string, number, MicroStudy["metre"], string, string[]];
   earTargets: number[];
-  overrides?: Partial<Record<ActivityKind, { title?: string; instruction?: string }>>;
+  overrides?: Partial<Record<ActivityKind, Partial<Pick<ActivityDefinition, "title" | "instruction" | "action" | "observable" | "prompt" | "hint" | "reveal">>>>;
 }
 
 interface StageSeed {
@@ -20,6 +21,19 @@ const SOUND_ACTION_OVERRIDE = {
   "sing-predict": {
     title: "Predict the sound of your action",
     instruction: "Before playing, describe (aloud or internally) how the note will start, sustain and stop. Then play and compare reality with the prediction."
+  },
+} satisfies NonNullable<UnitSeed["overrides"]>;
+
+const BASELINE_OVERRIDE = {
+  ...SOUND_ACTION_OVERRIDE,
+  rhythm: {
+    title: "Play a one-note question and answer",
+    instruction: "Use the open high E string for two bars. Play the question on counts 1 and 3; answer on counts 1, 2 and 4. Stop the string on each rest while your internal count continues.",
+    action: "Count four beats aloud before starting. Play the question, then the answer at 60 BPM. On every rest, lightly touch the high E string with your picking hand to stop it. Tap only after trying both bars.",
+    observable: "your question notes land on 1 and 3, your answer notes land on 1, 2 and 4, and each rest is silent without losing the pulse.",
+    prompt: "Question: play, rest, play, rest. Answer: play, play, rest, play. One open high E throughout.",
+    hint: "Loop the question bar alone: play on 1 and 3, keep counting through 2 and 4. Then add the answer bar.",
+    reveal: "Question: 1 play, 2 mute, 3 play, 4 mute. Answer: 1 play, 2 play, 3 mute, 4 play. Every sound ends when the following count begins."
   }
 } satisfies NonNullable<UnitSeed["overrides"]>;
 
@@ -42,7 +56,7 @@ export const STAGES: StageSeed[] = [
     title: "Sound and time",
     purpose: "Make deliberate, relaxed sounds that remain connected to an internal pulse.",
     units: [
-      ["Your musical baseline", "diagnostic listening and control", "Discover what is already secure and choose repairs without judgement.", ["sound", "rhythm", "reflection"], ["One clear note", 60, "4/4", "quarter quarter quarter quarter", ["e|--0---0---0---0--|", "Count 1   2   3   4"]], [0], SOUND_ACTION_OVERRIDE],
+      ["Your musical baseline", "diagnostic listening and control", "Discover what is already secure and choose repairs without judgement.", ["sound", "rhythm", "reflection"], ["One clear note", 60, "4/4", "quarter quarter quarter quarter", ["e|--0---0---0---0--|", "Count 1   2   3   4"]], [0], BASELINE_OVERRIDE],
       ["Clean beginnings and endings", "attack, sustain and release", "Control when a note begins, how it lives, and when it stops.", ["sound", "ear"], ["Four shapes of one note", 64, "4/4", "half half", ["B|--5-------5-------|", "Let ring   mute"]], [0], SOUND_ACTION_OVERRIDE],
       ["Pulse before speed", "steady quarter-note pulse", "Keep an even pulse while attention moves between both hands.", ["rhythm", "sound"], ["Pulse anchor", 66, "4/4", "quarter quarter quarter quarter", ["E|--0---0---0---0--|", "    >       >"]], [0], SOUND_ACTION_OVERRIDE],
       ["Subdivide the space", "eighth-note subdivision", "Feel the smaller grid inside the beat without rushing.", ["rhythm", "sound"], ["Two inside one", 62, "4/4", "eighth eighth eighth eighth eighth eighth eighth eighth", ["E|--0-0-0-0-0-0-0-0--|", "Count 1 + 2 + 3 + 4 +"]], [0], SOUND_ACTION_OVERRIDE],
@@ -190,15 +204,15 @@ function makeActivity(unitId: string, seed: UnitSeed, index: number, template: t
     minutes,
     competencyIds: seed.strands.map((strand) => `${strand}:${unitId}`),
     source,
-    action: tonicOnlyListening
+    action: override?.action ?? (tonicOnlyListening
       ? "Tap “Hear the tonic reference”, play the micro-study twice, then name one specific difference between your two attempts."
-      : action,
-    observable: tonicOnlyListening
+      : action),
+    observable: override?.observable ?? (tonicOnlyListening
       ? "you can name one specific change in sound or timing between your two attempts while keeping the tonic in mind."
-      : doneWhen,
-    prompt: `${seed.study[0]}: ${seed.study[3]}. ${seed.study[4].join(" · ")}`,
-    hint: `Reduce the tempo or material. Keep ${seed.focus} as the only problem you are solving.`,
-    reveal: `Reference: ${seed.study[4].join(" / ")}. The goal is to hear and control ${seed.focus}, not copy mechanically.`,
+      : doneWhen),
+    prompt: override?.prompt ?? `${seed.study[0]}: ${seed.study[3]}. ${seed.study[4].join(" · ")}`,
+    hint: override?.hint ?? `Reduce the tempo or material. Keep ${seed.focus} as the only problem you are solving.`,
+    reveal: override?.reveal ?? `Reference: ${seed.study[4].join(" / ")}. The goal is to hear and control ${seed.focus}, not copy mechanically.`,
   };
 }
 
@@ -208,6 +222,7 @@ export const CURRICULUM: CurriculumUnit[] = STAGES.flatMap((stage, stageIndex) =
     const id = `unit-${String(order).padStart(2, "0")}`;
     return {
       id,
+      episodeId: order === 1 ? PILOT_EPISODE.id : undefined,
       stage: stageIndex + 1,
       order,
       title: seed.title,
@@ -236,6 +251,7 @@ export function activityById(id: string): ActivityDefinition | null {
 
 export function validateCurriculum(): string[] {
   const errors: string[] = [];
+  errors.push(...validatePilotEpisode());
   const ids = new Set(CURRICULUM.map((unit) => unit.id));
   const notationDurations: Record<string, number> = {
     whole: 4,
@@ -250,6 +266,7 @@ export function validateCurriculum(): string[] {
   };
   if (CURRICULUM.length !== 48) errors.push(`Expected 48 core units, received ${CURRICULUM.length}.`);
   for (const unit of CURRICULUM) {
+    if (unit.episodeId && (unit.episodeId !== PILOT_EPISODE.id || unit.id !== PILOT_EPISODE.unitId)) errors.push(`${unit.id} has an unknown episode link.`);
     if (unit.activities.length !== ACTIVITY_TEMPLATE.length) errors.push(`${unit.id} does not implement the activity contract.`);
     for (const prerequisite of unit.prerequisiteIds) if (!ids.has(prerequisite)) errors.push(`${unit.id} has missing prerequisite ${prerequisite}.`);
     const kinds = new Set(unit.activities.map((activity) => activity.kind));

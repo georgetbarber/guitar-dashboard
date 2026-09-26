@@ -312,6 +312,19 @@ textarea { min-height: 92px; resize: vertical; }
 .glossary-list dt { font-weight: 600; }
 .glossary-list dd { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.45; }
 .micro-study { display: grid; grid-template-columns: 210px 1fr; gap: .75rem; margin: 1rem 0; padding: .8rem; border-radius: 14px; background: var(--night); color: #f3f5f1; }
+.pilot-study { display: grid; gap: .75rem; margin: 1rem 0; padding: 1rem; border-radius: 14px; background: var(--paper-2); }
+.pilot-study figcaption { display: grid; gap: .15rem; }
+.pilot-study figcaption strong { font-size: 1rem; }
+.pilot-study figcaption small, .pilot-study > p { color: var(--muted); font-size: .78rem; }
+.pilot-study > p { margin: 0; }
+.pilot-bars { display: grid; gap: .65rem; }
+.pilot-bar { display: grid; gap: .35rem; }
+.pilot-bar > strong { font-size: .85rem; }
+.pilot-counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .3rem; }
+.pilot-counts > div { display: grid; gap: .1rem; min-width: 0; padding: .48rem .25rem; border-radius: 8px; text-align: center; background: var(--moss-soft); }
+.pilot-counts > div.is-rest { background: var(--paper); }
+.pilot-counts span { color: var(--muted); font-size: .72rem; }
+.pilot-counts strong { font-size: .82rem; }
 .micro-study figcaption { display: grid; align-content: center; gap: .25rem; }
 .micro-study figcaption span, .micro-study figcaption small { color: #91a69d; font-size: .63rem; }
 .tab-staff { display: grid; gap: .35rem; padding: .75rem; border-radius: 9px; color: #dce8e2; background: rgba(255,255,255,.07); overflow-x: auto; }

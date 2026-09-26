@@ -7,6 +7,7 @@ import { PROFILE_LIMITS } from "../limits";
 import { useV8Store } from "../store";
 import type { ActivityDefinition, Assistance, CompetencyEvidence, EvidenceOutcome } from "../types";
 import { MicroStudy } from "./MicroStudy";
+import { PilotStudy } from "./PilotStudy";
 import { RhythmNotation } from "./RhythmNotation";
 import { RecordSaveStatus } from "./SaveStatus";
 import { useUpdateHold } from "./UpdateNotice";
@@ -230,8 +231,10 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
             <strong>Do this now</strong>
             <p>{activity.action}</p>
           </aside>
-          <MicroStudy study={unit.microStudy} />
-          {activity.kind === "rhythm" && <RhythmNotation pattern={unit.microStudy.rhythm} metre={unit.microStudy.metre} />}
+          {unit.episodeId && activity.kind === "rhythm"
+            ? <PilotStudy />
+            : <MicroStudy study={unit.microStudy} />}
+          {activity.kind === "rhythm" && !unit.episodeId && <RhythmNotation pattern={unit.microStudy.rhythm} metre={unit.microStudy.metre} />}
           {["listen-compare", "sing-predict", "relationship"].includes(activity.kind) && (
             <div className="action-row">
               <button className="primary-action" onClick={() => hear(false)}>{targets.length === 1 && targets[0] === 0 ? "Hear the tonic reference" : "Hear reference and target"}</button>
