@@ -1328,3 +1328,26 @@ The episode definition names a learning objective, success criterion, three teac
 Verification: 261 unit/interface tests across 35 files, typecheck and production build, lint, formatting, guest bundle and offline-shell gates passed. The new lesson journey passed in desktop and mobile Chromium at a 320px viewport, including the exact event order and no horizontal overflow. The guest entry graph is 379.4 KiB before compression, below its 420 KiB review threshold. No physical guitar review, independent learner test, real-phone check or deployed check has occurred.
 
 **Next:** persist the episode cursor and attempt identity with conservative legacy mapping; then build exact audio-clock playback and meaningful repair flows around this material. The Phase 3 gate remains unmet until the whole journey works and a learner can use it without outside coaching.
+
+---
+
+## Phase 3A-2, 3B and 3C — first complete pilot journey (26 September 2026)
+
+**Status: implemented and locally verified; the Phase 3 human-learning and physical-review gate remains open.**
+
+The first unit's rhythm activity now opens a guided one-note question-and-answer lesson. Learn presents the exact two-bar phrase, its counts, high-E open-string tab and a small fretboard position. Practise alternates a synthesized example with learner bars. Try gives a four-click count-in, then removes the model sound, pulse, highlighted answer and tab until the learner asks to reveal the notes. The learner reports an outcome and one concrete observation; the app does not claim to hear, score or verify the playing. This pilot is also offered from Continue. The older activities, sketches and broad progress records remain accessible.
+
+A versioned local episode cursor keeps the current step, selected section, tempo, repair, assistance and stable attempt identity across reloads. Versioned pilot attempts and the constrained answer variation live in the device workspace and its exported backup. They are structurally validated on load/import and do not turn older broad activity evidence into pilot success. The first reported success also writes the existing rhythm activity evidence for compatibility, explicitly marked self-reported; granular pilot records are **not cloud-synced** between devices. A later check opens on a different local calendar day after the first reported success and saved variation. It uses the original phrase at 72 BPM and only counts toward the pilot's reported completion if the learner reports an unaided success. Starting over does not erase earlier attempts.
+
+One audio-clock transport schedules the count-in, clicks and notes from the same events used by the count, tab and fretboard. It supports 50, 60, 72 and 88 BPM, full or selected-bar playback, optional looping and immediate stop; legacy sounds pre-empt it rather than overlap. Backgrounding the tab stops playback. The three repair choices narrow the material and change the instruction for starting, stopping a ringing note and holding pulse through silence, then return to both bars. The learner can pause without claiming mastery. The final variation is a deliberately constrained rhythm change (answer attacks on 1, 3 and 4 instead of 1, 2 and 4), not a general composition editor.
+
+Optional microphone capture stays as a temporary object URL in the current tab. The learner can replay it beside the synthesized reference, download it or discard it; the pilot never uploads it. Leaving with an undownloaded take requires a choice. A failed microphone request leaves the lesson usable. Recording on a physical phone and successful positive capture have **not** yet been exercised. The reference is synthesized timing guidance, not a reviewed human guitar demonstration; the material remains marked `draft` and has no performed-reference asset.
+
+| Local verification | Result |
+| --- | --- |
+| Unit/interface tests | 268 passed across 37 files, including musical material, versioned progress, exact playback cues, audio-clock scheduling, interruption and cancellation. |
+| Browser journeys | 64 passed in desktop and mobile Chromium, including the repair/variation/resume journey at 320px, delayed unaided check, denied microphone, and automated accessibility scans in both themes. |
+| Production offline preview | Both desktop and mobile disconnected-reload journeys passed, opening and playing the pilot from the installed shell. Local first-page foreground transfer was 199,570 bytes; measured installed precache was 1,168,383 bytes. These are local Chromium measurements. |
+| Code and size checks | Typecheck/production build, lint, formatting, guest-bundle and offline-shell gates passed. Guest entry graph: 400.8 KiB raw JavaScript (420 KiB review threshold); shell: 1,141.0 KiB raw (1,280 KiB threshold). |
+
+To close the Phase 3 gate, a guitarist must check the note, string, count, muting action, hand instruction and three repair prompts at the actual instrument; an uncoached learner must try the start → hear → practise → repair → vary → return journey; and the installed app's audio, controls, storage and optional microphone must be checked on a real phone. Those observations may require changes. No CI, deployment or live-account claim is made here. Phase 4's broader cross-feature handoffs should build on the pilot only after that review.

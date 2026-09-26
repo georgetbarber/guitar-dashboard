@@ -319,12 +319,54 @@ textarea { min-height: 92px; resize: vertical; }
 .pilot-study > p { margin: 0; }
 .pilot-bars { display: grid; gap: .65rem; }
 .pilot-bar { display: grid; gap: .35rem; }
-.pilot-bar > strong { font-size: .85rem; }
+.pilot-bar > strong { font-size: .95rem; }
 .pilot-counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .3rem; }
 .pilot-counts > div { display: grid; gap: .1rem; min-width: 0; padding: .48rem .25rem; border-radius: 8px; text-align: center; background: var(--moss-soft); }
 .pilot-counts > div.is-rest { background: var(--paper); }
-.pilot-counts span { color: var(--muted); font-size: .72rem; }
-.pilot-counts strong { font-size: .82rem; }
+.pilot-counts > div.is-current { outline: 3px solid var(--gold); outline-offset: 2px; }
+.pilot-counts span { color: var(--muted); font-size: 1.05rem; font-weight: 700; }
+.pilot-counts strong { font-size: .9rem; }
+.pilot-tab { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .3rem; padding-top: .35rem; border-top: 2px solid var(--line); }
+.pilot-tab span { text-align: center; font-size: 1rem; font-weight: 700; }
+.pilot-tab span.is-current { color: var(--moss); text-decoration: underline; text-decoration-thickness: 3px; }
+.pilot-guitar { display: grid; gap: .3rem; padding: .65rem .75rem; border: 1px solid var(--line); border-radius: 9px; }
+.pilot-guitar strong { font-size: .7rem; }
+.pilot-guitar span, .pilot-guitar small { font-size: .76rem; }
+.pilot-guitar small { color: var(--muted); }
+.pilot-fretboard { display: grid; gap: .16rem; max-width: 340px; }
+.pilot-string-row { display: grid; grid-template-columns: 24px 36px repeat(3, minmax(0, 1fr)); align-items: center; min-height: 18px; }
+.pilot-string-row > span { font-weight: 700; }
+.pilot-string-row b { display: grid; width: 24px; height: 24px; place-items: center; border: 1px solid transparent; border-radius: 50%; font-size: .75rem; }
+.pilot-string-row b.target { border-color: var(--moss); }
+.pilot-guitar.is-sounding .pilot-string-row b.target { background: var(--moss); color: white; }
+.pilot-guitar.is-muted .pilot-string-row b.target { border-style: dashed; }
+.pilot-string-row i { display: block; height: 1px; background: var(--muted); border-right: 2px solid var(--line); }
+.pilot-guitar.is-sounding { background: var(--moss-soft); }
+.pilot-guitar.is-muted { background: var(--paper); border-style: dashed; }
+.pilot-episode { display: grid; gap: 1rem; }
+.pilot-notice { margin: 0; padding: .7rem .9rem; border-radius: 10px; background: var(--moss-soft); font-size: .85rem; }
+.pilot-steps { display: flex; flex-wrap: wrap; gap: .45rem; }
+.pilot-steps button { min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); font: inherit; font-size: .88rem; cursor: pointer; }
+.pilot-steps button[aria-current] { border-color: var(--moss); background: var(--moss-soft); font-weight: 700; }
+.pilot-steps button:disabled { opacity: .55; cursor: not-allowed; }
+.pilot-layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(220px, 1fr); align-items: start; gap: 1rem; }
+.pilot-main, .pilot-side { display: grid; gap: .75rem; min-width: 0; }
+.pilot-main > h2, .pilot-side > h2, .pilot-recording h3 { margin: 0; }
+.pilot-main > p, .pilot-side > p, .pilot-recording p { margin: 0; font-size: .88rem; line-height: 1.5; }
+.pilot-controls, .pilot-play-actions, .pilot-outcomes, .pilot-variation { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; }
+.pilot-controls label, .pilot-check label { display: grid; gap: .25rem; font-size: .82rem; font-weight: 600; }
+.pilot-controls select { min-height: 44px; padding: .45rem; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); font: inherit; }
+.pilot-controls .pilot-loop { display: flex; align-items: center; gap: .35rem; min-height: 44px; }
+.pilot-playing { margin: 0; padding: .5rem .7rem; border-radius: 8px; background: var(--moss-soft); font-weight: 700; }
+.pilot-check, .pilot-recording { display: grid; gap: .6rem; padding-top: .8rem; border-top: 1px solid var(--line); }
+.pilot-check p { margin: 0; }
+.pilot-check textarea { min-height: 76px; width: 100%; padding: .65rem; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+.pilot-outcomes button { min-height: 44px; padding: .55rem .7rem; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); font: inherit; cursor: pointer; }
+.pilot-outcomes button:disabled { opacity: .55; cursor: not-allowed; }
+.pilot-side > button { text-align: left; }
+.pilot-recording audio { max-width: 100%; }
+.pilot-variation p { flex-basis: 100%; }
+@media (max-width: 760px) { .pilot-layout { grid-template-columns: minmax(0, 1fr); } }
 .micro-study figcaption { display: grid; align-content: center; gap: .25rem; }
 .micro-study figcaption span, .micro-study figcaption small { color: #91a69d; font-size: .63rem; }
 .tab-staff { display: grid; gap: .35rem; padding: .75rem; border-radius: 9px; color: #dce8e2; background: rgba(255,255,255,.07); overflow-x: auto; }

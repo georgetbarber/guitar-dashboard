@@ -1,14 +1,18 @@
+import { stopTransport } from "./transport";
+
 let context: AudioContext | null = null;
 let activeNodes: OscillatorNode[] = [];
 let activeTimers: number[] = [];
 
 function audioContext(): AudioContext {
+  stopTransport();
   context ??= new AudioContext();
   if (context.state === "suspended") void context.resume();
   return context;
 }
 
 export function stopAudio(): void {
+  stopTransport();
   activeNodes.forEach((node) => {
     try {
       node.stop();

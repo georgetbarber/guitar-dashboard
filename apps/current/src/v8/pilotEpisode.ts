@@ -40,6 +40,7 @@ const rest = (id: string, atBeat: number) => ({ id, kind: "rest" as const, atBea
 
 const common = {
   version: 1,
+  review: { status: "draft" as const },
   tuningMidi: STANDARD_TUNING_MIDI,
   tonalCenter: { name: "E", midi: 64 },
   metre: { numerator: 4 as const, denominator: 4 as const },
@@ -99,7 +100,7 @@ export const PILOT_EPISODE: EpisodeDefinition = {
   materialVersion: ONE_NOTE_QUESTION_ANSWER.version,
   objective: "Make a short rhythmic question and answer with one open string, including the silences.",
   successCriterion:
-    "Play the two bars at 60 BPM, enter on count 1, stop each sound on the following click, and keep the pulse through every rest.",
+    "Enter on count 1, stop each sound on the following beat, and keep the pulse through every rest.",
   capabilityIds: ["pulse.quarter-note.steady", "sound.release.to-rest", "phrase.question-answer.one-note"],
   moves: [
     {

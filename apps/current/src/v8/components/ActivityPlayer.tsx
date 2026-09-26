@@ -8,6 +8,7 @@ import { useV8Store } from "../store";
 import type { ActivityDefinition, Assistance, CompetencyEvidence, EvidenceOutcome } from "../types";
 import { MicroStudy } from "./MicroStudy";
 import { PilotStudy } from "./PilotStudy";
+import { PilotEpisodePlayer } from "./PilotEpisodePlayer";
 import { RhythmNotation } from "./RhythmNotation";
 import { RecordSaveStatus } from "./SaveStatus";
 import { useUpdateHold } from "./UpdateNotice";
@@ -63,6 +64,7 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
     return () => { requestCloseRef.current = null; };
   }, [requestCloseRef, unsavedReflection, onClose]);
   if (!activity) return null;
+  if (activity.id === "unit-01-rhythm" && unit.episodeId) return <PilotEpisodePlayer onClose={onClose} requestCloseRef={requestCloseRef} />;
   const originLabel = state.activityOrigin === "practice" ? "Strengthen"
     : state.activityOrigin === "path" ? "Course map"
       : state.activityOrigin === "today" ? "Guided session"

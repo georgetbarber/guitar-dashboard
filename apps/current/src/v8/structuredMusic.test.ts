@@ -28,6 +28,7 @@ describe("the first authored musical episode", () => {
       [4, 8],
     ]);
     expect(positionMidi(STANDARD_TUNING_MIDI, { string: 1, fret: 0 })).toBe(64);
+    expect(ONE_NOTE_QUESTION_ANSWER.review.status).toBe("draft");
     expect(PILOT_PERFORMED_REFERENCES).toEqual([]);
   });
 

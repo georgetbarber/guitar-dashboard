@@ -160,17 +160,67 @@ test("exposes all eight stages and a complete unit activity contract", async ({ 
   await expect(page.getByText("Move it somewhere new", { exact: true })).toBeVisible();
 });
 
-test("shows the exact two-bar pilot phrase without phone overflow", async ({ page }) => {
+test("starts, repairs, varies and resumes the first teaching episode at phone width", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await completeDiagnostic(page);
-  await learnViews(page).getByRole("button", { name: /Course map/ }).click();
-  await page.locator(".activity-list li").filter({ hasText: "Play a one-note question and answer" }).getByRole("button").click();
-  await expect(page.getByRole("heading", { name: "Play a one-note question and answer" })).toBeVisible();
+  await page.getByRole("button", { name: "Start the one-note lesson" }).click();
+  await expect(page.getByRole("heading", { name: "One-note question and answer" })).toBeVisible();
   await expect(page.locator(".pilot-bar").first()).toContainText("Question");
   await expect(page.locator(".pilot-bar").first().locator(".pilot-counts strong")).toHaveText(["Play E", "Rest", "Play E", "Rest"]);
   await expect(page.locator(".pilot-bar").last().locator(".pilot-counts strong")).toHaveText(["Play E", "Play E", "Rest", "Play E"]);
   await expect(page.locator(".pilot-study")).toContainText("High E string, open (E4) · 60 BPM · 4/4");
+  await page.getByRole("button", { name: "Hear the exact phrase" }).click();
+  await expect(page.getByRole("button", { name: "Stop sound" })).toBeEnabled();
+  await expect(page.locator(".pilot-tab .is-current").first()).toHaveText("0", { timeout: 7000 });
+  await expect(page.locator(".pilot-guitar.is-sounding")).toContainText("Play this open string now");
+  await page.getByRole("button", { name: "Stop sound" }).click();
+  await page.getByRole("button", { name: /2 · Practise it/ }).click();
+  await page.getByRole("button", { name: "My note rings through the rest." }).click();
+  await expect(page.locator(".pilot-counts strong")).toHaveText(["Play E", "Rest"]);
+  await page.getByRole("button", { name: "Return to both bars →" }).click();
+  await page.getByRole("button", { name: /3 · Try unaided/ }).click();
+  await expect(page.locator(".pilot-counts strong").first()).toHaveText("·");
+  await page.getByRole("button", { name: "Count in, then I play" }).click();
+  await expect(page.getByText("Your turn — play both bars")).toBeVisible({ timeout: 7000 });
+  await expect(page.locator(".pilot-counts .is-current, .pilot-tab .is-current")).toHaveCount(0);
+  await page.getByRole("button", { name: "Show the notes to help me" }).click();
+  await expect(page.getByText(/recorded as assisted/)).toBeVisible();
+  await expect(page.locator(".pilot-counts strong").first()).toHaveText("Play E");
+  await expect(page.locator('.save-indicator[data-status="saved"]:visible')).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "One-note question and answer" })).toBeVisible();
+  await expect(page.getByText(/recorded as assisted/)).toBeVisible();
+  await page.getByRole("button", { name: "I played both bars without the app sound" }).click();
+  await page.getByRole("textbox", { name: "One concrete observation" }).fill("The rests were clear, but I needed the notes on screen.");
+  await page.getByRole("button", { name: "I could do it" }).click();
+  await expect(page.getByRole("heading", { name: "Move one answer note" })).toBeVisible();
+  await page.getByRole("button", { name: "Keep this variation" }).click();
+  await expect(page.getByText(/Once the device save finishes/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /5 · Return later/ })).toBeDisabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+});
+
+test("requires a different day and an unaided 72 BPM return before calling the pilot complete", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-09-26T10:00:00Z") });
+  await completeDiagnostic(page);
+  await page.getByRole("button", { name: "Start the one-note lesson" }).click();
+  await page.getByRole("button", { name: /3 · Try unaided/ }).click();
+  await page.getByRole("button", { name: "I played both bars without the app sound" }).click();
+  await page.getByRole("textbox", { name: "One concrete observation" }).fill("I kept the pulse through both rests.");
+  await page.getByRole("button", { name: "I could do it" }).click();
+  await page.getByRole("button", { name: "Keep this variation" }).click();
+  await expect(page.getByRole("button", { name: /5 · Return later/ })).toBeDisabled();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await expect(page.locator('.save-indicator[data-status="saved"]:visible')).toBeVisible();
+  await page.clock.fastForward("24:00:00");
+  await page.getByRole("button", { name: "Continue the one-note lesson" }).click();
+  await page.getByRole("button", { name: /5 · Return later/ }).click();
+  await expect(page.getByRole("combobox", { name: "Tempo" })).toHaveValue("72");
+  await expect(page.getByRole("combobox", { name: "Tempo" })).toBeDisabled();
+  await page.getByRole("button", { name: "I played both bars without the app sound" }).click();
+  await page.getByRole("textbox", { name: "One concrete observation" }).fill("I entered on one and stopped every note on time.");
+  await page.getByRole("button", { name: "I could do it" }).click();
+  await expect(page.getByText(/later unaided success/)).toBeVisible();
 });
 
 test("creates, revises, finishes and restores a local musical sketch", async ({ page }) => {
@@ -207,6 +257,18 @@ test("handles denied microphone access without losing a sketch", async ({ page, 
   await page.getByRole("button", { name: "Record a temporary take" }).click();
   await expect(page.getByText(/Microphone unavailable/)).toBeVisible();
   await expect(page.getByLabel("Sketch name")).toBeVisible();
+});
+
+test("a denied microphone leaves the pilot lesson playable and private", async ({ page, context }) => {
+  await context.clearPermissions();
+  await page.addInitScript(() => Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: () => Promise.reject(new DOMException("Permission denied", "NotAllowedError")) } }));
+  await completeDiagnostic(page);
+  await page.getByRole("button", { name: "Start the one-note lesson" }).click();
+  await page.getByRole("button", { name: "Record a temporary take" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Permission denied" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Hear the exact phrase" })).toBeEnabled();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await expect(page.getByRole("heading", { name: "Turn one relationship into music." })).toBeVisible();
 });
 
 test("exports a complete local backup", async ({ page }) => {

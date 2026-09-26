@@ -1,12 +1,12 @@
 # Guitar Academy improvement plan
 
-**Status (23 September 2026): Phases 0 and 1 implemented; Phase 2 engineering packages 2B-1 to 2B-6 and 2A-1 to 2A-5 are implemented and locally checked. B30's dependency review retains seven documented development-only advisory paths pending upstream compatible fixes. Manual accessibility and real-device checks remain. See [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) for evidence and limits.**
+**Status (26 September 2026): Phases 0 and 1 implemented; Phase 2 engineering packages 2B-1 to 2B-6 and 2A-1 to 2A-5 locally checked. Phase 3's one-note pilot is implemented and locally checked, with its human guitar/content review, independent learner trial and real-device checks still open. B30 retains seven documented development-only advisory paths pending compatible upstream fixes. See [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) for evidence and limits.**
 
 Prepared 10 September 2026. Covers the supplied engineering audit and the [design and learning audit](/Users/georgethomasbarber/Developer/guitar-dashboard/docs/reviews/2026-09-10-design-and-learning-audit.md). The existing [Learning Effectiveness Backlog](/Users/georgethomasbarber/Developer/guitar-dashboard/docs/LEARNING_EFFECTIVENESS_BACKLOG.md) supplies additional content acceptance criteria.
 
 The intended outcome is a dependable guitar-learning companion that helps George hear something he wants to make, learn it with useful support, understand its relationships, develop his own version, and retain the ability later.
 
-This remains the full implementation sequence. Phases 3–8 and the unfinished parts of Phase 2 are pending. The implementation log distinguishes completed local work from CI, device and deployment evidence. Each audit finding has an explicit destination in the coverage register near the end.
+This remains the full implementation sequence. Phase 3's local pilot is ready for review; Phases 4–8 and the unfinished checks from Phases 2 and 3 remain. The implementation log distinguishes completed local work from CI, device and deployment evidence. Each audit finding has an explicit destination in the coverage register near the end.
 
 ## 1. Scope and delivery approach
 

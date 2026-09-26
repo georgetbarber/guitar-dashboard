@@ -128,6 +128,50 @@ export interface SessionPlan {
   generatedAt: string;
 }
 
+/** Device-durable position in the first authored episode. Older workspaces omit it. */
+export interface PilotCursor {
+  id: string;
+  episodeId: string;
+  episodeVersion: number;
+  materialId: string;
+  materialVersion: number;
+  step: "learn" | "practise" | "try" | "repair" | "vary" | "return";
+  sectionId: "whole" | "question" | "answer";
+  tempo: number;
+  assistance: Assistance;
+  /** Generated when a check begins and reused if the record action is retried. */
+  attemptId?: string;
+  repairId?: string;
+  updatedAt: string;
+}
+
+/** A self-report about a specific attempt; it is never a measured performance. */
+export interface PilotAttempt {
+  id: string;
+  cursorId: string;
+  episodeId: string;
+  episodeVersion: number;
+  materialId: string;
+  materialVersion: number;
+  kind: "first-check" | "later-check";
+  assistance: Assistance;
+  method: EvidenceMethod;
+  tempo: number;
+  outcome: EvidenceOutcome;
+  observation: string;
+  occurredAt: string;
+}
+
+export interface PilotVariation {
+  id: string;
+  sourceMaterialId: string;
+  sourceVersion: number;
+  materialId: string;
+  materialVersion: number;
+  answerMiddleCount: 3;
+  createdAt: string;
+}
+
 export interface LearnerSettings {
   instrument: Instrument;
   dailyMinutes: number;
@@ -216,6 +260,10 @@ export interface Sketch {
 export interface V8State {
   /** Device-only decision, committed atomically with a restored workspace. */
   pendingRestoreId?: string;
+  /** Pilot state is local to this workspace and included in its backup. */
+  pilotCursor?: PilotCursor | null;
+  pilotAttempts?: PilotAttempt[];
+  pilotVariations?: PilotVariation[];
   version: 8;
   syncVersion: 1;
   updatedAt: string;

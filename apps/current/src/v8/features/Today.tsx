@@ -31,6 +31,9 @@ export function Today() {
           {sessionComplete
             ? <button className="primary-action large" onClick={() => navigate("path")}>Session complete — open the Course map</button>
             : <button className="primary-action large" onClick={() => dispatch({ type: "openActivity", activityId: first.activityId })}>Start with: {first.title}</button>}
+          {unit.id === "unit-01" && <button className="secondary-action large" onClick={() => dispatch({ type: "openActivity", activityId: "unit-01-rhythm" })}>
+            {state.pilotCursor ? "Continue the one-note lesson" : "Start the one-note lesson"}
+          </button>}
         </div>
         <div className="session-ring" aria-label={`${unitProgress(state, unit.id)} percent of unit complete`}><strong>{unitProgress(state, unit.id)}%</strong><span>unit complete</span></div>
       </section>

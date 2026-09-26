@@ -10,7 +10,7 @@ import { clampSketchTempo } from "./limits";
 import { mergeCloudSnapshot } from "./sync";
 import type { CloudSnapshot } from "./sync";
 import { SKETCH_SYNC_FIELDS } from "./types";
-import type { CompetencyEvidence, LearnerSettings, RecordedTake, RouteId, Sketch, V8State } from "./types";
+import type { CompetencyEvidence, LearnerSettings, PilotAttempt, PilotCursor, PilotVariation, RecordedTake, RouteId, Sketch, V8State } from "./types";
 
 const ROUTES: RouteId[] = ["today", "path", "practice", "play", "create", "explore"];
 const ROUTE_PATHS: Record<RouteId, string> = {
@@ -56,6 +56,9 @@ export const DEFAULT_STATE: V8State = {
   resumeActivityId: null,
   completedActivityIds: [],
   evidence: [],
+  pilotCursor: null,
+  pilotAttempts: [],
+  pilotVariations: [],
   settings: {
     instrument: "electric", dailyMinutes: 25, tonicName: "C", mode: "major", theme: "light",
     reducedMotion: false, diagnosticComplete: false, startingBaseline: "repair"
@@ -71,6 +74,11 @@ type Action =
   | { type: "suspendActivity"; route: RouteId }
   | { type: "resumeActivity" }
   | { type: "recordActivity"; activityId: string; evidence: CompetencyEvidence[]; reflection?: string }
+  | { type: "beginPilot"; cursor: PilotCursor }
+  | { type: "restartPilot"; cursor: PilotCursor }
+  | { type: "updatePilot"; patch: Partial<Pick<PilotCursor, "step" | "sectionId" | "tempo" | "repairId" | "assistance" | "attemptId">> }
+  | { type: "recordPilotAttempt"; attempt: PilotAttempt }
+  | { type: "savePilotVariation"; variation: PilotVariation }
   | { type: "updateSettings"; settings: Partial<LearnerSettings> }
   | { type: "createSketch" }
   | { type: "updateSketch"; sketch: Sketch }
@@ -143,6 +151,32 @@ function reducer(state: V8State, action: Action): V8State {
         updatedAt: changedAt
       };
     }
+    case "beginPilot":
+      return state.pilotCursor?.episodeId === action.cursor.episodeId
+        && state.pilotCursor?.episodeVersion === action.cursor.episodeVersion
+        && state.pilotCursor?.materialId === action.cursor.materialId
+        && state.pilotCursor?.materialVersion === action.cursor.materialVersion
+        ? state
+        : { ...state, pilotCursor: action.cursor, updatedAt: changedAt };
+    case "restartPilot":
+      return { ...state, pilotCursor: action.cursor, updatedAt: changedAt };
+    case "updatePilot":
+      return state.pilotCursor
+        ? { ...state, pilotCursor: { ...state.pilotCursor, ...action.patch, updatedAt: changedAt }, updatedAt: changedAt }
+        : state;
+    case "recordPilotAttempt":
+      if ((state.pilotAttempts ?? []).some((attempt) => attempt.id === action.attempt.id)) return state;
+      return {
+        ...state,
+        pilotAttempts: [...(state.pilotAttempts ?? []), action.attempt],
+        pilotCursor: state.pilotCursor ? { ...state.pilotCursor,
+          step: action.attempt.kind === "later-check" ? "return" : action.attempt.outcome === "successful" ? "vary" : "repair",
+          updatedAt: changedAt } : state.pilotCursor,
+        updatedAt: changedAt
+      };
+    case "savePilotVariation":
+      if ((state.pilotVariations ?? []).some((variation) => variation.id === action.variation.id)) return state;
+      return { ...state, pilotVariations: [...(state.pilotVariations ?? []), action.variation], updatedAt: changedAt };
     case "updateSettings": {
       const settings = { ...state.settings, ...action.settings };
       return {

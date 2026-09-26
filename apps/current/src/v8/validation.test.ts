@@ -15,6 +15,7 @@ import {
 import { DEFAULT_STATE } from "./store";
 import { acceptEvidence, acceptProfile, acceptSketches, cloudProfile, describeRejected } from "./sync";
 import { createEvidence } from "./learning";
+import { ONE_NOTE_ANSWER_SHIFT, ONE_NOTE_QUESTION_ANSWER, PILOT_EPISODE } from "./pilotEpisode";
 import type { V8State } from "./types";
 
 async function resetDatabase() {
@@ -57,6 +58,35 @@ describe("the stored workspace is validated before it is trusted (B08)", () => {
     const load = await loadWorkspace("anonymous");
     expect(load.status).toBe("ok");
     expect(load.status === "ok" && load.state.sketches).toHaveLength(1);
+  });
+
+  it("keeps an older workspace readable and round-trips a versioned pilot cursor", async () => {
+    const older = validState();
+    delete older.pilotCursor; delete older.pilotAttempts; delete older.pilotVariations;
+    await savePersistedState(older, "anonymous");
+    expect((await loadWorkspace("anonymous")).status).toBe("ok");
+    const state: V8State = { ...older,
+      pilotCursor: { id: "cursor-one", episodeId: PILOT_EPISODE.id, episodeVersion: 1,
+        materialId: ONE_NOTE_QUESTION_ANSWER.id, materialVersion: 1, step: "try",
+        sectionId: "whole", tempo: 60, assistance: "reveal", updatedAt: "2026-09-26T10:00:00.000Z" },
+      pilotAttempts: [{ id: "attempt-one", cursorId: "cursor-one", episodeId: PILOT_EPISODE.id,
+        episodeVersion: 1, materialId: ONE_NOTE_QUESTION_ANSWER.id, materialVersion: 1,
+        kind: "first-check", assistance: "reveal", method: "self-reported", tempo: 60,
+        outcome: "partial", observation: "I lost the pulse on the last rest.", occurredAt: "2026-09-26T10:01:00.000Z" }],
+      pilotVariations: [{ id: "variation-one", sourceMaterialId: ONE_NOTE_QUESTION_ANSWER.id,
+        sourceVersion: 1, materialId: ONE_NOTE_ANSWER_SHIFT.id, materialVersion: 1,
+        answerMiddleCount: 3, createdAt: "2026-09-26T10:02:00.000Z" }]
+    };
+    await savePersistedState(state, "anonymous");
+    const load = await loadWorkspace("anonymous");
+    expect(load.status).toBe("ok");
+    if (load.status === "ok") expect(load.state).toMatchObject({ pilotCursor: state.pilotCursor,
+      pilotAttempts: state.pilotAttempts, pilotVariations: state.pilotVariations });
+  });
+
+  it("quarantines an invalid pilot attempt without erasing the stored bytes", async () => {
+    await writeRaw({ ...validState(), pilotAttempts: [{ id: "bad", outcome: "measured" }] });
+    expect((await loadWorkspace("anonymous")).status).toBe("unreadable");
   });
 
   it("reports an empty workspace as empty rather than unreadable", async () => {

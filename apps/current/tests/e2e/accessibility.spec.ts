@@ -72,6 +72,9 @@ test("core learning screens and dialogs meet automated WCAG 2.2 A and AA checks 
     await page.getByRole("button", { name: /Start with:/ }).click();
     await scan(theme, "Activity dialog", true);
     await page.getByRole("button", { name: "Close activity" }).click();
+    await page.getByRole("button", { name: /(?:Start|Continue) the one-note lesson/ }).click();
+    await scan(theme, "Pilot lesson dialog", true);
+    await page.getByRole("button", { name: "Close lesson" }).click();
   }
   expect(failures, failures.join("\n")).toEqual([]);
 });

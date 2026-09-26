@@ -104,6 +104,39 @@ function evidence(value: unknown, path: string) {
   }
 }
 function deletions(value: unknown, path: string) { for (const [key, time] of Object.entries(object(value, path))) { id(key, `${path} key`); date(time, `${path}.${key}`); } }
+function pilotIdentity(v: ObjectValue, path: string) {
+  id(v.episodeId, `${path}.episodeId`); id(v.materialId, `${path}.materialId`);
+  number(v.episodeVersion, `${path}.episodeVersion`, 1, 1000, true);
+  number(v.materialVersion, `${path}.materialVersion`, 1, 1000, true);
+}
+function pilotCursor(value: unknown, path: string) {
+  const v = object(value, path); id(v.id, `${path}.id`); pilotIdentity(v, path);
+  choice(v.step, ["learn", "practise", "try", "repair", "vary", "return"], `${path}.step`);
+  choice(v.sectionId, ["whole", "question", "answer"], `${path}.sectionId`);
+  choice(v.assistance, ["none", "hint", "reveal", "guided"], `${path}.assistance`);
+  if (v.attemptId !== undefined) id(v.attemptId, `${path}.attemptId`);
+  number(v.tempo, `${path}.tempo`, 20, 400, true);
+  if (v.repairId !== undefined) id(v.repairId, `${path}.repairId`);
+  date(v.updatedAt, `${path}.updatedAt`);
+}
+function pilotAttempt(value: unknown, path: string) {
+  const v = object(value, path); id(v.id, `${path}.id`); id(v.cursorId, `${path}.cursorId`); pilotIdentity(v, path);
+  choice(v.kind, ["first-check", "later-check"], `${path}.kind`);
+  choice(v.assistance, ["none", "hint", "reveal", "guided"], `${path}.assistance`);
+  choice(v.method, ["self-reported"], `${path}.method`);
+  choice(v.outcome, ["successful", "partial", "retry"], `${path}.outcome`);
+  number(v.tempo, `${path}.tempo`, 20, 400, true);
+  str(v.observation, `${path}.observation`); if ((v.observation as string).length > 1000) fail(`${path}.observation length`);
+  date(v.occurredAt, `${path}.occurredAt`);
+}
+function pilotVariation(value: unknown, path: string) {
+  const v = object(value, path); id(v.id, `${path}.id`);
+  id(v.sourceMaterialId, `${path}.sourceMaterialId`); id(v.materialId, `${path}.materialId`);
+  number(v.sourceVersion, `${path}.sourceVersion`, 1, 1000, true);
+  number(v.materialVersion, `${path}.materialVersion`, 1, 1000, true);
+  if (v.answerMiddleCount !== 3) fail(`${path}.answerMiddleCount`);
+  date(v.createdAt, `${path}.createdAt`);
+}
 export function validateSketch(value: unknown): asserts value is Sketch { sketch(value, "sketch"); }
 export function validateEvidence(value: unknown): asserts value is CompetencyEvidence { evidence(value, "observation"); }
 export function validateSettings(value: unknown): asserts value is LearnerSettings { settings(value, "settings"); }
@@ -116,6 +149,9 @@ export function validateProfile(value: unknown): asserts value is CloudProfile {
 export function validateState(value: unknown): asserts value is V8State {
   const v = object(value, "workspace"); if (v.version !== 8 || v.syncVersion !== 1) fail("workspace version");
   if (v.pendingRestoreId !== undefined) id(v.pendingRestoreId, "pending restore");
+  if (v.pilotCursor != null) pilotCursor(v.pilotCursor, "pilot cursor");
+  if (v.pilotAttempts !== undefined) identifiedList(v.pilotAttempts, "pilot attempts", pilotAttempt);
+  if (v.pilotVariations !== undefined) identifiedList(v.pilotVariations, "pilot variations", pilotVariation);
   settings(v.settings, "settings"); date(v.updatedAt, "workspace date"); date(v.settingsUpdatedAt, "settings date");
   choice(v.route, ROUTES, "route"); id(v.activeUnitId, "active unit");
   for (const key of ["activeActivityId", "resumeActivityId", "activeSketchId"]) nullable(v[key], id, key);
