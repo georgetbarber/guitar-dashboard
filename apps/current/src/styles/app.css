@@ -144,6 +144,12 @@ textarea { min-height: 92px; resize: vertical; }
 .today-meta { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1.25rem 0; }
 .course-location + .today-meta { margin-top: 0; }
 .today-meta span { padding: .4rem .6rem; border: 1px solid rgba(255,255,255,.13); border-radius: 999px; color: #c3cec9; font-size: .67rem; text-transform: capitalize; }
+.personal-goal { display: grid; gap: .3rem; max-width: 37rem; margin: 1rem 0; color: #dce8df; font-size: .78rem; font-weight: 700; }
+.personal-goal input { width: 100%; min-height: 44px; padding: .65rem .8rem; border: 1px solid rgba(255,255,255,.25); border-radius: 10px; background: rgba(255,255,255,.1); color: #fff; font: inherit; }
+.personal-goal input::placeholder { color: #b9c9c1; }
+.session-destination { display: grid; gap: .45rem; min-width: 170px; max-width: 240px; padding: 1.2rem; border: 1px solid rgba(255,255,255,.2); border-radius: 18px; background: rgba(255,255,255,.06); }
+.session-destination span, .session-destination small { color: #bdcdc4; font-size: .72rem; }
+.session-destination strong { font-family: "Instrument Serif", serif; font-size: 1.75rem; font-weight: 400; line-height: 1.1; }
 .session-ring { display: grid; width: 164px; height: 164px; flex: 0 0 auto; place-content: center; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.06) 52%, transparent 54%); text-align: center; }
 .session-ring strong { font-family: "Instrument Serif", serif; font-size: 2.8rem; font-weight: 400; }
 .session-ring span { color: #9fb0a9; font-size: .7rem; }

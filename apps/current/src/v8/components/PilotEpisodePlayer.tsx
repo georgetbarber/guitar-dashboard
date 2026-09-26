@@ -107,6 +107,24 @@ export function PilotEpisodePlayer({
     stop();
     onClose?.();
   };
+  const explorePhrase = () => {
+    if (recording || (takeUrl && !takeDownloaded)) {
+      setNotice("Stop and download or discard your temporary take before opening Explore.");
+      return;
+    }
+    if (!cursor) return;
+    stop();
+    dispatch({ type: "openExploreFocus", focus: {
+      materialId: cursor.materialId,
+      materialVersion: cursor.materialVersion,
+      sectionId: cursor.sectionId,
+      tempo: cursor.tempo,
+      returnActivityId: RHYTHM_ACTIVITY_ID,
+      returnRoute: state.activityOrigin ?? state.route,
+      openedAt: new Date().toISOString(),
+    } });
+    history.pushState({}, "", "/explore");
+  };
   useEffect(() => {
     if (!requestCloseRef) return;
     requestCloseRef.current = requestClose;
@@ -386,6 +404,7 @@ export function PilotEpisodePlayer({
             }
             conceal={check && cursor.assistance !== "reveal"}
           />
+          <button className="text-action" onClick={explorePhrase}>Explore why this phrase works →</button>
           <div className="pilot-controls">
             <label>
               Tempo{" "}

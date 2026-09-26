@@ -126,6 +126,8 @@ export interface SessionPlan {
   totalMinutes: number;
   items: SessionItem[];
   generatedAt: string;
+  /** A shorter, familiar return after time away; no claim of forgotten skill. */
+  kind?: "full" | "return";
 }
 
 /** Device-durable position in the first authored episode. Older workspaces omit it. */
@@ -170,6 +172,17 @@ export interface PilotVariation {
   materialVersion: number;
   answerMiddleCount: 3;
   createdAt: string;
+}
+
+/** Device-local return address for a contextual explanation. */
+export interface ExploreFocus {
+  materialId: string;
+  materialVersion: number;
+  sectionId: "whole" | "question" | "answer";
+  tempo: number;
+  returnActivityId: string;
+  returnRoute: RouteId;
+  openedAt: string;
 }
 
 export interface LearnerSettings {
@@ -264,6 +277,12 @@ export interface V8State {
   pilotCursor?: PilotCursor | null;
   pilotAttempts?: PilotAttempt[];
   pilotVariations?: PilotVariation[];
+  /** The current device's guided route; stays fixed across detours and reloads. */
+  sessionPlan?: SessionPlan | null;
+  sessionCursor?: number;
+  /** A learner-authored destination, kept in this device workspace and backup. */
+  personalGoal?: string;
+  exploreFocus?: ExploreFocus | null;
   version: 8;
   syncVersion: 1;
   updatedAt: string;

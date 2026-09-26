@@ -137,6 +137,35 @@ function pilotVariation(value: unknown, path: string) {
   if (v.answerMiddleCount !== 3) fail(`${path}.answerMiddleCount`);
   date(v.createdAt, `${path}.createdAt`);
 }
+function sessionPlan(value: unknown, path: string) {
+  const v = object(value, path);
+  id(v.id, `${path}.id`); id(v.unitId, `${path}.unitId`);
+  str(v.title, `${path}.title`); str(v.purpose, `${path}.purpose`);
+  date(v.generatedAt, `${path}.generatedAt`);
+  if (v.kind !== undefined) choice(v.kind, ["full", "return"], `${path}.kind`);
+  number(v.totalMinutes, `${path}.totalMinutes`, 1, 90, true);
+  let minutes = 0;
+  if (!Array.isArray(v.items) || v.items.length < 1 || v.items.length > 8) fail(`${path}.items`);
+  for (const [index, item] of v.items.entries()) {
+    const entry = object(item, `${path}.items[${index}]`);
+    id(entry.activityId, `${path}.items[${index}].activityId`);
+    str(entry.title, `${path}.items[${index}].title`);
+    str(entry.purpose, `${path}.items[${index}].purpose`);
+    choice(entry.kind, ["listen-compare", "sing-predict", "technique", "rhythm", "relationship", "play-reveal", "variation", "creative", "transfer", "reflection"], `${path}.items[${index}].kind`);
+    number(entry.minutes, `${path}.items[${index}].minutes`, 1, 90, true);
+    minutes += entry.minutes as number;
+  }
+  if (minutes !== v.totalMinutes) fail(`${path}.totalMinutes`);
+}
+function exploreFocus(value: unknown, path: string) {
+  const v = object(value, path);
+  id(v.materialId, `${path}.materialId`); id(v.returnActivityId, `${path}.returnActivityId`);
+  number(v.materialVersion, `${path}.materialVersion`, 1, 1000, true);
+  number(v.tempo, `${path}.tempo`, 20, 400, true);
+  choice(v.sectionId, ["whole", "question", "answer"], `${path}.sectionId`);
+  choice(v.returnRoute, ROUTES, `${path}.returnRoute`);
+  date(v.openedAt, `${path}.openedAt`);
+}
 export function validateSketch(value: unknown): asserts value is Sketch { sketch(value, "sketch"); }
 export function validateEvidence(value: unknown): asserts value is CompetencyEvidence { evidence(value, "observation"); }
 export function validateSettings(value: unknown): asserts value is LearnerSettings { settings(value, "settings"); }
@@ -152,6 +181,10 @@ export function validateState(value: unknown): asserts value is V8State {
   if (v.pilotCursor != null) pilotCursor(v.pilotCursor, "pilot cursor");
   if (v.pilotAttempts !== undefined) identifiedList(v.pilotAttempts, "pilot attempts", pilotAttempt);
   if (v.pilotVariations !== undefined) identifiedList(v.pilotVariations, "pilot variations", pilotVariation);
+  if (v.sessionPlan != null) sessionPlan(v.sessionPlan, "session plan");
+  if (v.sessionCursor !== undefined) number(v.sessionCursor, "session cursor", 0, 8, true);
+  if (v.personalGoal !== undefined) { str(v.personalGoal, "personal goal"); if ((v.personalGoal as string).length > 160) fail("personal goal length"); }
+  if (v.exploreFocus != null) exploreFocus(v.exploreFocus, "explore focus");
   settings(v.settings, "settings"); date(v.updatedAt, "workspace date"); date(v.settingsUpdatedAt, "settings date");
   choice(v.route, ROUTES, "route"); id(v.activeUnitId, "active unit");
   for (const key of ["activeActivityId", "resumeActivityId", "activeSketchId"]) nullable(v[key], id, key);

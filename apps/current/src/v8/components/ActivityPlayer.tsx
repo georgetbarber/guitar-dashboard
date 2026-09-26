@@ -144,11 +144,16 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
     setCaption(null);
   };
 
-  // Find the next unfinished activity in this unit, then in a later unit. The
-  // current activity is treated as done only after a successful outcome.
+  // A guided session owns its next step. A detour never silently drops the
+  // learner into the entire unit sequence.
   const nextActivity = (): ActivityDefinition | null => {
     const done = new Set(state.completedActivityIds);
     if (justCompleted === "successful") done.add(activity.id);
+    const sessionIndex = state.sessionPlan?.items.findIndex((item) => item.activityId === activity.id) ?? -1;
+    if (sessionIndex >= 0) {
+      const next = state.sessionPlan!.items.slice(sessionIndex + 1).find((item) => !done.has(item.activityId));
+      return next ? activityById(next.activityId) ?? null : null;
+    }
     const index = unit.activities.findIndex((item) => item.id === activity.id);
     const inUnit = unit.activities.slice(index + 1).find((item) => !done.has(item.id))
       ?? unit.activities.find((item) => !done.has(item.id));
@@ -170,6 +175,7 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
     const next = nextActivity();
     const outcomeLabel = OUTCOMES.find((item) => item.value === justCompleted)?.label ?? "Logged";
     const sameUnit = next && next.unitId === unit.id;
+    const planned = Boolean(state.sessionPlan?.items.some((item) => item.activityId === activity.id));
     return (
       <section className="activity-player activity-done" aria-labelledby="activity-title">
         <header className="activity-header">
@@ -194,7 +200,7 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
             : next
             ? <>
                 <h2>Keep the momentum going</h2>
-                <p>{sameUnit ? "Next in this unit:" : "You’ve finished this unit — next up:"} <strong>{next.title}</strong> <small>({next.kind.replaceAll("-", " ")} · {next.minutes} min)</small></p>
+                <p>{planned ? "Next in your session:" : sameUnit ? "Next in this unit:" : "You’ve finished this unit — next up:"} <strong>{next.title}</strong> <small>({next.kind.replaceAll("-", " ")} · {next.minutes} min)</small></p>
                 <div className="done-actions">
                   <button className="primary-action large" onClick={() => dispatch({ type: "openActivity", activityId: next.id })}>Continue to next →</button>
                   <button className="text-action" onClick={retractRecord}>I picked the wrong result</button>
@@ -202,8 +208,8 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
                 </div>
               </>
             : <>
-                <h2>That’s everything available for now</h2>
-                <p>You’ve completed every activity currently unlocked. Take a break, or explore what you’ve built.</p>
+                <h2>{planned ? "Your guided session is complete" : "That’s everything available for now"}</h2>
+                <p>{planned ? "That result is your report of this attempt. Keep the music, take a break, or begin a new session in Continue." : "You’ve completed every activity currently unlocked. Take a break, or explore what you’ve built."}</p>
                 <div className="done-actions"><button className="primary-action" onClick={onClose}>Back to my learning</button></div>
               </>}
         </div>

@@ -238,8 +238,34 @@ export function buildSession(state: V8State, now = new Date()): SessionPlan {
     purpose: unit.outcome,
     totalMinutes: items.reduce((sum, item) => sum + item.minutes, 0),
     items,
-    generatedAt: now.toISOString()
+    generatedAt: now.toISOString(),
+    kind: "full"
   };
+}
+
+/** A familiar first step after time away, without inferring that anything was forgotten. */
+export function daysSinceLastAttempt(state: V8State, now = new Date()): number | null {
+  const latest = liveObservations(state.evidence).reduce<string | null>(
+    (current, item) => !current || item.occurredAt > current ? item.occurredAt : current, null
+  );
+  if (!latest) return null;
+  const localDay = (date: Date) => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000;
+  return Math.max(0, localDay(now) - localDay(new Date(latest)));
+}
+
+export function buildReturnSession(state: V8State, now = new Date()): SessionPlan {
+  const full = buildSession(state, now);
+  const latest = [...liveObservations(state.evidence)].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
+  const familiar = latest && activityById(latest.activityId);
+  const candidates = [familiar ? sessionItem(familiar.id, 1) : undefined, ...full.items].filter(
+    (item): item is SessionItem => Boolean(item)
+  );
+  const distinct = candidates.filter((item, index) => candidates.findIndex((candidate) => candidate.activityId === item.activityId) === index).slice(0, 3);
+  const budget = Math.min(15, Math.max(10, state.settings.dailyMinutes));
+  const minimums = distinct.map(() => 3);
+  const minutes = distribute(budget, minimums, distinct.map((_, index) => index === 0 ? 3 : 2));
+  const items = distinct.map((item, index) => ({ ...item, minutes: minutes[index] }));
+  return { ...full, id: `${full.id}-return`, title: `Return to ${full.title}`, purpose: "Recall a familiar sound, work one useful part, and use it in music.", totalMinutes: budget, items, kind: "return" };
 }
 
 export function createEvidence(

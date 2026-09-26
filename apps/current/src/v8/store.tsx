@@ -10,7 +10,7 @@ import { clampSketchTempo } from "./limits";
 import { mergeCloudSnapshot } from "./sync";
 import type { CloudSnapshot } from "./sync";
 import { SKETCH_SYNC_FIELDS } from "./types";
-import type { CompetencyEvidence, LearnerSettings, PilotAttempt, PilotCursor, PilotVariation, RecordedTake, RouteId, Sketch, V8State } from "./types";
+import type { CompetencyEvidence, ExploreFocus, LearnerSettings, PilotAttempt, PilotCursor, PilotVariation, RecordedTake, RouteId, SessionPlan, Sketch, V8State } from "./types";
 
 const ROUTES: RouteId[] = ["today", "path", "practice", "play", "create", "explore"];
 const ROUTE_PATHS: Record<RouteId, string> = {
@@ -59,6 +59,10 @@ export const DEFAULT_STATE: V8State = {
   pilotCursor: null,
   pilotAttempts: [],
   pilotVariations: [],
+  sessionPlan: null,
+  sessionCursor: 0,
+  personalGoal: "",
+  exploreFocus: null,
   settings: {
     instrument: "electric", dailyMinutes: 25, tonicName: "C", mode: "major", theme: "light",
     reducedMotion: false, diagnosticComplete: false, startingBaseline: "repair"
@@ -79,6 +83,10 @@ type Action =
   | { type: "updatePilot"; patch: Partial<Pick<PilotCursor, "step" | "sectionId" | "tempo" | "repairId" | "assistance" | "attemptId">> }
   | { type: "recordPilotAttempt"; attempt: PilotAttempt }
   | { type: "savePilotVariation"; variation: PilotVariation }
+  | { type: "beginSession"; plan: SessionPlan }
+  | { type: "setPersonalGoal"; goal: string }
+  | { type: "openExploreFocus"; focus: ExploreFocus }
+  | { type: "clearExploreFocus" }
   | { type: "updateSettings"; settings: Partial<LearnerSettings> }
   | { type: "createSketch" }
   | { type: "updateSketch"; sketch: Sketch }
@@ -131,18 +139,24 @@ function reducer(state: V8State, action: Action): V8State {
     case "openActivity": return {
       ...state,
       activeActivityId: action.activityId,
+      sessionCursor: action.activityId && state.sessionPlan?.items.some((item) => item.activityId === action.activityId)
+        ? state.sessionPlan.items.findIndex((item) => item.activityId === action.activityId)
+        : state.sessionCursor,
       activityOrigin: action.activityId ? (state.activeActivityId ? state.activityOrigin ?? state.route : state.route) : null
     };
     case "suspendActivity": return { ...state, route: action.route, resumeActivityId: state.activeActivityId, activeActivityId: null };
     case "resumeActivity": return { ...state, activeActivityId: state.resumeActivityId, resumeActivityId: null };
     case "recordActivity": {
       const evidence = [...state.evidence, ...action.evidence];
+      const completedActivityIds = completedActivityIdsFromEvidence(evidence);
+      const nextSessionIndex = state.sessionPlan?.items.findIndex((item) => !completedActivityIds.includes(item.activityId)) ?? -1;
       return {
         ...state,
         // activeActivityId is intentionally kept so the player can show the
         // recorded outcome and either offer a retry or continue after success.
         resumeActivityId: null,
-        completedActivityIds: completedActivityIdsFromEvidence(evidence),
+        completedActivityIds,
+        sessionCursor: nextSessionIndex < 0 ? state.sessionPlan?.items.length ?? 0 : nextSessionIndex,
         evidence,
         // Not truncated. An over-length reflection is withheld from the profile
         // upload with an explanation (see ./sync.ts screenProfile) rather than
@@ -177,6 +191,14 @@ function reducer(state: V8State, action: Action): V8State {
     case "savePilotVariation":
       if ((state.pilotVariations ?? []).some((variation) => variation.id === action.variation.id)) return state;
       return { ...state, pilotVariations: [...(state.pilotVariations ?? []), action.variation], updatedAt: changedAt };
+    case "beginSession":
+      return { ...state, sessionPlan: action.plan, sessionCursor: 0, updatedAt: changedAt };
+    case "setPersonalGoal":
+      return { ...state, personalGoal: action.goal.slice(0, 160), updatedAt: changedAt };
+    case "openExploreFocus":
+      return { ...state, exploreFocus: action.focus, route: "explore", resumeActivityId: action.focus.returnActivityId, activeActivityId: null, updatedAt: changedAt };
+    case "clearExploreFocus":
+      return { ...state, exploreFocus: null, updatedAt: changedAt };
     case "updateSettings": {
       const settings = { ...state.settings, ...action.settings };
       return {

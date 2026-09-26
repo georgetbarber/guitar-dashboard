@@ -1,10 +1,15 @@
-import { buildSession, nextUnit, pathSummary, unitProgress } from "../learning";
+import { useEffect } from "react";
+import { buildReturnSession, buildSession, daysSinceLastAttempt, nextUnit, pathSummary, unitProgress } from "../learning";
 import { CURRICULUM, STAGES } from "../curriculum";
 import { useV8Store } from "../store";
 
 export function Today() {
   const { state, dispatch, navigate } = useV8Store();
-  const session = buildSession(state);
+  const session = state.sessionPlan ?? buildSession(state);
+  useEffect(() => {
+    if (!state.sessionPlan) dispatch({ type: "beginSession", plan: session });
+  }, [dispatch, session, state.sessionPlan]);
+  const awayDays = daysSinceLastAttempt(state);
   const unit = nextUnit(state);
   const stage = STAGES[unit.stage - 1];
   const unitsInStage = CURRICULUM.filter((candidate) => candidate.stage === unit.stage);
@@ -21,6 +26,9 @@ export function Today() {
           <span className="eyebrow">Learn · {state.settings.dailyMinutes}-minute session</span>
           <h1>Turn one relationship into music.</h1>
           <p>{session.purpose}</p>
+          <label className="personal-goal">My musical goal
+            <input maxLength={160} value={state.personalGoal ?? ""} onChange={(event) => dispatch({ type: "setPersonalGoal", goal: event.target.value })} placeholder="For example, make the rests in my rhythm feel deliberate" />
+          </label>
           <div className="course-location" aria-label="Current course location">
             <div><small>Stage {unit.stage} of {STAGES.length}</small><strong>{stage.title}</strong></div>
             <i aria-hidden="true">→</i>
@@ -29,17 +37,18 @@ export function Today() {
           </div>
           <div className="today-meta"><span>{state.settings.instrument}</span><span>{state.settings.tonicName} {state.settings.mode}</span></div>
           {sessionComplete
-            ? <button className="primary-action large" onClick={() => navigate("path")}>Session complete — open the Course map</button>
+            ? <button className="primary-action large" onClick={() => dispatch({ type: "beginSession", plan: buildSession(state) })}>Start another guided session</button>
             : <button className="primary-action large" onClick={() => dispatch({ type: "openActivity", activityId: first.activityId })}>Start with: {first.title}</button>}
+          {awayDays !== null && awayDays >= 3 && <button className="text-action" onClick={() => dispatch({ type: "beginSession", plan: buildReturnSession(state) })}>Take a shorter return session · 10–15 min</button>}
           {unit.id === "unit-01" && <button className="secondary-action large" onClick={() => dispatch({ type: "openActivity", activityId: "unit-01-rhythm" })}>
             {state.pilotCursor ? "Continue the one-note lesson" : "Start the one-note lesson"}
           </button>}
         </div>
-        <div className="session-ring" aria-label={`${unitProgress(state, unit.id)} percent of unit complete`}><strong>{unitProgress(state, unit.id)}%</strong><span>unit complete</span></div>
+        <div className="session-destination"><span>Today’s music</span><strong>{unit.microStudy.title}</strong><small>{unit.microStudy.tempo} BPM · {unit.microStudy.metre}</small></div>
       </section>
 
       <section className="session-plan card">
-        <header><div><span className="eyebrow">Guided session</span><h2>{session.title}</h2></div><strong>{session.totalMinutes} min</strong></header>
+        <header><div><span className="eyebrow">{session.kind === "return" ? "Short return" : "Guided session"}</span><h2>{session.title}</h2></div><strong>{session.totalMinutes} min guidance</strong></header>
         <ol>
           {session.items.map((item, index) => {
             const complete = state.completedActivityIds.includes(item.activityId);
@@ -61,7 +70,7 @@ export function Today() {
         </section>
         <section className="card reflection-glance">
           <span className="eyebrow">Learning evidence</span>
-          <h2>{summary.completedUnits} of {summary.totalUnits} units complete</h2>
+          <h2>{summary.completedUnits} of {summary.totalUnits} units complete · {unitProgress(state, unit.id)}% of this unit</h2>
           <p>{state.lastReflection || "After today’s playing, record one specific observation about sound, time, movement or intention."}</p>
           <div className="artifact-stats"><span><strong>{summary.created}</strong> created</span><span><strong>{summary.revised}</strong> revised</span><span><strong>{summary.finished}</strong> finished</span></div>
         </section>
