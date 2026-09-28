@@ -5,7 +5,8 @@ import { activityById, unitById, CURRICULUM } from "../curriculum";
 import { createEvidence, retractObservations, sessionActivityComplete } from "../learning";
 import { PROFILE_LIMITS } from "../limits";
 import { useV8Store } from "../store";
-import type { ActivityDefinition, Assistance, CompetencyEvidence, EvidenceOutcome } from "../types";
+import { TONAL_ROOTS } from "../validation";
+import type { ActivityDefinition, Assistance, CompetencyEvidence, EvidenceContext, EvidenceOutcome } from "../types";
 import { MicroStudy } from "./MicroStudy";
 import { PilotStudy } from "./PilotStudy";
 import { RhythmNotation } from "./RhythmNotation";
@@ -50,6 +51,10 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
   const [caption, setCaption] = useState<string | null>(null);
   const [justCompleted, setJustCompleted] = useState<EvidenceOutcome | null>(null);
   const [justRecorded, setJustRecorded] = useState<CompetencyEvidence[]>([]);
+  const [actualKey, setActualKey] = useState("");
+  const [actualInstrument, setActualInstrument] = useState<"" | "electric" | "acoustic">("");
+  const [actualTempo, setActualTempo] = useState("");
+  const actualTempoValid = !actualTempo || (Number.isFinite(Number(actualTempo)) && Number(actualTempo) >= 20 && Number(actualTempo) <= 400);
   const unit = useMemo(() => unitById(activity?.unitId ?? state.activeUnitId), [activity?.unitId, state.activeUnitId]);
   const [keepDraftNotice, setKeepDraftNotice] = useState(false);
   const unsavedReflection = !justCompleted && reflection.trim().length > 0;
@@ -97,19 +102,19 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
   const complete = (outcome: EvidenceOutcome) => {
     if (!attempted && activity.kind !== "reflection") return;
     if (activity.kind === "reflection" && reflection.trim().length < 8) return;
+    if (!actualTempoValid) return;
+    const actualContext: EvidenceContext = {
+      ...(actualKey ? { key: actualKey } : {}),
+      ...(actualInstrument ? { instrument: actualInstrument } : {}),
+      ...(actualTempo ? { tempo: Number(actualTempo) } : {})
+    };
     const evidence = createEvidence(
       activity.id,
       activity.competencyIds,
       activity.source,
       assistance,
       outcome,
-      {
-        key: state.settings.tonicName,
-        mode: state.settings.mode,
-        tempo: unit.microStudy.tempo,
-        instrument: state.settings.instrument,
-        fretRegion: unit.stage < 3 ? [0, 5] : [0, 12]
-      },
+      actualContext,
       undefined,
       // A creative observation points at the sketch the learner actually saved.
       // It records that a thing exists, never a judgement of it.
@@ -182,7 +187,7 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
         <header className="activity-header">
           <button className="icon-button" onClick={onClose} aria-label="Close activity" data-autofocus>←</button>
           <div><span>{originLabel} · {unit.title}</span><h1 id="activity-title">{successful ? "Completed" : "Attempt logged"}: {activity.title}</h1><p>{successful
-            ? `Recorded as “${outcomeLabel}”, on your own report. This activity is complete; independent mastery still depends on unassisted success across days and contexts.`
+            ? `Recorded as “${outcomeLabel}”, on your own report. This activity is complete in your path; it does not verify that the skill is secure.`
             : `Recorded as “${outcomeLabel}”, on your own report. This activity remains in your guided path until its success action is achieved.`}</p>
             <RecordSaveStatus evidenceIds={justRecorded.map((item) => item.id)} /></div>
         </header>
@@ -285,7 +290,7 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
             <button onClick={useHint}>Use a hint</button>
             <button onClick={useReveal}>Reveal the reference</button>
           </div>
-          <small className="help-note">Using help is completely fine. It's still recorded — but an attempt with a hint or reveal is kept separate and doesn't count toward “Secure”, so your independent progress stays honest.</small>
+          <small className="help-note">Using help is completely fine. Hints and reveals are recorded separately. A self-report, even without help, does not verify playing skill.</small>
           {hint && <aside className="guidance"><strong>Hint</strong><p>{activity.hint}</p></aside>}
           {reveal && <aside className="guidance reveal"><strong>Reference, not a shortcut</strong><p>{activity.reveal}</p></aside>}
         </article>
@@ -293,11 +298,13 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
         <aside className="activity-check card">
           <span>How did it go?</span>
           <div className="success-criterion"><small>You’ve succeeded when</small><p>{activity.observable}</p></div>
+          <details><summary>What did you actually try?</summary><p>Optional. Leave these blank if you are unsure. Your saved settings are not used as evidence of what you played.</p><label>Key used<select value={actualKey} onChange={(event) => setActualKey(event.target.value)}><option value="">Not recorded</option>{TONAL_ROOTS.map((root) => <option key={root} value={root}>{root}</option>)}</select></label><label>Guitar used<select value={actualInstrument} onChange={(event) => setActualInstrument(event.target.value as typeof actualInstrument)}><option value="">Not recorded</option><option value="electric">Electric</option><option value="acoustic">Acoustic</option></select></label><label>Tempo used, BPM<input type="number" min="20" max="400" value={actualTempo} onChange={(event) => setActualTempo(event.target.value)} placeholder="Not recorded" /></label></details>
+          {!actualTempoValid && <small role="alert">Enter a tempo from 20 to 400 BPM, or leave it blank.</small>}
           <div className="assistance-state"><small>Evidence status</small><strong>{assistance === "none" ? "Independent attempt" : `${assistance} used`}</strong><span>Recorded as your own report. Guitar Academy does not listen to or judge your playing.</span></div>
           <p className="outcome-lead">Pick the option that matches what just happened:</p>
           <div className="outcome-buttons">
             {OUTCOMES.map((outcome) => (
-              <button disabled={!attempted} onClick={() => complete(outcome.value)} key={outcome.value}>
+              <button disabled={!attempted || !actualTempoValid} onClick={() => complete(outcome.value)} key={outcome.value}>
                 <strong>{outcome.label}</strong><span>{outcome.description}</span>
               </button>
             ))}

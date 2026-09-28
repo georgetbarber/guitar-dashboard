@@ -39,6 +39,8 @@ export interface CompetencyEvidence {
   context: EvidenceContext;
   outcome: EvidenceOutcome;
   occurredAt: string;
+  /** Learner-local calendar date at capture; older records fall back to UTC date. */
+  localDate?: string;
   activityId: string;
   /** Absent on records written before this field existed; those are all self-reported too. */
   method?: EvidenceMethod;
@@ -162,6 +164,8 @@ export interface PilotAttempt {
   outcome: EvidenceOutcome;
   observation: string;
   occurredAt: string;
+  /** Learner-local calendar date at capture; older records fall back to UTC date. */
+  localDate?: string;
 }
 
 export interface PilotVariation {
@@ -328,7 +332,12 @@ export interface V8State {
 export interface MasterySummary {
   competencyId: string;
   state: MasteryState;
+  /** Days with an independently checked answer or measured performance. */
   successfulDays: number;
+  /** Learner-reported success stays visible without becoming verified readiness. */
+  reportedSuccessDays: number;
   contextCount: number;
   assistedAttempts: number;
+  lastAttemptAt?: string;
+  lastAttemptLocalDate?: string;
 }

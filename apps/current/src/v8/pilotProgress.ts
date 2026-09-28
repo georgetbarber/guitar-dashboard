@@ -1,9 +1,6 @@
 import { ONE_NOTE_QUESTION_ANSWER, PILOT_EPISODE } from "./pilotEpisode";
+import { calendarDaysBetween, localDateAt } from "./dates";
 import type { PilotAttempt, V8State } from "./types";
-
-function localDay(value: Date): number {
-  return Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()) / 86_400_000;
-}
 
 export function pilotAttempts(state: Pick<V8State, "pilotAttempts">): PilotAttempt[] {
   return (state.pilotAttempts ?? []).filter(
@@ -19,10 +16,10 @@ export function firstPilotSuccess(attempts: readonly PilotAttempt[]): PilotAttem
   return attempts.find((item) => item.kind === "first-check" && item.outcome === "successful");
 }
 
-export function isLaterCheckDue(firstSuccess: PilotAttempt | undefined, now = new Date()): boolean {
+export function isLaterCheckDue(firstSuccess: PilotAttempt | undefined, now = new Date(), today = localDateAt(now)): boolean {
   return Boolean(
     firstSuccess &&
-    localDay(now) - localDay(new Date(firstSuccess.occurredAt)) >= PILOT_EPISODE.delayedCheck.earliestDaysLater,
+    calendarDaysBetween(firstSuccess.localDate ?? firstSuccess.occurredAt.slice(0, 10), today) >= PILOT_EPISODE.delayedCheck.earliestDaysLater,
   );
 }
 
@@ -34,6 +31,6 @@ export function pilotLaterSuccess(attempts: readonly PilotAttempt[]): PilotAttem
       item.outcome === "successful" &&
       item.assistance === "none" &&
       item.tempo === PILOT_EPISODE.delayedCheck.tempo &&
-      isLaterCheckDue(first, new Date(item.occurredAt)),
+      isLaterCheckDue(first, new Date(item.occurredAt), item.localDate ?? item.occurredAt.slice(0, 10)),
   );
 }

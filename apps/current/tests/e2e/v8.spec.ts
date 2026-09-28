@@ -36,6 +36,26 @@ test("first launch explains the learning contract before entering the app", asyn
   await expect(page.getByText("acoustic", { exact: true }).first()).toBeVisible();
 });
 
+test("keeps attempted conditions and pilot capability reports distinct", async ({ page }) => {
+  await completeDiagnostic(page);
+  await expect(page.getByRole("heading", { name: "One phrase, several different skills." })).toBeVisible();
+  await expect(page.locator(".pilot-capabilities li")).toHaveCount(6);
+  await page.getByRole("button", { name: /Start with:/ }).click();
+  await page.getByText("What did you actually try?").click();
+  await expect(page.getByRole("combobox", { name: "Key used" })).toHaveValue("");
+  await expect(page.getByRole("combobox", { name: "Guitar used" })).toHaveValue("");
+  await expect(page.getByRole("spinbutton", { name: "Tempo used, BPM" })).toHaveValue("");
+  await page.getByRole("button", { name: "Close activity" }).click();
+  await page.getByRole("button", { name: "Start the one-note lesson" }).click();
+  await page.getByRole("button", { name: /3 · Try unaided/ }).click();
+  await page.getByRole("button", { name: "I played both bars without the app sound" }).click();
+  await page.getByRole("textbox", { name: "One concrete observation" }).fill("I stopped at the rests and counted through them.");
+  await page.getByRole("button", { name: "I could do it" }).click();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await expect(page.locator(".pilot-capabilities li").filter({ hasText: "Hear question and answer" })).toContainText("No separate check yet");
+  await expect(page.locator(".pilot-capabilities li").filter({ hasText: "Keep the pulse through silence" })).toContainText("reported for the full phrase");
+});
+
 test("navigates four distinct destinations and three nested Learn views with real URL history", async ({ page }) => {
   await completeDiagnostic(page);
   const nav = learningNav(page);

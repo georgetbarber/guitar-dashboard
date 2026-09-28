@@ -1374,3 +1374,19 @@ The automated end-to-end journey sets a ten-minute session, completes one report
 | Firebase emulator rules | Attempted, but the current Mac environment has no Java runtime on its path, so no new emulator result is claimed. The last recorded emulator run was Phase 2B-6. |
 
 The software handoff gate has automated evidence. The learning gate still needs the deferred Phase 3 instrument review, an uncoached learner's complete journey, the installed app on a physical phone, actual audible timing and feel, and later recall with the guitar. No CI, deployment, live-account sync or cross-device provenance claim is made here. Those observations may change the design before Phase 5 and release.
+
+---
+
+## Phase 5A-1 — honest evidence and first capability map (28 September 2026)
+
+**Status: first Phase 5 package implemented; Phase 5 and its assessment gate remain open.**
+
+The first authored episode now has a six-item capability catalogue that separates listening, naming, locating, timing and playing. Continue shows that the pilot's one whole-phrase outcome is a self-report about timing and playing, not separate checks of hearing, names or fretboard location. It keeps the episode and material version boundary, so a report for a changed version does not silently count as a current check. The granular pilot attempts remain device-local and in backups, not cloud-synchronised.
+
+Generic activity reports no longer become “Secure” or “Transfer-ready” after two days or a change of saved settings. All current generic outcomes are self-reported, so they remain practice history. An unaided reported success and the date of the latest attempt remain visible, while checked success days and verified contexts remain zero until a real assessment method exists. This is intentionally conservative and does not revoke completed course activities. A completed activity means the learner reported doing its action, not that its underlying physical skill was measured.
+
+Activity reports now ask optionally which key, guitar and tempo were actually used. These start blank; the app no longer copies Settings, the unit tempo or a suggested fret region into evidence as though those were attempted conditions. New evidence and pilot attempts store the learner-local calendar date at capture alongside the UTC timestamp; old records remain valid and use their UTC date as a stated fallback. Delayed pilot checks and return-session day gaps use the stored calendar date, avoiding a later timezone change reclassifying an old attempt. Strengthen ignores retracted observations, explains suggestions as reports, and gives a smaller changed-support step after a difficult report before returning to the musical activity.
+
+Local verification: 284 unit/interface tests across 40 files; typecheck/production build, lint, formatting, guest-bundle and offline-shell checks passed. Browser journeys: 76 passed on desktop and phone-sized Chromium; the two production-only checks were skipped in the development run. Firebase emulator rules have a new valid/invalid local-date test, but no Java runtime is installed here, so that rule has **not** been emulator-verified. No guitar performance, microphone measurement, physical-phone trial, independent learner trial, CI run or deployment is claimed.
+
+**Next:** add optional placement sampling; exact-answer checks tied to named capabilities and content versions; distinct measured-pitch evidence only after suitable signal and latency handling; actual changed-example transfer; structured recording comparison; and real-input trials. The broader Phase 5 gate remains open.

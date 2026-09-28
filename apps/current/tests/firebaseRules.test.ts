@@ -125,6 +125,16 @@ describe("Firestore tenant rules", () => {
     await assertSucceeds(deleteDoc(doc(database, "users/learner-a/evidence/evidence-1")));
   });
 
+  it("accepts a learner-local date while rejecting malformed dates", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/local-date"), {
+      ...evidence, id: "local-date", localDate: "2026-09-28"
+    }));
+    await assertFails(setDoc(doc(database, "users/learner-a/evidence/bad-date"), {
+      ...evidence, id: "bad-date", localDate: "28 September 2026"
+    }));
+  });
+
   it("takes a correction as a new retraction record rather than an edit", async () => {
     const database = environment.authenticatedContext("learner-a").firestore();
     await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/evidence-1"), evidence));

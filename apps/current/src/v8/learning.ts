@@ -1,4 +1,5 @@
 import { ACTIVITIES, CURRICULUM, activityById, unitById } from "./curriculum";
+import { calendarDaysBetween, localDateAt } from "./dates";
 import { newId } from "./identity";
 import { COMPETENCY_STRANDS } from "./types";
 import type {
@@ -12,16 +13,6 @@ import type {
   SessionPlan,
   V8State
 } from "./types";
-
-function day(value: string): string {
-  return value.slice(0, 10);
-}
-
-function contextKey(context: EvidenceContext): string {
-  return [context.key, context.mode, context.fretRegion?.join("-"), context.tempo, context.instrument]
-    .filter((value) => value !== undefined)
-    .join("|");
-}
 
 /**
  * The observations that still stand.
@@ -64,23 +55,23 @@ export function completedActivityIdsFromEvidence(evidence: CompetencyEvidence[])
 
 export function masteryFor(competencyId: string, evidence: CompetencyEvidence[]): MasterySummary {
   const relevant = liveObservations(evidence).filter((item) => item.competencyId === competencyId);
-  const independent = relevant.filter((item) => item.assistance === "none" && item.outcome === "successful");
-  const successfulDays = new Set(independent.map((item) => day(item.occurredAt))).size;
-  const contextCount = new Set(independent.map((item) => contextKey(item.context))).size;
-  const hasTransfer = independent.some((item) => item.source === "transfer");
-  const state = successfulDays >= 2 && contextCount >= 2 && hasTransfer
-    ? "transfer-ready"
-    : successfulDays >= 2
-      ? "secure"
-      : relevant.length
-        ? "practising"
-        : "introduced";
+  // All observations currently written by the app are self-reports. An
+  // unaided report is useful history, but it cannot verify sound or technique.
+  // Reserve Secure for a future checked method tied to the actual capability.
+  const reported = relevant.filter((item) => item.assistance === "none" && item.outcome === "successful");
+  const reportedSuccessDays = new Set(reported.map((item) => item.localDate ?? item.occurredAt.slice(0, 10))).size;
+  const successfulDays = 0;
+  const contextCount = 0;
+  const state = relevant.length ? "practising" : "introduced";
   return {
     competencyId,
     state,
     successfulDays,
+    reportedSuccessDays,
     contextCount,
-    assistedAttempts: relevant.filter((item) => item.assistance !== "none").length
+    assistedAttempts: relevant.filter((item) => item.assistance !== "none").length,
+    lastAttemptAt: relevant.reduce<string | undefined>((last, item) => !last || item.occurredAt > last ? item.occurredAt : last, undefined),
+    lastAttemptLocalDate: [...relevant].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0]?.localDate
   };
 }
 
@@ -93,12 +84,26 @@ export function masteryNextStep(summary: MasterySummary): string {
         ? "Play it in a new key or tempo, then do a transfer task, to reach Transfer-ready."
         : "Do a transfer task (new key, region or tempo) to reach Transfer-ready.";
     case "practising": {
-      const daysLeft = Math.max(1, 2 - summary.successfulDays);
-      return `${daysLeft} more independent success day${daysLeft === 1 ? "" : "s"} (no hint or reveal) to reach Secure.`;
+      return summary.reportedSuccessDays
+        ? "You reported an unaided success. Revisit the sound later; checked evidence is needed before claiming secure skill."
+        : "Try the relationship, with support if useful, then record what actually happened.";
     }
     default:
-      return "Complete it independently once to start building evidence.";
+      return "No attempt recorded yet. Try the relationship once to start building a practice history.";
   }
+}
+
+/** Change the support after a difficult report, then return to the musical task. */
+export function repairFor(activity: typeof ACTIVITIES[number], evidence: CompetencyEvidence[]): string | null {
+  const latest = liveObservations(evidence)
+    .filter((item) => item.activityId === activity.id)
+    .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
+  if (!latest || latest.outcome === "successful") return null;
+  if (activity.kind === "rhythm") return "First play only the difficult bar at a slower count, including every rest. Then return to both bars at the chosen tempo.";
+  if (activity.kind === "technique") return "Reduce the movement to one clean attack and release. Repeat it comfortably, then return to the whole musical phrase.";
+  if (activity.kind === "listen-compare" || activity.kind === "sing-predict") return "Hear one contrast again, sing or tap your prediction before revealing it, then return to the full comparison.";
+  if (activity.kind === "transfer") return "Keep the original example beside the changed one. Name what stays the same, try one change, then return to the full musical use.";
+  return "Work on one small part with a hint if useful. Then hide the help and return to the full musical action.";
 }
 
 // Weakest-link ranking: prefer activities whose competency shows the least independent
@@ -107,7 +112,7 @@ export function recommendPractice(activities: typeof ACTIVITIES, state: V8State,
   if (!activities.length) return undefined;
   const stateRank: Record<string, number> = { introduced: 0, practising: 1, secure: 2, "transfer-ready": 3 };
   const retriesFor = (competencyId: string) =>
-    state.evidence.filter((item) => item.competencyId === competencyId && item.outcome !== "successful").length;
+    liveObservations(state.evidence).filter((item) => item.competencyId === competencyId && item.outcome !== "successful").length;
   const weakness = (activity: typeof ACTIVITIES[number]) => {
     const focusedIds = focusStrands.length
       ? activity.competencyIds.filter((id) => focusStrands.some((strand) => id.startsWith(`${strand}:`)))
@@ -123,12 +128,13 @@ export function recommendPractice(activities: typeof ACTIVITIES, state: V8State,
 }
 
 export function recommendedPracticeStrand(state: V8State): CompetencyStrand | undefined {
+  const observations = liveObservations(state.evidence);
   const stateRank: Record<string, number> = { introduced: 0, practising: 1, secure: 2, "transfer-ready": 3 };
   const candidates = COMPETENCY_STRANDS.flatMap((strand, index) => {
-    const competencyIds = [...new Set(state.evidence.filter((item) => item.competencyId.startsWith(`${strand}:`)).map((item) => item.competencyId))];
+    const competencyIds = [...new Set(observations.filter((item) => item.competencyId.startsWith(`${strand}:`)).map((item) => item.competencyId))];
     if (!competencyIds.length) return [];
     const minMastery = Math.min(...competencyIds.map((id) => stateRank[masteryFor(id, state.evidence).state] ?? 0));
-    const retries = state.evidence.filter((item) => item.competencyId.startsWith(`${strand}:`) && item.outcome !== "successful").length;
+    const retries = observations.filter((item) => item.competencyId.startsWith(`${strand}:`) && item.outcome !== "successful").length;
     return [{ strand, index, score: minMastery * 100 - Math.min(retries, 99) }];
   });
   return candidates.sort((a, b) => a.score - b.score || a.index - b.index)[0]?.strand;
@@ -246,12 +252,9 @@ export function buildSession(state: V8State, now = new Date()): SessionPlan {
 
 /** A familiar first step after time away, without inferring that anything was forgotten. */
 export function daysSinceLastAttempt(state: V8State, now = new Date()): number | null {
-  const latest = liveObservations(state.evidence).reduce<string | null>(
-    (current, item) => !current || item.occurredAt > current ? item.occurredAt : current, null
-  );
+  const latest = [...liveObservations(state.evidence)].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
   if (!latest) return null;
-  const localDay = (date: Date) => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000;
-  return Math.max(0, localDay(now) - localDay(new Date(latest)));
+  return calendarDaysBetween(latest.localDate ?? latest.occurredAt.slice(0, 10), localDateAt(now));
 }
 
 export function buildReturnSession(state: V8State, now = new Date()): SessionPlan {
@@ -293,6 +296,7 @@ export function createEvidence(
     context,
     outcome,
     occurredAt,
+    localDate: localDateAt(new Date(occurredAt)),
     activityId,
     // Recorded on every observation because it is true of every observation the
     // app can currently make. When something is measured, it will say so.

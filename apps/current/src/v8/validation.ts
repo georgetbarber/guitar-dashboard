@@ -19,6 +19,11 @@ function id(value: unknown, path: string) {
   if (!text || text.length > 160 || text.includes("/") || text.includes("\u0000") || ["__proto__", "constructor", "prototype"].includes(text)) fail(path);
 }
 function date(value: unknown, path: string) { str(value, path); if (!/^\d{4}-\d\d-\d\dT/.test(value as string) || !Number.isFinite(Date.parse(value as string))) fail(path); }
+function localDate(value: unknown, path: string) {
+  str(value, path);
+  const parsed = new Date(`${value}T00:00:00Z`);
+  if (!/^\d{4}-\d\d-\d\d$/.test(value as string) || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) fail(path);
+}
 function number(value: unknown, path: string, min: number, max: number, integer = false) {
   if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max || (integer && !Number.isInteger(value))) fail(path);
 }
@@ -128,6 +133,7 @@ function evidence(value: unknown, path: string) {
   choice(v.source, ["recognition", "production", "performance", "transfer", "creation", "reflection"], `${path}.source`);
   choice(v.assistance, ["none", "hint", "reveal", "guided"], `${path}.assistance`);
   choice(v.outcome, ["successful", "partial", "retry"], `${path}.outcome`); date(v.occurredAt, `${path}.occurredAt`);
+  if (v.localDate !== undefined) localDate(v.localDate, `${path}.localDate`);
   // Absent on records written before the field existed; those are self-reported too.
   if (v.method !== undefined) choice(v.method, ["self-reported"], `${path}.method`);
   if (v.artifactId !== undefined) id(v.artifactId, `${path}.artifactId`);
@@ -169,6 +175,7 @@ function pilotAttempt(value: unknown, path: string) {
   number(v.tempo, `${path}.tempo`, 20, 400, true);
   str(v.observation, `${path}.observation`); if ((v.observation as string).length > 1000) fail(`${path}.observation length`);
   date(v.occurredAt, `${path}.occurredAt`);
+  if (v.localDate !== undefined) localDate(v.localDate, `${path}.localDate`);
 }
 function pilotVariation(value: unknown, path: string) {
   const v = object(value, path); id(v.id, `${path}.id`);

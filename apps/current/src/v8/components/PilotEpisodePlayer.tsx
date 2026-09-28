@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import { startEpisodePlayback, stopEpisodePlayback, type PlaybackProgress } from "../../audio/episodePlayback";
 import { openMicrophone, startTakeRecording, type MicrophoneSession, type TakeRecorder } from "../../audio/microphone";
 import { newId } from "../identity";
+import { localDateAt } from "../dates";
 import { createEvidence } from "../learning";
 import { ONE_NOTE_ANSWER_SHIFT, ONE_NOTE_QUESTION_ANSWER, PILOT_EPISODE } from "../pilotEpisode";
 import { firstPilotSuccess, isLaterCheckDue, pilotAttempts, pilotLaterSuccess } from "../pilotProgress";
@@ -238,6 +239,7 @@ export function PilotEpisodePlayer({
   const recordAttempt = (outcome: EvidenceOutcome) => {
     if (!played || observation.trim().length < 8 || !check || !cursor.attemptId || recordingAttemptRef.current) return;
     recordingAttemptRef.current = true;
+    const capturedAt = new Date();
     const attempt: PilotAttempt = {
       id: cursor.attemptId,
       cursorId: cursor.id,
@@ -251,7 +253,8 @@ export function PilotEpisodePlayer({
       tempo: cursor.tempo,
       outcome,
       observation: observation.trim(),
-      occurredAt: new Date().toISOString(),
+      occurredAt: capturedAt.toISOString(),
+      localDate: localDateAt(capturedAt),
     };
     dispatch({ type: "recordPilotAttempt", attempt });
     if (attempt.kind === "first-check") {
@@ -261,7 +264,9 @@ export function PilotEpisodePlayer({
         "performance",
         cursor.assistance,
         outcome,
-        { key: "E", tempo: cursor.tempo, instrument: state.settings.instrument, fretRegion: [0, 0] },
+        // The score specifies E and the chosen tempo, but neither proves what
+        // was physically played. Keep the report's context unknown here.
+        {},
       );
       dispatch({ type: "recordActivity", activityId: RHYTHM_ACTIVITY_ID, evidence });
       setEvidenceIds(evidence.map((item) => item.id));

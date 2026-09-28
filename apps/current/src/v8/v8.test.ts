@@ -44,13 +44,17 @@ describe("V8 musical-freedom foundations", () => {
     expect(state.evidence).toEqual([]);
   });
 
-  it("requires two independent days and transfer for transfer-ready mastery", () => {
+  it("keeps unaided self-reports visible without claiming verified mastery or transfer", () => {
     const context = { key: "C", mode: "major" as const, instrument: "electric" as const };
     const first = createEvidence("a", ["ear:u1"], "production", "none", "successful", context, "2026-07-10T10:00:00Z");
     const assisted = createEvidence("b", ["ear:u1"], "production", "hint", "successful", context, "2026-07-11T10:00:00Z");
     expect(masteryFor("ear:u1", [...first, ...assisted]).state).toBe("practising");
     const transfer = createEvidence("c", ["ear:u1"], "transfer", "none", "successful", { ...context, key: "D" }, "2026-07-12T10:00:00Z");
-    expect(masteryFor("ear:u1", [...first, ...assisted, ...transfer]).state).toBe("transfer-ready");
+    const summary = masteryFor("ear:u1", [...first, ...assisted, ...transfer]);
+    expect(summary.state).toBe("practising");
+    expect(summary.reportedSuccessDays).toBe(2);
+    expect(summary.successfulDays).toBe(0);
+    expect(summary.contextCount).toBe(0);
   });
 
   it("records retry and partial evidence without treating the activity as complete", () => {
