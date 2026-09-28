@@ -236,8 +236,29 @@ export interface SketchRevision {
   id: string;
   createdAt: string;
   summary: string;
-  snapshot: Pick<Sketch, "chords" | "melody" | "rhythmPattern" | "sections" | "notes">;
+  snapshot: Pick<Sketch, "chords" | "melody" | "rhythmPattern" | "sections" | "notes"> &
+    Partial<Pick<Sketch, "key" | "mode" | "tempo" | "metre">>;
 }
+
+/** Provenance is kept in the device workspace/backup; the music itself can sync. */
+export interface SketchOrigin {
+  kind: "pilot" | "free-play";
+  sourceId: string;
+  sourceVersion?: number;
+  label: string;
+  activityId?: string;
+  sectionId?: "whole" | "question" | "answer";
+  referenceTempo: number;
+  createdAt: string;
+  /** Exact Free Play guide retained even when the new sketch changes. */
+  preview?: FreePlayPreview;
+}
+
+export type FreePlayPreview =
+  | { kind: "chords"; pitches: number[][] }
+  | { kind: "notes"; pitches: number[]; bpm: number }
+  | { kind: "degree"; tonic: number; target: number }
+  | { kind: "groove"; bpm: number; accents: boolean[] };
 
 export const SKETCH_SYNC_FIELDS = [
   "name", "intention", "tags", "tempo", "metre", "key", "mode", "chords", "melody",
@@ -247,6 +268,7 @@ export type SketchSyncField = typeof SKETCH_SYNC_FIELDS[number];
 
 export interface Sketch {
   id: string;
+  origin?: SketchOrigin;
   name: string;
   intention: string;
   tags: string[];
@@ -282,6 +304,8 @@ export interface V8State {
   sessionCursor?: number;
   /** A learner-authored destination, kept in this device workspace and backup. */
   personalGoal?: string;
+  /** User-chosen familiar material for a later recall or warm-up. */
+  favoriteActivityIds?: string[];
   exploreFocus?: ExploreFocus | null;
   version: 8;
   syncVersion: 1;

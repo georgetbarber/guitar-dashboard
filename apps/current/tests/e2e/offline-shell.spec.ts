@@ -55,4 +55,9 @@ test("a selected unit reports its offline copy and reopens after a disconnected 
   await page.getByRole("button", { name: "Hear the exact phrase" }).click();
   await expect(page.getByText(/Count in:/)).toBeVisible();
   await page.getByRole("button", { name: "Stop sound" }).click();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await page.locator(".primary-sidebar nav:visible, .mobile-nav:visible").getByRole("button", { name: /Play/ }).click();
+  await expect(page.getByRole("heading", { name: "Put the guitar in your hands." })).toBeVisible();
+  await page.getByRole("button", { name: "Start a mixed flow" }).click();
+  await expect(page.getByText("Your one instruction")).toBeVisible();
 });

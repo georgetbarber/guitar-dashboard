@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { V8StoreProvider, useV8Store } from "../v8/store";
 import { playMidi } from "../audio/engine";
 import { CloudSyncProvider, useCloudSync } from "../v8/cloudFacade";
@@ -11,9 +11,9 @@ import { AppNotices, SaveIndicator } from "../v8/components/SaveStatus";
 import { Today } from "../v8/features/Today";
 import { Path } from "../v8/features/Path";
 import { Practice } from "../v8/features/Practice";
-import { Play } from "../v8/features/Play";
-import { Create } from "../v8/features/Create";
-import { Explore } from "../v8/features/Explore";
+const Play = lazy(() => import("../v8/features/Play").then((module) => ({ default: module.Play })));
+const Create = lazy(() => import("../v8/features/Create").then((module) => ({ default: module.Create })));
+const Explore = lazy(() => import("../v8/features/Explore").then((module) => ({ default: module.Explore })));
 
 const LEARN_ROUTES: RouteId[] = ["today", "path", "practice"];
 
@@ -73,9 +73,11 @@ function V8Application() {
         {state.route === "today" && <Today />}
         {state.route === "path" && <Path />}
         {state.route === "practice" && <Practice />}
-        {state.route === "play" && <Play />}
-        {state.route === "create" && <Create />}
-        {state.route === "explore" && <Explore />}
+        <Suspense fallback={<section className="card" role="status">Opening this part of your workspace…</section>}>
+          {state.route === "play" && <Play />}
+          {state.route === "create" && <Create />}
+          {state.route === "explore" && <Explore />}
+        </Suspense>
       </main>
       <nav className="mobile-nav" aria-label="Mobile learning navigation">{NAV.map((item) => {
         const active = item.activeRoutes.includes(state.route);

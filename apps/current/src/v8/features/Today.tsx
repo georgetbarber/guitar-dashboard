@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { buildReturnSession, buildSession, daysSinceLastAttempt, nextUnit, pathSummary, unitProgress } from "../learning";
-import { CURRICULUM, STAGES } from "../curriculum";
+import { buildReturnSession, buildSession, daysSinceLastAttempt, liveObservations, nextUnit, pathSummary, sessionActivityComplete, unitProgress } from "../learning";
+import { activityById, CURRICULUM, STAGES } from "../curriculum";
 import { useV8Store } from "../store";
 
 export function Today() {
@@ -16,14 +16,18 @@ export function Today() {
   const unitPosition = unitsInStage.findIndex((candidate) => candidate.id === unit.id) + 1;
   const summary = pathSummary(state);
   const currentProject = state.sketches.find((sketch) => sketch.id === state.activeSketchId) ?? state.sketches.at(-1);
-  const firstUnfinished = session.items.find((item) => !state.completedActivityIds.includes(item.activityId));
+  const firstUnfinished = session.items.find((item) => !sessionActivityComplete(state, session, item.activityId));
   const first = firstUnfinished ?? session.items[0];
   const sessionComplete = !firstUnfinished;
+  const sessionReports = liveObservations(state.evidence).filter((item) =>
+    item.occurredAt >= session.generatedAt && session.items.some((part) => part.activityId === item.activityId));
+  const reportedAttempts = new Set(sessionReports.map((item) => `${item.activityId}|${item.occurredAt}`)).size;
+  const favorites = (state.favoriteActivityIds ?? []).map(activityById).filter((item) => item !== null);
   return (
     <div className="page-stack today-page">
       <section className="today-focus">
         <div className="today-copy">
-          <span className="eyebrow">Learn · {state.settings.dailyMinutes}-minute session</span>
+          <span className="eyebrow">Learn · {session.totalMinutes}-minute {session.kind === "return" ? "return" : "guided"} session</span>
           <h1>Turn one relationship into music.</h1>
           <p>{session.purpose}</p>
           <label className="personal-goal">My musical goal
@@ -40,6 +44,7 @@ export function Today() {
             ? <button className="primary-action large" onClick={() => dispatch({ type: "beginSession", plan: buildSession(state) })}>Start another guided session</button>
             : <button className="primary-action large" onClick={() => dispatch({ type: "openActivity", activityId: first.activityId })}>Start with: {first.title}</button>}
           {awayDays !== null && awayDays >= 3 && <button className="text-action" onClick={() => dispatch({ type: "beginSession", plan: buildReturnSession(state) })}>Take a shorter return session · 10–15 min</button>}
+          {session.kind !== "return" && session.totalMinutes !== state.settings.dailyMinutes && <button className="text-action" onClick={() => dispatch({ type: "beginSession", plan: buildSession(state) })}>Plan a new {state.settings.dailyMinutes}-minute session</button>}
           {unit.id === "unit-01" && <button className="secondary-action large" onClick={() => dispatch({ type: "openActivity", activityId: "unit-01-rhythm" })}>
             {state.pilotCursor ? "Continue the one-note lesson" : "Start the one-note lesson"}
           </button>}
@@ -47,15 +52,18 @@ export function Today() {
         <div className="session-destination"><span>Today’s music</span><strong>{unit.microStudy.title}</strong><small>{unit.microStudy.tempo} BPM · {unit.microStudy.metre}</small></div>
       </section>
 
+      {sessionComplete && <section className="card session-ending"><span className="eyebrow">Session finished · on your report</span><h2>You worked through this music.</h2><p>You reported {reportedAttempts} attempt{reportedAttempts === 1 ? "" : "s"} across {session.items.length} activities. This records your own observations; it does not claim to have heard or graded your playing.</p><p>Next useful step: repeat one phrase after a break, then try changing just one thing in Free Play.</p><button className="secondary-action" onClick={() => navigate("play")}>Try a Free Play variation</button></section>}
       <section className="session-plan card">
         <header><div><span className="eyebrow">{session.kind === "return" ? "Short return" : "Guided session"}</span><h2>{session.title}</h2></div><strong>{session.totalMinutes} min guidance</strong></header>
         <ol>
           {session.items.map((item, index) => {
-            const complete = state.completedActivityIds.includes(item.activityId);
+            const complete = sessionActivityComplete(state, session, item.activityId);
             return <li className={complete ? "is-complete" : ""} key={`${item.activityId}-${index}`}><button onClick={() => dispatch({ type: "openActivity", activityId: item.activityId })}><span>{complete ? "✓" : index + 1}</span><div><strong>{item.title}</strong><small>{item.purpose}</small></div><b>{item.minutes}m</b></button></li>;
           })}
         </ol>
       </section>
+
+      {favorites.length > 0 && <section className="card familiar-favorites"><span className="eyebrow">Familiar favourites</span><h2>Return to a sound you chose.</h2><p>These are quick ways back into music; opening one does not mark it complete.</p><div className="action-row">{favorites.slice(0, 4).map((activity) => <button className="secondary-action" key={activity.id} onClick={() => dispatch({ type: "openActivity", activityId: activity.id })}>{activity.title}</button>)}</div>{favorites.length > 4 && <details><summary>Show {favorites.length - 4} more favourites</summary><div className="action-row">{favorites.slice(4).map((activity) => <button className="secondary-action" key={activity.id} onClick={() => dispatch({ type: "openActivity", activityId: activity.id })}>{activity.title}</button>)}</div></details>}</section>}
 
       <div className="today-lower">
         <section className="card free-play-glance">

@@ -96,6 +96,11 @@ test("runs an ability-matched prompted free-play flow without scoring it", async
 
 test("keeps local learning and Free Play available when the connection drops", async ({ page, context }) => {
   await completeDiagnostic(page);
+  // The development server has no service worker. Load the route once here;
+  // the production-preview test checks a genuinely cold offline route.
+  await learningNav(page).getByRole("button", { name: /Play/ }).click();
+  await expect(page.getByRole("heading", { name: "Put the guitar in your hands." })).toBeVisible();
+  await learningNav(page).getByRole("button", { name: /Learn/ }).click();
   await context.setOffline(true);
   await expect(page.getByRole("status").filter({ hasText: "Working offline" })).toBeVisible();
   await learningNav(page).getByRole("button", { name: /Play/ }).click();
@@ -200,6 +205,110 @@ test("starts, repairs, varies and resumes the first teaching episode at phone wi
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 });
 
+test("keeps one lesson and its musical material through Explore, Create and reload", async ({ page }) => {
+  await completeDiagnostic(page);
+  await page.getByRole("textbox", { name: "My musical goal" }).fill("Make the rests deliberate");
+  await page.getByRole("button", { name: "Start the one-note lesson" }).click();
+  await page.getByRole("button", { name: "☆ Save as a familiar favourite" }).click();
+  await page.getByRole("button", { name: "2 · Practise it" }).click();
+  await page.getByRole("button", { name: "Explore why this phrase works →" }).click();
+  await expect(page).toHaveURL(/\/explore$/);
+  await expect(page.getByRole("heading", { name: "The rest is part of the answer" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("At 60 BPM in 4/4")).toBeVisible();
+  await page.getByRole("button", { name: "Return to the same lesson step →" }).click();
+  await expect(page.getByRole("heading", { name: "Play beside the count" })).toBeVisible();
+  await page.getByRole("button", { name: "Make an editable sketch from this phrase →" }).click();
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(page.getByRole("heading", { name: "One-note question and answer" })).toBeVisible();
+  await expect(page.locator(".sketch-melody-events > div")).toHaveCount(5);
+  await page.locator(".sketch-melody-events > div").nth(3).getByLabel("Count").selectOption("6");
+  await expect(page.locator(".revision-count")).toContainText("1");
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "One-note question and answer" })).toBeVisible();
+  await page.getByRole("button", { name: "Undo most recent edit" }).click();
+  await page.getByRole("button", { name: "Make a related B section" }).click();
+  await expect(page.getByRole("region", { name: "Experiment preview" })).toContainText("B repeats the A rhythm");
+  await page.getByRole("button", { name: "Hear current" }).click();
+  await page.getByRole("button", { name: "Hear possible edit" }).click();
+  await page.getByRole("button", { name: "Apply this edit" }).click();
+  await expect(page.locator(".sketch-melody-events > div")).toHaveCount(10);
+  await page.reload();
+  await expect(page.locator(".sketch-melody-events > div")).toHaveCount(10);
+  await page.getByRole("button", { name: /Return to the creative learning activity/ }).click();
+  await expect(page.getByRole("heading", { name: "Play beside the count" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "★ Saved as a familiar favourite" })).toBeVisible();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await learningNav(page).getByRole("button", { name: /Learn/ }).click();
+  await expect(page.getByRole("heading", { name: "Return to a sound you chose." })).toBeVisible();
+});
+
+test("carries a short session through explanation, reported attempt, Free Play variation and saved material", async ({ page }) => {
+  await completeDiagnostic(page);
+  await page.getByRole("button", { name: /settings and (?:data|sync)/i }).filter({ visible: true }).click();
+  await page.getByRole("spinbutton", { name: "Practice minutes" }).fill("10");
+  await page.getByRole("button", { name: "Close settings" }).click();
+  await page.getByRole("button", { name: "Plan a new 10-minute session" }).click();
+  await expect(page.locator(".session-plan li")).toHaveCount(2);
+  await expect(page.locator(".session-plan li").nth(1)).toContainText("Play a one-note question and answer");
+  await page.getByRole("button", { name: /Start with:/ }).click();
+  await page.getByRole("button", { name: "Hear the tonic reference" }).click();
+  await page.getByRole("button", { name: "Successful today" }).click();
+  await page.getByRole("button", { name: "Continue to next →" }).click();
+  await expect(page.getByRole("heading", { name: "One-note question and answer" })).toBeVisible();
+  await page.getByRole("button", { name: "Explore why this phrase works →" }).click();
+  await expect(page.getByRole("heading", { name: "The rest is part of the answer" })).toBeVisible();
+  await page.getByRole("button", { name: "Return to the same lesson step →" }).click();
+  await page.getByRole("button", { name: "3 · Try unaided" }).click();
+  await page.getByRole("button", { name: "I played both bars without the app sound" }).click();
+  await page.getByRole("textbox", { name: "One concrete observation" }).fill("I kept the two rests silent while counting four.");
+  await page.getByRole("button", { name: "I could do it" }).click();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await expect(page.getByRole("heading", { name: "You worked through this music." })).toBeVisible();
+  await page.getByRole("button", { name: "Try a Free Play variation" }).click();
+  await page.getByRole("button", { name: "Play Groove keeper" }).click();
+  await page.getByRole("button", { name: "Make it mine" }).click();
+  await expect(page.getByText("Make it yours")).toBeVisible();
+  await page.getByRole("button", { name: "Keep this fragment in Create →" }).click();
+  await expect(page.getByRole("heading", { name: "Move one accent" })).toBeVisible();
+  await page.getByRole("button", { name: /Count 1:/ }).click();
+  await expect(page.locator(".revision-count")).toContainText("1");
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Move one accent" })).toBeVisible();
+  await expect(page.getByText(/exact guide and context were kept/)).toBeVisible();
+});
+
+test("carries a Free Play rhythm fragment into an editable, reopenable sketch", async ({ page }) => {
+  await completeDiagnostic(page);
+  await learningNav(page).getByRole("button", { name: /Play/ }).click();
+  await page.getByRole("button", { name: "Play Groove keeper" }).click();
+  await page.getByRole("button", { name: "Keep this fragment in Create →" }).click();
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(page.getByText(/exact guide and context were kept/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Move one accent" })).toBeVisible();
+  await page.getByRole("button", { name: /Count 1:/ }).click();
+  await expect(page.locator(".revision-count")).toContainText("1");
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Move one accent" })).toBeVisible();
+  await page.getByRole("button", { name: "Hear preserved original" }).click();
+  await page.getByRole("button", { name: "Hear my version" }).click();
+});
+
+test("loops a Free Play guide and moves only at its musical boundary without claiming playing", async ({ page }) => {
+  await completeDiagnostic(page);
+  await learningNav(page).getByRole("button", { name: /Play/ }).click();
+  await page.getByRole("button", { name: "Play Groove keeper" }).click();
+  await page.clock.install();
+  await page.getByRole("button", { name: "Repeat the guide 4 times" }).click();
+  await page.getByRole("button", { name: "Move to the next prompt when the guide ends" }).click();
+  await page.getByRole("button", { name: "▶ Hear the guide" }).click();
+  await expect(page.getByLabel("Prompt 1 of 8")).toBeVisible();
+  await page.clock.fastForward("00:00:50");
+  await expect(page.getByLabel("Prompt 2 of 8")).toBeVisible();
+  await page.getByRole("button", { name: "Not this one — skip" }).click();
+  await expect(page.getByLabel("Prompt 3 of 8")).toBeVisible();
+});
+
 test("requires a different day and an unaided 72 BPM return before calling the pilot complete", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-09-26T10:00:00Z") });
   await completeDiagnostic(page);
@@ -229,7 +338,9 @@ test("creates, revises, finishes and restores a local musical sketch", async ({ 
   await page.getByRole("button", { name: "Start your first sketch" }).click();
   await page.getByLabel("Sketch name").fill("Two-note horizon");
   await page.getByLabel("Add chord").selectOption({ index: 1 });
-  await page.getByRole("button", { name: "Change one interval" }).click();
+  await page.getByRole("button", { name: "Change harmony, keep the time" }).click();
+  await expect(page.getByRole("region", { name: "Experiment preview" })).toContainText("first chord changes");
+  await page.getByRole("button", { name: "Apply this edit" }).click();
   await expect(page.locator(".revision-count")).toContainText(/1\s*preserved revisions/);
   await page.getByRole("button", { name: "Finish this version" }).click();
   await expect(page.getByText(/creative workflow · finished/i)).toBeVisible();

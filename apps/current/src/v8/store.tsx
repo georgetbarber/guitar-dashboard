@@ -1,12 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { CURRICULUM } from "./curriculum";
-import { completedActivityIdsFromEvidence } from "./learning";
+import { completedActivityIdsFromEvidence, sessionActivityComplete } from "./learning";
 import { activateRestore, activeWorkspaceId, confirmRestoreMerge, discardIncompleteStaging, exportArchive, loadWorkspace, moveWorkspace, newSketch, savePersistedState, setActiveWorkspace } from "./repository";
 import type { WorkspaceId } from "./repository";
 import { IDLE_SAVE, runSave } from "./saveState";
 import type { LocalSaveState } from "./saveState";
 import { holdUpdates } from "./updates";
 import { clampSketchTempo } from "./limits";
+import { newId } from "./identity";
+import { ONE_NOTE_QUESTION_ANSWER } from "./pilotEpisode";
 import { mergeCloudSnapshot } from "./sync";
 import type { CloudSnapshot } from "./sync";
 import { SKETCH_SYNC_FIELDS } from "./types";
@@ -62,6 +64,7 @@ export const DEFAULT_STATE: V8State = {
   sessionPlan: null,
   sessionCursor: 0,
   personalGoal: "",
+  favoriteActivityIds: [],
   exploreFocus: null,
   settings: {
     instrument: "electric", dailyMinutes: 25, tonicName: "C", mode: "major", theme: "light",
@@ -85,10 +88,13 @@ type Action =
   | { type: "savePilotVariation"; variation: PilotVariation }
   | { type: "beginSession"; plan: SessionPlan }
   | { type: "setPersonalGoal"; goal: string }
+  | { type: "toggleFavoriteActivity"; activityId: string }
   | { type: "openExploreFocus"; focus: ExploreFocus }
   | { type: "clearExploreFocus" }
   | { type: "updateSettings"; settings: Partial<LearnerSettings> }
   | { type: "createSketch" }
+  | { type: "createFromPilot"; sectionId: PilotCursor["sectionId"]; tempo: number; returnActivityId: string }
+  | { type: "importFragment"; sketch: Sketch }
   | { type: "updateSketch"; sketch: Sketch }
   | { type: "setTakeCloud"; sketchId: string; takeId: string; cloud: RecordedTake["cloud"] | null; note: string }
   | { type: "deleteSketch"; id: string }
@@ -149,7 +155,8 @@ function reducer(state: V8State, action: Action): V8State {
     case "recordActivity": {
       const evidence = [...state.evidence, ...action.evidence];
       const completedActivityIds = completedActivityIdsFromEvidence(evidence);
-      const nextSessionIndex = state.sessionPlan?.items.findIndex((item) => !completedActivityIds.includes(item.activityId)) ?? -1;
+      const nextSessionIndex = state.sessionPlan?.items.findIndex((item) =>
+        !sessionActivityComplete({ ...state, evidence }, state.sessionPlan!, item.activityId)) ?? -1;
       return {
         ...state,
         // activeActivityId is intentionally kept so the player can show the
@@ -195,6 +202,12 @@ function reducer(state: V8State, action: Action): V8State {
       return { ...state, sessionPlan: action.plan, sessionCursor: 0, updatedAt: changedAt };
     case "setPersonalGoal":
       return { ...state, personalGoal: action.goal.slice(0, 160), updatedAt: changedAt };
+    case "toggleFavoriteActivity": {
+      const favorites = state.favoriteActivityIds ?? [];
+      return { ...state, favoriteActivityIds: favorites.includes(action.activityId)
+        ? favorites.filter((id) => id !== action.activityId)
+        : [...favorites, action.activityId].slice(0, 48), updatedAt: changedAt };
+    }
     case "openExploreFocus":
       return { ...state, exploreFocus: action.focus, route: "explore", resumeActivityId: action.focus.returnActivityId, activeActivityId: null, updatedAt: changedAt };
     case "clearExploreFocus":
@@ -215,6 +228,29 @@ function reducer(state: V8State, action: Action): V8State {
       const sketch = newSketch(state.sketches.length, { key: state.settings.tonicName, mode: state.settings.mode });
       return { ...state, sketches: [...state.sketches, sketch], activeSketchId: sketch.id, route: "create", updatedAt: changedAt };
     }
+    case "createFromPilot": {
+      const source = ONE_NOTE_QUESTION_ANSWER;
+      const section = action.sectionId === "whole" ? { fromBeat: 0, toBeat: 8 } : source.sections.find((item) => item.id === action.sectionId)!;
+      const sketch = newSketch(state.sketches.length, { key: "E", mode: "major" });
+      sketch.name = "One-note answer";
+      sketch.intention = "Change one part of the answer while keeping its question recognisable.";
+      sketch.mode = null; // The rhythm study defines a tonal centre, not a major/minor scale.
+      sketch.tempo = action.tempo;
+      sketch.sections = action.sectionId === "whole" ? ["Question", "Answer"] : [action.sectionId];
+      sketch.rhythmPattern = action.sectionId === "whole" ? "Question: 1 · 3 · | Answer: 1 2 · 4"
+        : action.sectionId === "question" ? "question: 1 · 3 ·" : "answer: 1 2 · 4";
+      sketch.melody = source.events.flatMap((event) => event.kind === "note" && event.atBeat >= section.fromBeat && event.atBeat < section.toBeat
+        ? [{ id: newId("melody"), string: event.position.string - 1, fret: event.position.fret, beat: event.atBeat - section.fromBeat, duration: event.beats }]
+        : []);
+      sketch.origin = { kind: "pilot", sourceId: source.id, sourceVersion: source.version, label: source.title,
+        activityId: action.returnActivityId, sectionId: action.sectionId, referenceTempo: action.tempo, createdAt: changedAt };
+      return { ...state, sketches: [...state.sketches, sketch], activeSketchId: sketch.id, route: "create",
+        activeActivityId: null, resumeActivityId: action.returnActivityId, updatedAt: changedAt };
+    }
+    case "importFragment":
+      if (state.sketches.some((item) => item.id === action.sketch.id)) return state;
+      return { ...state, sketches: [...state.sketches, action.sketch], activeSketchId: action.sketch.id,
+        route: "create", updatedAt: changedAt };
     /*
      * Tempo is clamped here because every sketch write passes through this case
      * and an out-of-range figure is a typo rather than work. Nothing else is

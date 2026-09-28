@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { playChord, playClick, playMidi, playRelationship, stopAudio } from "../../audio/engine";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { stopAudio } from "../../audio/engine";
 import {
   FREE_PLAY_MODE_INFO,
   availableFreePlayModes,
@@ -11,24 +11,11 @@ import {
   type FreePlayPrompt
 } from "../freePlay";
 import { useV8Store } from "../store";
+import { sketchFromFreePlay } from "../freePlayFragment";
+import { hearFreePlayPreview } from "../freePlayAudio";
 
 const MODE_ICONS: Record<FreePlayMode, string> = { groove: "◉", riff: "⌁", degree: "◎", chord: "◇" };
 const SESSION_LENGTH = 8;
-
-function hearPrompt(prompt: FreePlayPrompt) {
-  stopAudio();
-  if (prompt.preview.kind === "chords") {
-    prompt.preview.pitches.forEach((pitches, index) => playChord(pitches, index * 1.25, 1.05));
-  } else if (prompt.preview.kind === "notes") {
-    const step = 60 / prompt.preview.bpm / 2;
-    prompt.preview.pitches.forEach((pitch, index) => { if (pitch >= 0) playMidi(60 + pitch, index * step, step * .76, .16); });
-  } else if (prompt.preview.kind === "degree") {
-    playRelationship(prompt.preview.tonic, prompt.preview.target);
-  } else {
-    const step = 60 / prompt.preview.bpm;
-    [...prompt.preview.accents, ...prompt.preview.accents].forEach((accented, index) => playClick(index * step, accented));
-  }
-}
 
 function PromptRelationship({ prompt }: { prompt: FreePlayPrompt }) {
   return (
@@ -49,35 +36,79 @@ export function Play() {
   const [position, setPosition] = useState(0);
   const [followed, setFollowed] = useState(0);
   const [skipped, setSkipped] = useState(0);
+  const [unreported, setUnreported] = useState(0);
+  const [repeatGuide, setRepeatGuide] = useState(false);
+  const [autoAdvance, setAutoAdvance] = useState(false);
+  const boundaryTimer = useRef<number | null>(null);
   const [hintOpen, setHintOpen] = useState(false);
   const [physicalOpen, setPhysicalOpen] = useState(false);
   const [variationOpen, setVariationOpen] = useState(false);
-  useEffect(() => () => stopAudio(), []);
+  const [captureError, setCaptureError] = useState("");
+  useEffect(() => () => {
+    if (boundaryTimer.current !== null) window.clearTimeout(boundaryTimer.current);
+    stopAudio();
+  }, []);
+  useEffect(() => {
+    const pauseHiddenGuide = () => {
+      if (document.visibilityState !== "hidden") return;
+      if (boundaryTimer.current !== null) window.clearTimeout(boundaryTimer.current);
+      boundaryTimer.current = null;
+      stopAudio();
+    };
+    document.addEventListener("visibilitychange", pauseHiddenGuide);
+    return () => document.removeEventListener("visibilitychange", pauseHiddenGuide);
+  }, []);
+
+  const clearBoundary = () => {
+    if (boundaryTimer.current !== null) window.clearTimeout(boundaryTimer.current);
+    boundaryTimer.current = null;
+  };
 
   const start = (nextFocus: FreePlayFocus) => {
     const nextSession = sessionNumber + 1;
+    clearBoundary();
     stopAudio();
     setFocus(nextFocus);
     setSessionNumber(nextSession);
     setPrompts(buildFreePlaySequence(state, nextFocus, nextSession, SESSION_LENGTH));
-    setPosition(0); setFollowed(0); setSkipped(0);
+    setPosition(0); setFollowed(0); setSkipped(0); setUnreported(0);
     setHintOpen(false); setPhysicalOpen(false); setVariationOpen(false);
     setPhase("playing");
   };
 
   const resetHandholds = () => { setHintOpen(false); setPhysicalOpen(false); setVariationOpen(false); };
-  const advance = (played: boolean) => {
+  const advance = (report: "played" | "skipped" | "unreported") => {
+    clearBoundary();
     stopAudio();
-    if (played) setFollowed((value) => value + 1); else setSkipped((value) => value + 1);
+    if (report === "played") setFollowed((value) => value + 1);
+    else if (report === "skipped") setSkipped((value) => value + 1);
+    else setUnreported((value) => value + 1);
     if (position >= prompts.length - 1) { setPhase("complete"); return; }
     setPosition((value) => value + 1);
     resetHandholds();
   };
 
   const switchCurrentMode = (mode: FreePlayMode) => {
+    clearBoundary();
     stopAudio();
     setPrompts((current) => current.map((prompt, index) => index === position ? buildFreePlayPrompt(state, mode, sessionNumber * SESSION_LENGTH + position + 37) : prompt));
     resetHandholds();
+  };
+  const capture = (prompt: FreePlayPrompt) => {
+    const sketch = sketchFromFreePlay(state, prompt);
+    if (!sketch) {
+      setCaptureError("No checked guitar voicing is available for this chord prompt. Try a riff or groove fragment, or make a blank sketch.");
+      return;
+    }
+    clearBoundary();
+    stopAudio();
+    dispatch({ type: "importFragment", sketch });
+    navigate("create");
+  };
+  const playGuide = (prompt: FreePlayPrompt) => {
+    clearBoundary();
+    const duration = hearFreePlayPreview(prompt.preview, repeatGuide ? 4 : 1);
+    if (autoAdvance) boundaryTimer.current = window.setTimeout(() => advance("unreported"), duration);
   };
 
   if (phase === "choose") return (
@@ -118,10 +149,11 @@ export function Play() {
         <section className="play-complete">
           <span className="play-complete-mark">✦</span><span className="eyebrow">Flow complete · nothing was graded</span>
           <h1>You kept music moving.</h1>
-          <p>You followed {followed} prompt{followed === 1 ? "" : "s"}{skipped ? ` and passed over ${skipped} that did not feel useful` : ""}. The useful evidence is the sound and physical knowledge you just experienced.</p>
+          <p>You marked {followed} prompt{followed === 1 ? "" : "s"} as played{skipped ? `, skipped ${skipped}` : ""}{unreported ? `, and moved past ${unreported} automatically after the guide` : ""}. These are your choices, not a measured record of playing.</p>
           <div className="play-complete-modes">{usedModes.map((mode) => <span key={mode}>{mode}</span>)}</div>
           <div className="play-complete-actions"><button className="primary-action large" onClick={() => start("mix")}>Keep playing</button><button className="secondary-action" onClick={() => start(focus)}>Another {focus === "mix" ? "mixed" : FREE_PLAY_MODE_INFO[focus].label} set</button><button className="text-action" onClick={() => setPhase("choose")}>Choose a different flavour</button></div>
-          <aside><div><strong>Did one fragment stick?</strong><span>Carry the spark into a sketch before explaining it.</span></div><button className="secondary-action" onClick={() => { dispatch({ type: "createSketch" }); navigate("create"); }}>Take an idea to Create</button></aside>
+          <aside><div><strong>Did the last fragment stick?</strong><span>Carry its exact guide and context into an editable sketch.</span></div><button className="secondary-action" onClick={() => capture(prompts[position])}>Take the last fragment to Create</button></aside>
+          {captureError && <p role="alert">{captureError}</p>}
         </section>
       </div>
     );
@@ -132,7 +164,7 @@ export function Play() {
   return (
     <div className="play-session">
       <header className="play-session-header">
-        <button className="text-action" onClick={() => { stopAudio(); setPhase("choose"); }}>← Leave the flow</button>
+        <button className="text-action" onClick={() => { clearBoundary(); stopAudio(); setPhase("choose"); }}>← Leave the flow</button>
         <div className="play-progress" aria-label={`Prompt ${position + 1} of ${prompts.length}`}><span>{position + 1} of {prompts.length}</span><div>{prompts.map((_, index) => <i className={index < position ? "is-complete" : index === position ? "is-current" : ""} key={index} />)}</div></div>
         <span className="play-session-context">{state.settings.tonicName} {state.settings.mode} · {state.settings.instrument}</span>
       </header>
@@ -151,10 +183,13 @@ export function Play() {
             {physicalOpen && <aside><span>Connect it to the hand</span><p>{prompt.physicalCue}</p></aside>}
             {variationOpen && <aside className="is-variation"><span>Make it yours</span><p>{prompt.variation}</p></aside>}
           </div>
-          <div className="play-sound-actions"><button className="secondary-action" onClick={() => hearPrompt(prompt)}>▶ Hear the guide</button><button className={physicalOpen ? "is-active" : ""} onClick={() => setPhysicalOpen((value) => !value)}>Hand cue</button><button className={hintOpen ? "is-active" : ""} onClick={() => setHintOpen((value) => !value)}>Reveal names</button><button className={variationOpen ? "is-active" : ""} onClick={() => setVariationOpen((value) => !value)}>Make it mine</button></div>
+          <div className="play-sound-actions"><button className="secondary-action" onClick={() => playGuide(prompt)}>▶ Hear the guide</button><button className={physicalOpen ? "is-active" : ""} onClick={() => setPhysicalOpen((value) => !value)}>Hand cue</button><button className={hintOpen ? "is-active" : ""} onClick={() => setHintOpen((value) => !value)}>Reveal names</button><button className={variationOpen ? "is-active" : ""} onClick={() => setVariationOpen((value) => !value)}>Make it mine</button></div>
+          <div className="play-flow-options"><button aria-pressed={repeatGuide} onClick={() => setRepeatGuide((value) => !value)}>Repeat the guide 4 times</button><button aria-pressed={autoAdvance} onClick={() => { setAutoAdvance((value) => !value); clearBoundary(); }}>Move to the next prompt when the guide ends</button><small>Automatic movement never marks a prompt as played. Press Hear the guide to use these options.</small></div>
+          <button className="text-action" onClick={() => capture(prompt)}>Keep this fragment in Create →</button>
+          {captureError && <p role="alert">{captureError}</p>}
         </main>
       </div>
-      <footer className="play-session-footer"><button className="text-action" onClick={() => advance(false)}>Not this one — skip</button><span>There is no right response to submit. Play, listen, then move when ready.</span><button className="primary-action large" onClick={() => advance(true)}>Played it — keep flowing →</button></footer>
+      <footer className="play-session-footer"><button className="text-action" onClick={() => advance("skipped")}>Not this one — skip</button><span>There is no right response to submit. Play, listen, then move when ready.</span><button className="primary-action large" onClick={() => advance("played")}>Played it — keep flowing →</button></footer>
     </div>
   );
 }

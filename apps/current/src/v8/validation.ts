@@ -59,6 +59,39 @@ function material(v: ObjectValue, path: string) {
 }
 function sketch(value: unknown, path: string) {
   const v = object(value, path); id(v.id, `${path}.id`);
+  if (v.origin !== undefined) {
+    const source = object(v.origin, `${path}.origin`);
+    choice(source.kind, ["pilot", "free-play"], `${path}.origin.kind`);
+    id(source.sourceId, `${path}.origin.sourceId`);
+    if (source.sourceVersion !== undefined) number(source.sourceVersion, `${path}.origin.sourceVersion`, 1, 1000, true);
+    str(source.label, `${path}.origin.label`);
+    if (source.activityId !== undefined) id(source.activityId, `${path}.origin.activityId`);
+    if (source.sectionId !== undefined) choice(source.sectionId, ["whole", "question", "answer"], `${path}.origin.sectionId`);
+    number(source.referenceTempo, `${path}.origin.referenceTempo`, 20, 400, true);
+    date(source.createdAt, `${path}.origin.createdAt`);
+    if (source.preview !== undefined) {
+      const preview = object(source.preview, `${path}.origin.preview`);
+      choice(preview.kind, ["chords", "notes", "degree", "groove"], `${path}.origin.preview.kind`);
+      if (preview.kind === "chords") {
+        if (!Array.isArray(preview.pitches) || preview.pitches.length > 16) fail(`${path}.origin.preview.pitches`);
+        list(preview.pitches, `${path}.origin.preview.pitches`, (tones, p) => {
+          if (!Array.isArray(tones) || tones.length > 7) fail(p);
+          list(tones, p, (tone, q) => number(tone, q, 0, 11, true));
+        });
+      } else if (preview.kind === "notes") {
+        if (!Array.isArray(preview.pitches) || preview.pitches.length > 128) fail(`${path}.origin.preview.pitches`);
+        list(preview.pitches, `${path}.origin.preview.pitches`, (tone, p) => number(tone, p, -1, 11, true));
+        number(preview.bpm, `${path}.origin.preview.bpm`, 20, 400, true);
+      } else if (preview.kind === "degree") {
+        number(preview.tonic, `${path}.origin.preview.tonic`, 0, 11, true);
+        number(preview.target, `${path}.origin.preview.target`, 0, 11, true);
+      } else {
+        if (!Array.isArray(preview.accents) || preview.accents.length > 128) fail(`${path}.origin.preview.accents`);
+        list(preview.accents, `${path}.origin.preview.accents`, (accent, p) => { if (typeof accent !== "boolean") fail(p); });
+        number(preview.bpm, `${path}.origin.preview.bpm`, 20, 400, true);
+      }
+    }
+  }
   for (const key of ["name", "intention", "bassMovement", "ambiguityNotes"]) str(v[key], `${path}.${key}`);
   date(v.createdAt, `${path}.createdAt`); date(v.updatedAt, `${path}.updatedAt`);
   number(v.tempo, `${path}.tempo`, 20, 400);
@@ -77,7 +110,15 @@ function sketch(value: unknown, path: string) {
       number(cloud.bytes, `${p}.cloud.bytes`, 0, 50 * 1024 * 1024, true); date(cloud.uploadedAt, `${p}.cloud.uploadedAt`);
     }
   });
-  identifiedList(v.revisions, `${path}.revisions`, (r, p) => { const rev = object(r, p); id(rev.id, `${p}.id`); str(rev.summary, `${p}.summary`); date(rev.createdAt, `${p}.createdAt`); material(object(rev.snapshot, `${p}.snapshot`), `${p}.snapshot`); });
+  identifiedList(v.revisions, `${path}.revisions`, (r, p) => {
+    const rev = object(r, p); id(rev.id, `${p}.id`); str(rev.summary, `${p}.summary`); date(rev.createdAt, `${p}.createdAt`);
+    const original = object(rev.snapshot, `${p}.snapshot`);
+    material(original, `${p}.snapshot`);
+    if (original.key !== undefined) nullable(original.key, root, `${p}.snapshot.key`);
+    if (original.mode !== undefined) nullable(original.mode, (m, field) => choice(m, MODES, field), `${p}.snapshot.mode`);
+    if (original.tempo !== undefined) number(original.tempo, `${p}.snapshot.tempo`, 20, 400);
+    if (original.metre !== undefined) choice(original.metre, ["4/4", "3/4", "6/8"], `${p}.snapshot.metre`);
+  });
   identifiedList(v.reflections, `${path}.reflections`, (r, p) => { const ref = object(r, p); id(ref.id, `${p}.id`); str(ref.prompt, `${p}.prompt`); str(ref.response, `${p}.response`); date(ref.createdAt, `${p}.createdAt`); });
   if (v.fieldUpdatedAt !== undefined) for (const [key, time] of Object.entries(object(v.fieldUpdatedAt, `${path}.fieldUpdatedAt`))) { choice(key, SKETCH_SYNC_FIELDS, `${path}.fieldUpdatedAt key`); date(time, `${path}.${key} time`); }
 }
@@ -184,6 +225,11 @@ export function validateState(value: unknown): asserts value is V8State {
   if (v.sessionPlan != null) sessionPlan(v.sessionPlan, "session plan");
   if (v.sessionCursor !== undefined) number(v.sessionCursor, "session cursor", 0, 8, true);
   if (v.personalGoal !== undefined) { str(v.personalGoal, "personal goal"); if ((v.personalGoal as string).length > 160) fail("personal goal length"); }
+  if (v.favoriteActivityIds !== undefined) {
+    if (!Array.isArray(v.favoriteActivityIds) || v.favoriteActivityIds.length > 48) fail("familiar favourites");
+    list(v.favoriteActivityIds, "familiar favourites", id);
+    if (new Set(v.favoriteActivityIds).size !== v.favoriteActivityIds.length) fail("familiar favourites duplicate");
+  }
   if (v.exploreFocus != null) exploreFocus(v.exploreFocus, "explore focus");
   settings(v.settings, "settings"); date(v.updatedAt, "workspace date"); date(v.settingsUpdatedAt, "settings date");
   choice(v.route, ROUTES, "route"); id(v.activeUnitId, "active unit");

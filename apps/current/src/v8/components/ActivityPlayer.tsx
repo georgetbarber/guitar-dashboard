@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useState, type MutableRefObject } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type MutableRefObject } from "react";
 import { playHarmonicRelationship, playMelodicRelationship } from "../../audio/engine";
 import { createContext, normalize } from "../../core/music/theory";
 import { activityById, unitById, CURRICULUM } from "../curriculum";
-import { createEvidence, retractObservations } from "../learning";
+import { createEvidence, retractObservations, sessionActivityComplete } from "../learning";
 import { PROFILE_LIMITS } from "../limits";
 import { useV8Store } from "../store";
 import type { ActivityDefinition, Assistance, CompetencyEvidence, EvidenceOutcome } from "../types";
 import { MicroStudy } from "./MicroStudy";
 import { PilotStudy } from "./PilotStudy";
-import { PilotEpisodePlayer } from "./PilotEpisodePlayer";
 import { RhythmNotation } from "./RhythmNotation";
 import { RecordSaveStatus } from "./SaveStatus";
 import { useUpdateHold } from "./UpdateNotice";
@@ -18,6 +17,7 @@ const OUTCOMES: Array<{ value: EvidenceOutcome; label: string; description: stri
   { value: "partial", label: "Partly there", description: "Some of it worked, but not the whole thing or not reliably." },
   { value: "successful", label: "Successful today", description: "Yes — I did the success action above, deliberately." }
 ];
+const PilotEpisodePlayer = lazy(() => import("./PilotEpisodePlayer").then((module) => ({ default: module.PilotEpisodePlayer })));
 
 const INTERVAL_NAMES = [
   "the home note (tonic) on its own", "a minor 2nd above home", "a major 2nd above home",
@@ -64,7 +64,7 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
     return () => { requestCloseRef.current = null; };
   }, [requestCloseRef, unsavedReflection, onClose]);
   if (!activity) return null;
-  if (activity.id === "unit-01-rhythm" && unit.episodeId) return <PilotEpisodePlayer onClose={onClose} requestCloseRef={requestCloseRef} />;
+  if (activity.id === "unit-01-rhythm" && unit.episodeId) return <Suspense fallback={<section aria-labelledby="activity-title"><h1 id="activity-title">Opening the one-note lesson…</h1></section>}><PilotEpisodePlayer onClose={onClose} requestCloseRef={requestCloseRef} /></Suspense>;
   const originLabel = state.activityOrigin === "practice" ? "Strengthen"
     : state.activityOrigin === "path" ? "Course map"
       : state.activityOrigin === "today" ? "Guided session"
@@ -151,7 +151,8 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
     if (justCompleted === "successful") done.add(activity.id);
     const sessionIndex = state.sessionPlan?.items.findIndex((item) => item.activityId === activity.id) ?? -1;
     if (sessionIndex >= 0) {
-      const next = state.sessionPlan!.items.slice(sessionIndex + 1).find((item) => !done.has(item.activityId));
+      const next = state.sessionPlan!.items.slice(sessionIndex + 1).find((item) =>
+        !sessionActivityComplete(state, state.sessionPlan!, item.activityId));
       return next ? activityById(next.activityId) ?? null : null;
     }
     const index = unit.activities.findIndex((item) => item.id === activity.id);
@@ -221,7 +222,7 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
     <section className="activity-player" aria-labelledby="activity-title">
       <header className="activity-header">
         <button className="icon-button" onClick={onClose} aria-label="Close activity" data-autofocus>←</button>
-        <div><span>{originLabel} · {unit.title} · {activity.minutes} minutes</span><h1 id="activity-title">{activity.title}</h1><p>{activity.why}</p></div>
+        <div><span>{originLabel} · {unit.title} · {activity.minutes} minutes</span><h1 id="activity-title">{activity.title}</h1><p>{activity.why}</p><button className="text-action" aria-pressed={(state.favoriteActivityIds ?? []).includes(activity.id)} onClick={() => dispatch({ type: "toggleFavoriteActivity", activityId: activity.id })}>{(state.favoriteActivityIds ?? []).includes(activity.id) ? "★ Saved as a familiar favourite" : "☆ Save as a familiar favourite"}</button></div>
       </header>
       {keepDraftNotice && unsavedReflection && <p className="activity-draft-notice" role="status">Your written reflection has not been saved, so Escape kept this activity open. Save it below, or choose Close activity to leave without it.</p>}
 

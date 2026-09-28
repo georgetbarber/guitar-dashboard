@@ -158,10 +158,8 @@ function sessionItem(activityId: string, minutes: number): SessionItem {
  * screen as though it applied. Someone with fifteen minutes was handed a
  * twenty-five minute session, and someone with an hour was handed the same.
  *
- * This is an interim correction, not the session design: it keeps the existing
- * five-part shape and simply fits it honestly to the available time. The real
- * design — recall, targeted work, musical use, capture, a clear ending — arrives
- * in Phase 4A.
+ * Phase 4 keeps the honest duration fit and lets the authored pilot lead the
+ * first unit's playing slot, rather than burying it behind a generic task.
  */
 const SESSION_SHAPE = [
   { kinds: ["listen-compare", "sing-predict"] as const, fallback: 0, minimum: 3, share: 3 },
@@ -219,7 +217,10 @@ export function buildSession(state: V8State, now = new Date()): SessionPlan {
   const taken = new Set<string>();
   const unfinished = unit.activities.filter((activity) => !state.completedActivityIds.includes(activity.id));
   const select = (kinds: readonly string[], fallback: number) => {
-    const preferred = unfinished.find((activity) => kinds.includes(activity.kind) && !taken.has(activity.id))
+    const pilotRhythm = unit.episodeId && kinds.includes("rhythm")
+      ? unfinished.find((activity) => activity.kind === "rhythm" && !taken.has(activity.id)) : undefined;
+    const preferred = pilotRhythm
+      ?? unfinished.find((activity) => kinds.includes(activity.kind) && !taken.has(activity.id))
       ?? unit.activities.find((activity) => kinds.includes(activity.kind) && !taken.has(activity.id))
       ?? unfinished.find((activity) => !taken.has(activity.id))
       ?? unit.activities.find((activity) => !taken.has(activity.id))
@@ -266,6 +267,12 @@ export function buildReturnSession(state: V8State, now = new Date()): SessionPla
   const minutes = distribute(budget, minimums, distinct.map((_, index) => index === 0 ? 3 : 2));
   const items = distinct.map((item, index) => ({ ...item, minutes: minutes[index] }));
   return { ...full, id: `${full.id}-return`, title: `Return to ${full.title}`, purpose: "Recall a familiar sound, work one useful part, and use it in music.", totalMinutes: budget, items, kind: "return" };
+}
+
+/** A session is a fresh attempt, including its familiar recall item. */
+export function sessionActivityComplete(state: V8State, plan: SessionPlan, activityId: string): boolean {
+  return liveObservations(state.evidence).some((item) =>
+    item.activityId === activityId && item.outcome === "successful" && item.occurredAt >= plan.generatedAt);
 }
 
 export function createEvidence(

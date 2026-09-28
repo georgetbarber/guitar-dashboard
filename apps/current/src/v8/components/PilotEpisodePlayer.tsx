@@ -128,6 +128,16 @@ export function PilotEpisodePlayer({
     });
     history.pushState({}, "", "/explore");
   };
+  const makeSketch = () => {
+    if (recording || (takeUrl && !takeDownloaded)) {
+      setNotice("Stop and download or discard your temporary take before opening Create.");
+      return;
+    }
+    if (!cursor) return;
+    stop();
+    dispatch({ type: "createFromPilot", sectionId: cursor.sectionId, tempo: cursor.tempo, returnActivityId: RHYTHM_ACTIVITY_ID });
+    history.pushState({}, "", "/create");
+  };
   useEffect(() => {
     if (!requestCloseRef) return;
     requestCloseRef.current = requestClose;
@@ -323,6 +333,7 @@ export function PilotEpisodePlayer({
           <span>Learn · Your musical baseline</span>
           <h1 id="activity-title">One-note question and answer</h1>
           <p>{PILOT_EPISODE.objective}</p>
+          <button className="text-action" aria-pressed={(state.favoriteActivityIds ?? []).includes(RHYTHM_ACTIVITY_ID)} onClick={() => dispatch({ type: "toggleFavoriteActivity", activityId: RHYTHM_ACTIVITY_ID })}>{(state.favoriteActivityIds ?? []).includes(RHYTHM_ACTIVITY_ID) ? "★ Saved as a familiar favourite" : "☆ Save as a familiar favourite"}</button>
         </div>
       </header>
       {notice && (
@@ -409,6 +420,9 @@ export function PilotEpisodePlayer({
           />
           <button className="text-action" onClick={explorePhrase}>
             Explore why this phrase works →
+          </button>
+          <button className="text-action" onClick={makeSketch}>
+            Make an editable sketch from this phrase →
           </button>
           <div className="pilot-controls">
             <label>

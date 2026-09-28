@@ -37,8 +37,9 @@ export function cloudProfile(state: V8State): CloudProfile {
 export function cloudSketch(sketch: Sketch): Sketch {
   // Device blob ids remain private. Only metadata for takes the learner explicitly
   // selected from a finished project enters cloud sync.
+  const { origin: _deviceOrigin, ...shareable } = sketch;
   return {
-    ...sketch,
+    ...shareable,
     takes: sketch.takes.filter((take) => take.cloud).map((take) => ({ ...take, blobId: undefined }))
   };
 }

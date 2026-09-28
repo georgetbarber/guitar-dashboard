@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSession, completedActivityIdsFromEvidence, createEvidence, liveObservations, masteryFor, retractObservations } from "./learning";
+import { buildReturnSession, buildSession, completedActivityIdsFromEvidence, createEvidence, daysSinceLastAttempt, liveObservations, masteryFor, retractObservations, sessionActivityComplete } from "./learning";
 import { newSketch } from "./repository";
 import { DEFAULT_STATE } from "./store";
 import { MODE_OPTIONS, TONAL_ROOTS } from "./validation";
@@ -30,6 +30,7 @@ describe("a session is the length the learner chose (B01)", () => {
     // Padding a ten-minute session out to five items would be the same
     // overstatement in a different shape.
     expect(short.items.every((item) => item.minutes >= 3)).toBe(true);
+    expect(short.items.map((item) => item.activityId)).toContain("unit-01-rhythm");
   });
 
   it("never repeats one activity to fill two parts of the same session", () => {
@@ -42,6 +43,25 @@ describe("a session is the length the learner chose (B01)", () => {
   it("stays within the range the settings control allows, whatever is stored", () => {
     expect(buildSession(withMinutes(2)).totalMinutes).toBe(10);
     expect(buildSession(withMinutes(500)).totalMinutes).toBe(90);
+  });
+});
+
+describe("a return session makes familiar material a fresh musical attempt", () => {
+  it("offers the previous activity first, with a smaller coherent budget", () => {
+    const previous = createEvidence("unit-01-listen-compare", ["ear:u1"], "recognition", "none", "successful", {}, "2026-09-20T10:00:00.000Z");
+    const now = new Date("2026-09-28T10:00:00.000Z");
+    const learner = state({ evidence: previous, completedActivityIds: ["unit-01-listen-compare"] });
+    const plan = buildReturnSession(learner, now);
+    expect(daysSinceLastAttempt(learner, now)).toBe(8);
+    expect(plan.kind).toBe("return");
+    expect(plan.items[0].activityId).toBe("unit-01-listen-compare");
+    expect(plan.totalMinutes).toBeGreaterThanOrEqual(10);
+    expect(plan.totalMinutes).toBeLessThanOrEqual(15);
+    expect(plan.items.reduce((sum, item) => sum + item.minutes, 0)).toBe(plan.totalMinutes);
+    expect(sessionActivityComplete(learner, plan, "unit-01-listen-compare")).toBe(false);
+    expect(sessionActivityComplete({ ...learner, evidence: [...previous,
+      ...createEvidence("unit-01-listen-compare", ["ear:u1"], "recognition", "none", "successful", {}, "2026-09-28T10:01:00.000Z")
+    ] }, plan, "unit-01-listen-compare")).toBe(true);
   });
 });
 

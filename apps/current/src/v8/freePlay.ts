@@ -1,6 +1,6 @@
 import { buildChords, buildScale, createContext } from "../core/music/theory";
 import { CURRICULUM } from "./curriculum";
-import type { V8State } from "./types";
+import type { FreePlayPreview, V8State } from "./types";
 
 export type FreePlayMode = "chord" | "riff" | "degree" | "groove";
 
@@ -15,11 +15,7 @@ export interface FreePlayPrompt {
   physicalCue: string;
   variation: string;
   stretch: boolean;
-  preview:
-    | { kind: "chords"; pitches: number[][] }
-    | { kind: "notes"; pitches: number[]; bpm: number }
-    | { kind: "degree"; tonic: number; target: number }
-    | { kind: "groove"; bpm: number; accents: boolean[] };
+  preview: FreePlayPreview;
 }
 
 export type FreePlayFocus = FreePlayMode | "mix";
