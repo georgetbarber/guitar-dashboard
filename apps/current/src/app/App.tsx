@@ -18,12 +18,17 @@ const Explore = lazy(() => import("../v8/features/Explore").then((module) => ({ 
 
 const LEARN_ROUTES: RouteId[] = ["today", "path", "practice"];
 
-const NAV: Array<{ id: string; route: RouteId; label: string; symbol: string; purpose: string; activeRoutes: RouteId[] }> = [
-  { id: "learn", route: "today", label: "Learn", symbol: "↗", purpose: "Continue your course", activeRoutes: LEARN_ROUTES },
-  { id: "play", route: "play", label: "Play", symbol: "◉", purpose: "Follow a prompt and flow", activeRoutes: ["play"] },
-  { id: "create", route: "create", label: "Create", symbol: "✦", purpose: "Turn choices into music", activeRoutes: ["create"] },
-  { id: "explore", route: "explore", label: "Explore", symbol: "⌁", purpose: "Follow relationships", activeRoutes: ["explore"] }
+const NAV: Array<{ id: string; route: RouteId; label: string; activeRoutes: RouteId[] }> = [
+  { id: "learn", route: "today", label: "Learn", activeRoutes: LEARN_ROUTES },
+  { id: "play", route: "play", label: "Play", activeRoutes: ["play"] },
+  { id: "create", route: "create", label: "Create", activeRoutes: ["create"] },
+  { id: "explore", route: "explore", label: "Explore", activeRoutes: ["explore"] }
 ];
+
+/** The shell's one glyph: a stroked settings mark, drawn like the site's search icon. */
+function SettingsGlyph() {
+  return <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><path d="M15 4.5v5M9 14.5v5" /></svg>;
+}
 
 const LEARN_VIEWS: Array<{ route: RouteId; label: string; purpose: string }> = [
   { route: "today", label: "Continue", purpose: "Your next guided session" },
@@ -42,28 +47,28 @@ function V8Application() {
   const activityCloseRef = useRef<(() => void) | null>(null);
   const closeActivity = () => dispatch({ type: "openActivity", activityId: "" });
   if (cloud.accountChoice) return <AccountWorkspaceChoice />;
-  if (!hydrated) return <div className="loading-screen"><span>GA</span><p>Loading your learning path…</p></div>;
+  if (!hydrated) return <div className="loading-screen"><span>Guitar Academy</span><p>Loading your learning path…</p></div>;
   if (!state.settings.diagnosticComplete) return <Diagnostic />;
   return (
     <DialogNoticesContext.Provider value={<AppNotices />}>
     <div className="v8-shell">
       <a className="skip-link" href="#main-content">Skip to learning content</a>
-      <aside className="primary-sidebar">
-        <button className="v8-brand" onClick={() => navigate("today")} aria-label="Guitar Academy, go to Learn"><span>GA</span><div><strong>Guitar Academy</strong><small>Musical freedom</small></div></button>
-        <nav aria-label="Primary learning navigation">
-          {NAV.map((item) => {
-            const active = item.activeRoutes.includes(state.route);
-            return <button className={active ? "is-active" : ""} aria-current={active ? "page" : undefined} onClick={() => navigate(item.route)} key={item.id}><i>{item.symbol}</i><div><strong>{item.label}</strong><small>{item.purpose}</small></div></button>;
-          })}
-        </nav>
-        <div className="sidebar-context"><span>Current reference</span><strong>{state.settings.tonicName} {state.settings.mode}</strong><small>{state.settings.instrument} · {state.settings.dailyMinutes} min sessions</small><SaveIndicator /></div>
-        <button className="settings-button" onClick={() => setSettingsOpen(true)}><span>⚙</span><div><strong>Settings and sync</strong><small>{cloud.user ? cloud.status : "Private backup and devices"}</small></div></button>
-      </aside>
-      {/* Phones: an in-flow bar, so nothing floats over the page's own controls, and the local save status stays visible. */}
-      <header className="mobile-topbar">
-        <button className="mobile-brand" onClick={() => navigate("today")} aria-label="Guitar Academy, go to Learn"><span aria-hidden="true">GA</span><strong>Guitar Academy</strong></button>
-        <SaveIndicator />
-        <button className="mobile-settings-button" onClick={() => setSettingsOpen(true)} aria-label="Open settings and data"><span aria-hidden="true">⚙</span><span className="mobile-settings-label">Settings</span></button>
+      <header className="app-header">
+        <div className="app-header__bar">
+          <button className="wordmark" onClick={() => navigate("today")} aria-label="Guitar Academy, go to Learn">Guitar Academy</button>
+          <nav className="primary-nav" aria-label="Primary learning navigation">
+            {NAV.map((item) => {
+              const active = item.activeRoutes.includes(state.route);
+              return <button className={active ? "is-active" : ""} aria-current={active ? "page" : undefined} onClick={() => navigate(item.route)} key={item.id}>{item.label}</button>;
+            })}
+          </nav>
+          <button className="header-settings" onClick={() => setSettingsOpen(true)} aria-label="Open settings and data"><SettingsGlyph /><span>Settings</span></button>
+        </div>
+        {/* Phones keep this bar too, so the local save status is always visible. */}
+        <div className="context-bar">
+          <p className="context-bar__reference"><span className="context-bar__label">Reference</span> {state.settings.tonicName} {state.settings.mode} · {state.settings.instrument} · {state.settings.dailyMinutes} min{cloud.user ? ` · sync ${cloud.status}` : ""}</p>
+          <SaveIndicator />
+        </div>
       </header>
       <main id="main-content" tabIndex={-1}>
         <PageNotices><AppNotices /></PageNotices>
@@ -82,7 +87,7 @@ function V8Application() {
       </main>
       <nav className="mobile-nav" aria-label="Mobile learning navigation">{NAV.map((item) => {
         const active = item.activeRoutes.includes(state.route);
-        return <button className={active ? "is-active" : ""} aria-current={active ? "page" : undefined} onClick={() => navigate(item.route)} key={item.id}><i>{item.symbol}</i><span>{item.label}</span></button>;
+        return <button className={active ? "is-active" : ""} aria-current={active ? "page" : undefined} onClick={() => navigate(item.route)} key={item.id}><span>{item.label}</span></button>;
       })}</nav>
       {/* Escape asks the player first: it keeps an unsaved reflection unless the learner uses Close activity. */}
       {state.activeActivityId && <Modal className="activity-overlay" labelledBy="activity-title" onRequestClose={() => (activityCloseRef.current ?? closeActivity)()}><ActivityPlayer key={state.activeActivityId} activityId={state.activeActivityId} onClose={closeActivity} requestCloseRef={activityCloseRef} /></Modal>}
@@ -109,7 +114,7 @@ function AccountWorkspaceChoice() {
       setBusy(null);
     }
   };
-  return <main className="diagnostic"><div className="diagnostic-mark">GA <span>Private workspace check</span></div><div className="diagnostic-notices"><AppNotices /></div><div className="diagnostic-card"><section><span className="eyebrow">Before synchronising</span><h1>Which history belongs with {cloud.accountChoice.email}?</h1><p>This browser already has a guest learning history. Guitar Academy will never silently mix it into a different account.</p><div className="diagnostic-choices"><button disabled={Boolean(busy)} onClick={() => void run("connect")}><strong>{busy === "connect" ? "Connecting…" : "Move this device history into the account"}</strong><span>Use this when the guest progress and sketches are yours. The separate guest copy is removed from this device.</span></button><button disabled={Boolean(busy)} onClick={() => void run("separate")}><strong>{busy === "separate" ? "Opening…" : "Keep the account history separate"}</strong><span>Open a clean account workspace, or download its existing cloud history, without uploading anything from the guest workspace.</span></button></div>{error && <p className="configuration-note" role="alert">{error}</p>}</section><footer><div /><button className="text-action" disabled={Boolean(busy)} onClick={() => void run("cancel")}>{busy === "cancel" ? "Cancelling…" : "Cancel sign-in"}</button></footer></div></main>;
+  return <main className="diagnostic"><div className="diagnostic-mark"><span className="wordmark">Guitar Academy</span><span>Private workspace check</span></div><div className="diagnostic-notices"><AppNotices /></div><div className="diagnostic-card"><section><span className="eyebrow">Before synchronising</span><h1>Which history belongs with {cloud.accountChoice.email}?</h1><p>This browser already has a guest learning history. Guitar Academy will never silently mix it into a different account.</p><div className="diagnostic-choices"><button disabled={Boolean(busy)} onClick={() => void run("connect")}><strong>{busy === "connect" ? "Connecting…" : "Move this device history into the account"}</strong><span>Use this when the guest progress and sketches are yours. The separate guest copy is removed from this device.</span></button><button disabled={Boolean(busy)} onClick={() => void run("separate")}><strong>{busy === "separate" ? "Opening…" : "Keep the account history separate"}</strong><span>Open a clean account workspace, or download its existing cloud history, without uploading anything from the guest workspace.</span></button></div>{error && <p className="configuration-note" role="alert">{error}</p>}</section><footer><div /><button className="text-action" disabled={Boolean(busy)} onClick={() => void run("cancel")}>{busy === "cancel" ? "Cancelling…" : "Cancel sign-in"}</button></footer></div></main>;
 }
 
 function Diagnostic() {
@@ -128,5 +133,5 @@ function Diagnostic() {
     <section key="instrument"><span className="eyebrow">Your physical context</span><h1>Which guitar are you holding most often?</h1><p>The core path is shared. Technique branches change where electric and acoustic instruments genuinely differ.</p><div className="diagnostic-choices"><button className={state.settings.instrument === "electric" ? "is-active" : ""} onClick={() => dispatch({ type: "updateSettings", settings: { instrument: "electric" } })}><strong>Electric</strong><span>Muting, pick control, bends and gain-aware touch</span></button><button className={state.settings.instrument === "acoustic" ? "is-active" : ""} onClick={() => dispatch({ type: "updateSettings", settings: { instrument: "acoustic" } })}><strong>Acoustic</strong><span>Balance, projection, strumming and fingerstyle touch</span></button></div></section>,
     <section key="baseline"><span className="eyebrow">Where would you like to start?</span><h1>Pick a starting point — you can move any time.</h1><p>New to guitar or unsure? Begin with one clean note. If you want more guidance, try the short optional sample below. Nothing here marks a skill mastered, and you can change your start later in the Course map.</p><div className="diagnostic-choices three">{[["repair", "Start from the beginning", "New, returning, or unsure. Begin with one clean note, timing and the basic fretboard — nothing assumed."], ["some", "Skip the basics", "Confident with clean notes and steady time. Start at pulse and subdivision."], ["secure", "Jump ahead", "Solid foundations already. Start at fretboard relationships, melody and harmony."]].map(([id, title, text]) => <button className={baseline === id ? "is-active" : ""} onClick={() => setBaseline(id as typeof baseline)} key={id}><strong>{title}</strong><span>{text}</span></button>)}</div><PlacementSampler selectedBaseline={baseline} onChoose={setBaseline} /></section>
   ];
-  return <main className="diagnostic"><div className="diagnostic-mark">GA <span>Guitar Academy</span></div><div className="diagnostic-notices"><AppNotices /></div><div className="diagnostic-card">{panels[step]}<footer><div>{panels.map((_, index) => <i className={index <= step ? "is-active" : ""} key={index} />)}</div>{step > 0 && <button className="text-action" onClick={() => setStep(step - 1)}>Back</button>}<button className="primary-action" onClick={() => step < panels.length - 1 ? setStep(step + 1) : dispatch({ type: "updateSettings", settings: { diagnosticComplete: true, startingBaseline: baseline } })}>{step < panels.length - 1 ? "Continue" : "Start your path"}</button></footer></div></main>;
+  return <main className="diagnostic"><div className="diagnostic-mark"><span className="wordmark">Guitar Academy</span><span>Musical freedom</span></div><div className="diagnostic-notices"><AppNotices /></div><div className="diagnostic-card">{panels[step]}<footer><div>{panels.map((_, index) => <i className={index <= step ? "is-active" : ""} key={index} />)}</div>{step > 0 && <button className="text-action" onClick={() => setStep(step - 1)}>Back</button>}<button className="primary-action" onClick={() => step < panels.length - 1 ? setStep(step + 1) : dispatch({ type: "updateSettings", settings: { diagnosticComplete: true, startingBaseline: baseline } })}>{step < panels.length - 1 ? "Continue" : "Start your path"}</button></footer></div></main>;
 }

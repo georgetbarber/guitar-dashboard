@@ -17,7 +17,7 @@ async function completeDiagnostic(page: Page) {
 }
 
 function learningNav(page: Page) {
-  return page.locator(".primary-sidebar nav:visible, .mobile-nav:visible");
+  return page.locator(".primary-nav:visible, .mobile-nav:visible");
 }
 
 function learnViews(page: Page) {
@@ -707,7 +707,7 @@ for (const [width, height, label] of [[320, 640, "small phone"], [390, 844, "pho
         expect(tab.smallestText, `${screen}: Learn tab text too small to read`).toBeGreaterThanOrEqual(12);
       }
       await expect(settings).toBeInViewport();
-      // The sidebar's local save status is hidden on phones; its own copy must be visible.
+      // The header's local save status stays visible on phones.
       await expect(page.locator(".save-indicator:visible")).toBeInViewport();
       await expectNoInternalCopy(page);
     };

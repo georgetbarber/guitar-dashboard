@@ -69,7 +69,7 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
     return () => { requestCloseRef.current = null; };
   }, [requestCloseRef, unsavedReflection, onClose]);
   if (!activity) return null;
-  if (activity.id === "unit-01-rhythm" && unit.episodeId) return <Suspense fallback={<section aria-labelledby="activity-title"><h1 id="activity-title">Opening the one-note lesson…</h1></section>}><PilotEpisodePlayer onClose={onClose} requestCloseRef={requestCloseRef} /></Suspense>;
+  if (activity.id === "unit-01-rhythm" && unit.episodeId) return <Suspense fallback={<section className="activity-player" aria-labelledby="activity-title"><header className="activity-header"><span /><h1 id="activity-title">Opening the one-note lesson…</h1></header></section>}><PilotEpisodePlayer onClose={onClose} requestCloseRef={requestCloseRef} /></Suspense>;
   const originLabel = state.activityOrigin === "practice" ? "Strengthen"
     : state.activityOrigin === "path" ? "Course map"
       : state.activityOrigin === "today" ? "Guided session"

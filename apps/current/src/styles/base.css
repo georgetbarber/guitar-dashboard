@@ -1,0 +1,493 @@
+/*
+ * SHARED PRIMITIVES. Element defaults and the reusable pieces every screen composes:
+ * the card surface, one button spec, one field spec, ruled grids, listing rows and notices.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: var(--lh-ui);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--type-text);
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  border-radius: var(--radius-none);
+}
+
+button,
+select,
+summary,
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: pointer;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  flex: 0 0 auto;
+  accent-color: var(--ink);
+}
+
+/* One focus ring everywhere: never removed. It switches to night-text on dark grounds. */
+:focus-visible {
+  outline: var(--focus-width) solid var(--focus-colour);
+  outline-offset: var(--focus-offset);
+}
+
+::selection {
+  background: var(--piece-field);
+  color: var(--ink);
+}
+
+/* One link style: a 1px line-dark underline that takes the text colour on hover. */
+a {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--line-dark);
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  color: var(--piece-accent);
+  text-decoration-color: currentColor;
+}
+
+/* Type. Display names things; the serif carries everything you read. */
+h1,
+h2,
+h3,
+h4 {
+  margin-top: 0;
+  color: var(--ink);
+  letter-spacing: 0;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
+h1 {
+  max-width: 18ch;
+  margin-bottom: var(--space-4);
+  font: var(--weight-regular) var(--type-page) / var(--lh-display) var(--display);
+}
+
+h2 {
+  margin-bottom: var(--space-3);
+  font: var(--weight-semi) var(--type-lead) / var(--lh-tight) var(--serif);
+}
+
+h3 {
+  margin-bottom: var(--space-2);
+  font: var(--font-subhead);
+}
+
+h4 {
+  margin-bottom: var(--space-2);
+  font: var(--font-item);
+}
+
+p,
+li,
+dd {
+  text-wrap: pretty;
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+  color: var(--ink-soft);
+  font-size: var(--type-text);
+  line-height: var(--lh-ui);
+}
+
+figure {
+  margin: 0;
+}
+
+small {
+  font-size: var(--type-small);
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.84em;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 200;
+  top: var(--space-3);
+  left: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--ink);
+  color: var(--paper);
+  font: var(--font-label);
+  text-transform: uppercase;
+  transform: translateY(-180%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/*
+ * THE CONTEXT LABEL. A sentence-case serif line that says where a panel sits. It is
+ * never a bold uppercase kicker: that pairing over display type is the signature of
+ * generated editorial layouts.
+ */
+.eyebrow {
+  display: block;
+  margin: 0 0 var(--space-2);
+  color: var(--piece-accent);
+  font: var(--weight-semi) var(--type-small) / var(--lh-tight) var(--serif);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* THE PANEL. A raised editorial surface with a fine ink edge: square, no shadow. */
+.card {
+  min-width: 0;
+  border: var(--rule-ink);
+  border-radius: var(--radius-none);
+  background: var(--paper-bright);
+  box-shadow: none;
+}
+
+.card > p,
+.card header p {
+  max-width: var(--measure);
+}
+
+/*
+ * THE BUTTON SPEC. Rectangular, mono, uppercase, at least touch-min tall.
+ *   primary    solid ink, paper text; piece-accent on hover
+ *   secondary  paper-bright with an ink edge; the edge and text turn piece-accent
+ *   text       an underlined mono action, for quieter onward steps
+ *   danger     a secondary button that names a destructive action in --danger
+ */
+.primary-action,
+.secondary-action,
+.text-action,
+.danger-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: var(--space-2) var(--space-4);
+  border: var(--rule-ink);
+  border-radius: var(--radius-none);
+  font: var(--font-label);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.primary-action {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.primary-action:hover:not(:disabled) {
+  border-color: var(--piece-accent);
+  background: var(--piece-accent);
+  color: var(--on-strong);
+}
+
+.primary-action.large,
+.secondary-action.large {
+  max-width: 100%;
+  padding-inline: var(--space-5);
+  text-align: left;
+}
+
+.secondary-action {
+  background: var(--paper-bright);
+  color: var(--ink);
+}
+
+.secondary-action:hover:not(:disabled),
+.danger-action:hover:not(:disabled) {
+  border-color: var(--piece-accent);
+  color: var(--piece-accent);
+}
+
+.secondary-action[aria-pressed="true"] {
+  background: var(--piece-field);
+  box-shadow: inset 0 calc(-1 * var(--rule-heavy)) 0 var(--ink);
+}
+
+.text-action {
+  padding-inline: var(--space-2);
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--line-dark);
+  text-underline-offset: 0.3em;
+}
+
+.text-action:hover:not(:disabled) {
+  color: var(--piece-accent);
+  text-decoration-color: currentColor;
+}
+
+.danger-action {
+  background: var(--paper-bright);
+  color: var(--danger);
+}
+
+.primary-action:disabled,
+.secondary-action:disabled,
+.danger-action:disabled {
+  border-color: var(--line-dark);
+  background: var(--paper);
+  color: var(--muted);
+}
+
+.text-action:disabled {
+  color: var(--muted);
+  text-decoration-style: dotted;
+}
+
+.icon-button {
+  display: grid;
+  width: var(--touch-min);
+  height: var(--touch-min);
+  flex: 0 0 auto;
+  padding: 0;
+  place-items: center;
+  border: var(--rule-ink);
+  border-radius: var(--radius-none);
+  background: var(--paper-bright);
+  color: var(--ink);
+  font: var(--weight-regular) var(--type-subhead) / var(--lh-display) var(--mono);
+  transition:
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.icon-button:hover {
+  border-color: var(--piece-accent);
+  color: var(--piece-accent);
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/*
+ * THE FIELD SPEC. Short field labels are mono uppercase; inputs sit on paper-bright
+ * with a 1px ink edge. Question-length labels (a reflection prompt) stay in the reading
+ * serif, because a sentence in mono capitals is hard to read.
+ */
+.studio-settings label,
+.settings-grid label,
+.context-controls label,
+.activity-check details label,
+.sketch-melody-events label,
+.pilot-controls label {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--ink);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+input:not([type="checkbox"], [type="radio"], [type="range"]),
+select,
+textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: var(--space-3) var(--space-4);
+  border: var(--rule-ink);
+  border-radius: var(--radius-none);
+  background: var(--paper-bright);
+  color: var(--ink);
+  font: var(--weight-regular) var(--type-text) / var(--lh-ui) var(--serif);
+  text-transform: none;
+}
+
+select {
+  padding-block: var(--space-2);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+/* Checkbox rows read as sentences, so they keep the serif. */
+.toggle,
+.check-line {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-min);
+  color: var(--ink);
+  font: var(--weight-regular) var(--type-text) / var(--lh-tight) var(--serif);
+  text-transform: none;
+}
+
+details > summary {
+  min-height: var(--touch-min);
+}
+
+/*
+ * RULED GRIDS. A 1px line-dark gap drawn between paper-bright cells, inside an ink edge:
+ * the site's contents-panel and filter-bar structure, reused for every set of options.
+ */
+.pilot-capabilities ul,
+.mastery-grid,
+.practice-modes,
+.relationship-ribbon > div,
+.chord-picker,
+.transformation-grid,
+.play-promise,
+.placement-results,
+.diagnostic-choices {
+  display: grid;
+  gap: 1px;
+  padding: 0;
+  border: var(--rule-ink);
+  background: var(--line-dark);
+  list-style: none;
+}
+
+/* Selected option inside any ruled set: a teal field plus an ink bar, never colour alone. */
+.practice-modes button.is-active,
+.relationship-ribbon button.is-active,
+.transformation-grid button[aria-pressed="true"],
+.diagnostic-choices button.is-active,
+.placement-manual button[aria-pressed="true"] {
+  background: var(--piece-field);
+  box-shadow: inset 0 var(--rule-heavy) 0 var(--ink);
+}
+
+/* Mono tags: competencies, states and small facts. Square, ruled, uppercase by CSS. */
+.competency-tags span,
+.mastery-state,
+.ability-badge,
+.workflow-mini span,
+.unit-status > span,
+.offline-unit-status {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border: var(--rule);
+  border-radius: var(--radius-none);
+  background: var(--paper-bright);
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+/*
+ * NOTICES. A ruled box with a heavy left rule naming its status: ink for information,
+ * brass for caution, --danger for failure. The heading always states the status in words.
+ */
+.offline-banner,
+.save-failure,
+.workspace-recovery,
+.restore-hold,
+.update-notice,
+.restore-preview,
+.activity-draft-notice {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border: var(--rule-ink);
+  border-left-width: var(--rule-heavy);
+  border-radius: var(--radius-none);
+  background: var(--paper-bright);
+  box-shadow: none;
+  color: var(--ink);
+  font-size: var(--type-small);
+}
+
+.loading-screen {
+  display: grid;
+  min-height: 100vh;
+  gap: var(--space-4);
+  place-content: center;
+  text-align: center;
+}
+
+.loading-screen span {
+  font: var(--font-name-large);
+}
+
+.loading-screen p {
+  margin: 0;
+  color: var(--muted);
+  font: var(--font-meta);
+  text-transform: uppercase;
+}

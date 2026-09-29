@@ -1,0 +1,670 @@
+/*
+ * CREATE. A sketchbook: the list of sketches is a listing panel, the open sketch is named
+ * in the display face, and its chords are exact voicings set like chord charts.
+ */
+
+.create-shell {
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--grid-gap);
+  width: var(--frame);
+  margin: 0 auto;
+}
+
+.sketch-list {
+  position: sticky;
+  top: var(--space-4);
+  display: grid;
+  max-height: calc(100vh - var(--space-6));
+  overflow-y: auto;
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+}
+
+.sketch-list > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--rule-ink);
+}
+
+.sketch-list h1 {
+  margin: 0;
+  font-size: var(--type-card);
+}
+
+.sketch-list > button {
+  display: grid;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+.sketch-list > button + button {
+  border-top: var(--rule);
+}
+
+.sketch-list > button:hover {
+  background: var(--paper);
+}
+
+.sketch-list > button.is-active {
+  background: var(--piece-field);
+  box-shadow: inset var(--rule-heavy) 0 0 var(--ink);
+}
+
+.sketch-list > button strong {
+  font: var(--font-item);
+  overflow-wrap: anywhere;
+}
+
+.sketch-list > button span,
+.sketch-list > button small {
+  color: var(--ink-soft);
+  font: var(--weight-regular) var(--type-meta) / var(--lh-ui) var(--mono);
+  text-transform: uppercase;
+}
+
+.empty-sketch {
+  padding: var(--space-4);
+}
+
+.empty-sketch p {
+  margin: 0;
+  font-size: var(--type-small);
+}
+
+.studio-main {
+  min-width: 0;
+}
+
+.resume-learning {
+  width: 100%;
+  min-height: var(--touch-min);
+  margin-bottom: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  border: var(--rule-ink);
+  border-left-width: var(--rule-heavy);
+  border-left-color: var(--piece-accent);
+  background: var(--paper-bright);
+  color: var(--ink);
+  font: var(--font-label);
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.resume-learning:hover {
+  color: var(--piece-accent);
+}
+
+.studio-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  min-height: 60vh;
+  padding: var(--space-8) var(--space-5);
+  place-content: center;
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+  text-align: center;
+}
+
+.studio-empty h2 {
+  max-width: 18ch;
+  margin: 0;
+  font: var(--font-name-large);
+}
+
+.studio-empty p {
+  max-width: var(--measure);
+}
+
+.studio-stack {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.studio-header,
+.studio-intention,
+.chord-track > header,
+.transformation-panel > header,
+.take-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.studio-header {
+  align-items: flex-end;
+  padding-bottom: var(--space-5);
+  border-bottom: var(--rule-ink);
+}
+
+.studio-header > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The sketch's name is edited in place, in the face that names things. */
+.title-input:not([type="checkbox"]) {
+  width: 100%;
+  padding: var(--space-1) 0;
+  border: 0;
+  border-bottom: var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font: var(--weight-regular) var(--type-feature) / var(--lh-tight) var(--display);
+  text-overflow: ellipsis;
+}
+
+.title-input:hover {
+  border-bottom-color: var(--ink);
+}
+
+.studio-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* Creative stages: a ruled segmented row; the current stage is filled with ink. */
+.workflow-details {
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+}
+
+.workflow-details summary {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  color: var(--ink);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.workflow {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 1px;
+  border-top: var(--rule-ink);
+  background: var(--line-dark);
+}
+
+.workflow button {
+  min-height: var(--touch-min);
+  padding: var(--space-2);
+  border: 0;
+  background: var(--paper-bright);
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.workflow button:hover {
+  color: var(--piece-accent);
+}
+
+.workflow button.is-active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.studio-intention,
+.chord-track,
+.rhythm-track,
+.notes-panel,
+.take-panel,
+.transformation-panel,
+.sketch-origin,
+.sketch-melody {
+  min-width: 0;
+  padding: var(--space-5);
+}
+
+.studio-intention {
+  align-items: flex-start;
+}
+
+.studio-intention > label {
+  display: grid;
+  flex: 1;
+  gap: var(--space-2);
+  font: var(--font-item);
+}
+
+.studio-settings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(6rem, 1fr));
+  gap: var(--space-3);
+  width: min(32rem, 46%);
+}
+
+.studio-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  gap: var(--grid-gap);
+}
+
+.sketch-origin,
+.sketch-melody {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sketch-origin p,
+.sketch-melody p {
+  max-width: var(--measure);
+  margin: 0;
+}
+
+.sketch-origin .secondary-action {
+  justify-self: start;
+}
+
+.sketch-melody-events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sketch-melody-events > div {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 8rem;
+  padding: var(--space-3);
+  border: var(--rule);
+  background: var(--paper);
+}
+
+.sketch-melody-events > div > strong {
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.chord-track > header {
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.chord-track > header > div {
+  margin-right: auto;
+}
+
+.chord-track > header h2 {
+  margin: 0;
+}
+
+.chord-track select {
+  width: auto;
+  max-width: 100%;
+}
+
+/* Chord events read like a chord chart: numeral, symbol, and the exact fret pattern. */
+.chord-events {
+  display: grid;
+  grid-auto-columns: minmax(10rem, 1fr);
+  grid-auto-flow: column;
+  gap: 1px;
+  overflow-x: auto;
+  border: var(--rule-ink);
+  background: var(--line-dark);
+}
+
+.chord-events:empty {
+  display: none;
+}
+
+.chord-events article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--paper-bright);
+}
+
+.chord-events article > small {
+  color: var(--ink-soft);
+  font: var(--font-label);
+}
+
+.chord-events article > strong {
+  grid-column: 1 / -1;
+  font: var(--font-name);
+}
+
+.chord-events article > span {
+  grid-column: 1 / -1;
+  color: var(--ink-soft);
+  font: var(--weight-regular) var(--type-small) / var(--lh-tight) var(--mono);
+}
+
+.chord-events article label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.chord-events article input:not([type="checkbox"]) {
+  width: 4.5rem;
+  padding: var(--space-2);
+}
+
+.chord-events article > button {
+  grid-row: 1;
+  grid-column: 2;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  margin: calc(-1 * var(--space-2));
+  border: 0;
+  background: transparent;
+  color: var(--danger);
+  font: var(--weight-bold) var(--type-subhead) / var(--lh-display) var(--mono);
+}
+
+.rhythm-track,
+.notes-panel {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+}
+
+.rhythm-track label,
+.notes-panel label {
+  display: grid;
+  gap: var(--space-2);
+  font: var(--font-item);
+}
+
+.transformation-panel > header {
+  margin-bottom: var(--space-4);
+}
+
+.transformation-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: var(--space-4);
+}
+
+.transformation-grid button {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-height: 6rem;
+  padding: var(--space-4);
+  border: 0;
+  background: var(--paper-bright);
+  color: var(--ink);
+  text-align: left;
+}
+
+.transformation-grid button:hover:not([aria-pressed="true"]) {
+  background: var(--paper);
+}
+
+.transformation-grid strong {
+  font: var(--font-item);
+}
+
+.transformation-grid span {
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.experiment-preview {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4);
+  border: var(--rule-ink);
+  border-left-width: var(--rule-heavy);
+  border-left-color: var(--piece-accent);
+  background: var(--paper);
+}
+
+.experiment-preview h3,
+.experiment-preview p {
+  margin: 0;
+}
+
+.experiment-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  border: var(--rule);
+  background: var(--line-dark);
+}
+
+.experiment-comparison > div {
+  min-width: 0;
+  padding: var(--space-3);
+  background: var(--paper-bright);
+  overflow-wrap: anywhere;
+}
+
+.experiment-comparison strong {
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.take-panel > p {
+  font-size: var(--type-small);
+}
+
+.take-player {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+  padding: var(--space-3);
+  border: var(--rule);
+  background: var(--paper);
+}
+
+.take-player > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.take-player > div:first-child span {
+  color: var(--piece-accent);
+  font: var(--font-meta);
+  text-transform: uppercase;
+}
+
+.take-player audio {
+  width: 100%;
+  height: var(--space-7);
+}
+
+.take-sharing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.take-sharing small,
+.pending-take small {
+  color: var(--ink-soft);
+  line-height: var(--lh-ui);
+}
+
+.pending-take {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+  padding: var(--space-4);
+  border: var(--rule-ink);
+  border-left-width: var(--rule-heavy);
+  border-left-color: var(--caution-rule);
+  background: var(--paper);
+}
+
+.pending-take audio {
+  width: 100%;
+}
+
+.revision-count {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: var(--rule);
+}
+
+.revision-count strong {
+  font: var(--font-name-large);
+}
+
+.revision-count span {
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.studio-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: var(--rule-ink);
+}
+
+/* The first-run guide: a ruled note, not a coloured banner. */
+.create-guide {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border: var(--rule-ink);
+  border-left-width: var(--rule-heavy);
+  border-left-color: var(--piece-accent);
+  background: var(--paper-bright);
+}
+
+.create-guide strong {
+  font: var(--font-item);
+}
+
+.create-guide ol {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-5);
+  color: var(--ink-soft);
+}
+
+@media (max-width: 1180px) {
+  .transformation-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workflow {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .studio-intention {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .studio-settings {
+    width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .create-shell,
+  .studio-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sketch-list {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .studio-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .studio-actions {
+    justify-content: flex-start;
+  }
+
+  .title-input:not([type="checkbox"]) {
+    font-size: var(--type-heading);
+  }
+
+  .studio-settings,
+  .transformation-grid,
+  .experiment-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-intention,
+  .chord-track,
+  .rhythm-track,
+  .notes-panel,
+  .take-panel,
+  .transformation-panel,
+  .sketch-origin,
+  .sketch-melody {
+    padding: var(--space-4);
+  }
+
+  .studio-empty {
+    min-height: 0;
+    padding: var(--space-7) var(--space-4);
+  }
+
+  .create-guide {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 420px) {
+  .workflow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .studio-footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+}
+
+/* Grid-stacked panels already space their children; keep the label tight to its heading. */
+.rhythm-track > .eyebrow,
+.notes-panel > .eyebrow,
+.sketch-origin > .eyebrow,
+.sketch-melody > .eyebrow {
+  margin: 0;
+}
+
+.rhythm-track > h2,
+.notes-panel > h2,
+.sketch-origin > h2,
+.sketch-melody > h2 {
+  margin: 0;
+}

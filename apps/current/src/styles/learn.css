@@ -1,0 +1,993 @@
+/*
+ * LEARN: Continue, Course map and Strengthen. The session, the curriculum and the
+ * evidence are lists of named things, so they use the listing panel: a ruled box, a mono
+ * meta cell on the teal field, and a title beside it.
+ */
+
+/* Continue: a page header that holds today's session and the music it builds towards. */
+.today-focus {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  align-items: end;
+  gap: var(--space-6) var(--space-8);
+  padding: var(--space-6) 0 var(--space-7);
+  border-bottom: var(--rule-ink);
+}
+
+.today-copy {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.today-copy h1,
+.today-copy .eyebrow {
+  margin: 0;
+}
+
+.today-copy > p {
+  max-width: var(--measure);
+  margin: 0;
+  font: var(--font-lede);
+}
+
+.personal-goal {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: var(--measure);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+/* Where this session sits in the course: two ruled cells and the onward link. */
+.course-location {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: stretch;
+  width: 100%;
+  max-width: 48rem;
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+}
+
+.course-location > div {
+  display: grid;
+  align-content: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+}
+
+.course-location small {
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.course-location strong {
+  font: var(--font-item);
+}
+
+.course-location i {
+  display: grid;
+  place-items: center;
+  padding: 0 var(--space-2);
+  border-inline: var(--rule);
+  color: var(--muted);
+  font-style: normal;
+}
+
+.course-location .text-action {
+  height: 100%;
+  border-left: var(--rule);
+  white-space: nowrap;
+}
+
+.today-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.today-meta span {
+  padding: var(--space-1) var(--space-2);
+  border: var(--rule);
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+/* Today's music: the piece the session builds towards, named in the display face. */
+.session-destination {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: var(--rule-ink);
+  background: var(--piece-field);
+}
+
+.session-destination span {
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.session-destination strong {
+  font: var(--font-name-large);
+  text-wrap: balance;
+}
+
+.session-destination small {
+  color: var(--ink-soft);
+  font: var(--font-meta);
+  text-transform: uppercase;
+}
+
+/* Every Learn card uses the same inner rhythm. */
+.session-plan,
+.session-ending,
+.familiar-favorites,
+.pilot-capabilities,
+.project-glance,
+.reflection-glance,
+.free-play-glance,
+.today-page > section.card:not(.session-plan),
+.evidence-panel,
+.practice-focus,
+.strengthen-empty,
+.unit-detail {
+  padding: var(--space-5);
+}
+
+.session-plan > header,
+.evidence-panel > header,
+.unit-detail > header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.session-plan > header h2,
+.evidence-panel > header h2,
+.unit-detail > header h2 {
+  margin: 0;
+}
+
+.session-plan > header > strong,
+.evidence-panel > header > span,
+.unit-detail > header > strong {
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-align: right;
+  text-transform: uppercase;
+}
+
+/*
+ * THE LISTING ROW, for the session plan and a unit's activities: a meta cell on the teal
+ * field (step number or activity kind), the title, and the time on the right.
+ */
+.session-plan ol,
+.activity-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border: var(--rule-ink);
+  list-style: none;
+}
+
+.session-plan li + li,
+.activity-list li + li {
+  border-top: var(--rule);
+}
+
+.session-plan li button,
+.activity-list li button {
+  display: grid;
+  grid-template-columns: var(--space-9) minmax(0, 1fr) auto;
+  align-items: stretch;
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  background: var(--paper-bright);
+  color: var(--ink);
+  text-align: left;
+}
+
+.activity-list li button {
+  grid-template-columns: 9rem minmax(0, 1fr) auto;
+}
+
+.session-plan li button > span,
+.activity-list li button > span {
+  display: grid;
+  place-items: center start;
+  padding: var(--space-3) var(--space-4);
+  border-right: var(--rule);
+  background: var(--shell-field);
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.session-plan li button > div,
+.activity-list li button > div {
+  display: grid;
+  align-content: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+}
+
+.session-plan li strong,
+.activity-list li strong {
+  font: var(--font-item);
+  transition: color var(--dur) var(--ease);
+}
+
+.session-plan li small,
+.activity-list li small {
+  color: var(--ink-soft);
+  font: var(--weight-regular) var(--type-small) / var(--lh-ui) var(--serif);
+}
+
+.session-plan li b,
+.activity-list li b {
+  display: grid;
+  place-items: center end;
+  padding: var(--space-3) var(--space-4);
+  color: var(--muted);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.session-plan li button:hover strong,
+.activity-list li button:hover strong {
+  color: var(--piece-accent);
+}
+
+.session-plan li.is-complete button > div,
+.activity-list li.is-complete button > div {
+  color: var(--muted);
+}
+
+.session-plan li.is-complete strong,
+.activity-list li.is-complete strong {
+  color: var(--ink-soft);
+  font-weight: var(--weight-regular);
+}
+
+/* What the one-note lesson can show: a ruled grid of capabilities. */
+.pilot-capabilities ul {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  margin: var(--space-4) 0 0;
+}
+
+.pilot-capabilities li {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--paper-bright);
+}
+
+.pilot-capabilities li strong {
+  font: var(--font-item);
+}
+
+.pilot-capabilities li small {
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.today-lower {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--grid-gap);
+}
+
+.free-play-glance {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-6);
+}
+
+.free-play-glance > * {
+  grid-column: 1;
+}
+
+.free-play-glance p {
+  margin: 0;
+}
+
+.free-play-glance button {
+  grid-row: 1 / 4;
+  grid-column: 2;
+}
+
+.project-glance,
+.reflection-glance {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.project-glance > button {
+  margin-top: auto;
+}
+
+.workflow-mini,
+.artifact-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+}
+
+/* Three figures in a ruled row. */
+.artifact-stats {
+  gap: 1px;
+  width: 100%;
+  margin: auto 0 0;
+  border: var(--rule-ink);
+  background: var(--line-dark);
+}
+
+.artifact-stats span {
+  display: grid;
+  flex: 1 1 0;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper-bright);
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.artifact-stats strong {
+  color: var(--ink);
+  font: var(--font-name);
+}
+
+.familiar-favorites details {
+  margin-top: var(--space-3);
+}
+
+/* Course map. */
+.path-total {
+  display: grid;
+  flex: 0 0 auto;
+  justify-items: end;
+  gap: var(--space-1);
+}
+
+.path-total strong {
+  font: var(--weight-regular) var(--type-display) / var(--lh-display) var(--display);
+}
+
+.path-total span {
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.path-layout {
+  display: grid;
+  grid-template-columns: 19rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--grid-gap);
+}
+
+/* The stage list is a contents panel: a title row, then one ruled row per stage. */
+.stage-list {
+  position: sticky;
+  top: var(--space-4);
+  display: grid;
+}
+
+.stage-list > header {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--rule-ink);
+}
+
+.stage-list > header strong,
+.stage-list > header small {
+  display: block;
+}
+
+.stage-list > header strong {
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.stage-list > header small {
+  margin-top: var(--space-1);
+  color: var(--ink-soft);
+}
+
+.stage-list > button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-3);
+  min-height: var(--touch-min);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.stage-list > button + button {
+  border-top: var(--rule);
+}
+
+.stage-list > button:hover {
+  background: var(--paper);
+}
+
+.stage-list > button.is-active {
+  background: var(--piece-field);
+  box-shadow: inset var(--rule-heavy) 0 0 var(--ink);
+}
+
+.stage-list .stage-order {
+  grid-column: 1 / -1;
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.stage-list strong,
+.stage-list small {
+  display: block;
+}
+
+.stage-list strong {
+  font: var(--font-item);
+}
+
+.stage-list small {
+  margin-top: var(--space-1);
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+  line-height: var(--lh-ui);
+}
+
+.stage-list b {
+  align-self: start;
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.unit-stage {
+  display: grid;
+  gap: var(--grid-gap);
+  min-width: 0;
+}
+
+.unit-stage > header {
+  padding-bottom: var(--space-4);
+  border-bottom: var(--rule-ink);
+}
+
+.unit-stage > header p {
+  max-width: var(--measure);
+  margin: var(--space-3) 0 0;
+}
+
+/* Unit cards are work cards: the unit is named in the display face. */
+.unit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--grid-gap);
+}
+
+.unit-card {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4);
+  transition: border-color var(--dur) var(--ease);
+}
+
+.unit-card h3 {
+  margin: var(--space-3) 0 var(--space-2);
+  font: var(--font-name);
+}
+
+.unit-card p {
+  font-size: var(--type-small);
+}
+
+.unit-card > button {
+  margin-top: auto;
+}
+
+.unit-card:hover:not(.is-locked) {
+  border-color: var(--piece-accent);
+}
+
+.unit-card.is-active {
+  box-shadow: inset 0 var(--rule-heavy) 0 var(--piece-accent);
+}
+
+.unit-card.is-locked {
+  border-style: dashed;
+  border-color: var(--line-dark);
+  background: var(--paper);
+}
+
+.unit-card .lock-note {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--muted);
+}
+
+.unit-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* Unit progress: a square ruled bar filled in the accent. */
+.unit-status i {
+  width: var(--space-9);
+  height: var(--space-2);
+  border: var(--rule-ink);
+  background: linear-gradient(90deg, var(--piece-accent) var(--progress), transparent var(--progress));
+}
+
+.competency-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 var(--space-4);
+}
+
+.offline-unit-status {
+  margin: 0 0 var(--space-4);
+}
+
+.locked-unit-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-4);
+  border: var(--rule);
+  background: var(--paper);
+}
+
+.locked-unit-summary p {
+  margin: 0;
+}
+
+.locked-unit-summary .primary-action {
+  flex: 0 0 auto;
+}
+
+/* Strengthen. */
+.practice-modes {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.practice-modes button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-height: 9rem;
+  padding: var(--space-4);
+  border: 0;
+  background: var(--paper-bright);
+  color: var(--ink);
+  text-align: left;
+}
+
+.practice-modes button:hover:not(.is-active) {
+  background: var(--paper);
+}
+
+.practice-modes span {
+  font: var(--font-subhead);
+}
+
+.practice-modes small {
+  color: var(--ink-soft);
+  line-height: var(--lh-ui);
+}
+
+.practice-modes b {
+  margin-top: auto;
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.practice-focus,
+.strengthen-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.practice-focus > div,
+.strengthen-empty > div {
+  max-width: 48rem;
+}
+
+.practice-focus .primary-action,
+.strengthen-empty .primary-action {
+  flex: 0 0 auto;
+}
+
+.strengthen-empty p {
+  margin-bottom: 0;
+}
+
+.recommendation-context {
+  display: block;
+  margin: 0 0 var(--space-4);
+  color: var(--ink-soft);
+  font: var(--weight-bold) var(--type-meta) / var(--lh-ui) var(--mono);
+  text-transform: uppercase;
+}
+
+/* The reason for a suggestion: a pull-quote rule in the accent. */
+.recommendation-reason {
+  max-width: var(--measure);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-1) 0 var(--space-1) var(--space-4);
+  border-left: var(--rule-heavy) solid var(--piece-accent);
+  color: var(--ink);
+}
+
+.recommendation-reason strong {
+  font-weight: var(--weight-semi);
+}
+
+.mastery-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mastery-grid article {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--paper-bright);
+}
+
+.mastery-grid article > strong {
+  font: var(--font-item);
+}
+
+.mastery-grid article > strong::first-letter {
+  text-transform: uppercase;
+}
+
+.mastery-grid small {
+  color: var(--ink-soft);
+}
+
+.mastery-state {
+  justify-self: start;
+}
+
+.state-secure,
+.state-transfer-ready {
+  border-color: var(--ink);
+  background: var(--piece-field);
+  color: var(--ink);
+}
+
+.mastery-next {
+  display: block;
+  color: var(--piece-accent);
+  line-height: var(--lh-ui);
+}
+
+/* Concept checks and the placement sampler: folded panels that open into a worked task. */
+.concept-checks,
+.placement-sampler {
+  min-width: 0;
+  padding: var(--space-4) var(--space-5);
+}
+
+.concept-checks summary,
+.placement-sampler summary {
+  display: grid;
+  align-content: center;
+  gap: var(--space-1);
+}
+
+.concept-checks summary strong,
+.placement-sampler summary strong {
+  font: var(--font-subhead);
+}
+
+.concept-checks summary span,
+.placement-sampler summary span {
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.concept-checks:not([open]) .concept-check-body {
+  display: none;
+}
+
+.concept-check-body,
+.placement-content {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+}
+
+.concept-check-body > p,
+.placement-content > p {
+  max-width: var(--measure);
+  margin: 0;
+}
+
+.concept-check-kinds,
+.concept-check-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.concept-check-kinds button {
+  min-height: var(--touch-min);
+  padding: var(--space-2) var(--space-4);
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+  color: var(--ink);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.concept-check-kinds button.is-active {
+  background: var(--piece-field);
+  box-shadow: inset 0 calc(-1 * var(--rule-heavy)) 0 var(--ink);
+}
+
+.concept-check-question {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: var(--rule);
+  background: var(--paper);
+}
+
+.concept-check-question > strong {
+  font: var(--font-subhead);
+}
+
+.concept-check-question > button {
+  justify-self: start;
+}
+
+/* Answer options: ruled choices; the chosen one takes the field and an ink edge. */
+.concept-check-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: var(--space-2) var(--space-4);
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.concept-check-options label:has(input:checked) {
+  background: var(--piece-field);
+  box-shadow: inset 0 calc(-1 * var(--rule-heavy)) 0 var(--ink);
+}
+
+.concept-result {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.diagnostic-choices + .placement-sampler {
+  margin-top: var(--space-5);
+}
+
+.placement-results {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+
+.placement-results > div,
+.placement-domain,
+.placement-suggestion,
+.placement-manual {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+  background: var(--paper-bright);
+}
+
+.placement-domain,
+.placement-suggestion,
+.placement-manual {
+  border: var(--rule);
+  background: var(--paper);
+}
+
+.placement-results > div {
+  gap: var(--space-1);
+}
+
+.placement-results small,
+.placement-domain small {
+  color: var(--ink-soft);
+}
+
+.placement-domain h4,
+.placement-suggestion h4 {
+  margin: 0;
+}
+
+.placement-domain > button,
+.placement-suggestion > button {
+  justify-self: start;
+}
+
+.placement-manual {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.placement-manual p {
+  width: 100%;
+  margin: 0;
+}
+
+@media (max-width: 1180px) {
+  .unit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .practice-modes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mastery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .today-focus {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .path-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .stage-list {
+    position: static;
+  }
+}
+
+@media (max-width: 680px) {
+  .today-focus {
+    padding-top: var(--space-2);
+  }
+
+  .course-location {
+    grid-template-columns: 1fr;
+  }
+
+  .course-location i {
+    display: none;
+  }
+
+  .course-location > div ~ div,
+  .course-location .text-action {
+    border-top: var(--rule);
+    border-left: 0;
+  }
+
+  .course-location .text-action {
+    justify-content: flex-start;
+    padding-inline: var(--space-4);
+  }
+
+  .today-lower,
+  .practice-modes,
+  .unit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .free-play-glance {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .session-plan,
+  .session-ending,
+  .familiar-favorites,
+  .pilot-capabilities,
+  .project-glance,
+  .reflection-glance,
+  .free-play-glance,
+  .today-page > section.card:not(.session-plan),
+  .evidence-panel,
+  .practice-focus,
+  .strengthen-empty,
+  .unit-detail {
+    padding: var(--space-4);
+  }
+
+  .session-plan > header,
+  .evidence-panel > header,
+  .unit-detail > header,
+  .practice-focus,
+  .strengthen-empty,
+  .locked-unit-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .session-plan > header > strong,
+  .evidence-panel > header > span,
+  .unit-detail > header > strong {
+    text-align: left;
+  }
+
+  .path-total {
+    justify-items: start;
+  }
+
+  .practice-modes button {
+    min-height: 0;
+  }
+
+  .mastery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .session-plan li button {
+    grid-template-columns: var(--space-7) minmax(0, 1fr);
+  }
+
+  .activity-list li button {
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+  }
+
+  .session-plan li button > span {
+    place-items: center;
+    padding-inline: var(--space-1);
+  }
+
+  .activity-list li button > span {
+    padding-inline: var(--space-2);
+  }
+
+  .session-plan li b,
+  .activity-list li b {
+    display: none;
+  }
+
+  .mastery-grid {
+    grid-template-columns: 1fr;
+  }
+}

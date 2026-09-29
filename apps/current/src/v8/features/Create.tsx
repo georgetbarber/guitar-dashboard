@@ -38,7 +38,7 @@ export function Create() {
   return (
     <div className="create-shell">
       <aside className="sketch-list">
-        <header><div><span className="eyebrow">Local sketchbook</span><h1>Create</h1></div><button className="icon-button" onClick={() => dispatch({ type: "createSketch" })} aria-label="Create new sketch">＋</button></header>
+        <header><div><span className="eyebrow">Local sketchbook</span><h1>Create</h1></div><button className="icon-button" onClick={() => dispatch({ type: "createSketch" })} aria-label="Create new sketch"><svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button></header>
         {state.sketches.length ? state.sketches.map((sketch) => <button className={sketch.id === active?.id ? "is-active" : ""} onClick={() => dispatch({ type: "setActiveSketch", id: sketch.id })} key={sketch.id}><strong>{sketch.name}</strong><span>{sketch.status} · {sketch.tempo} BPM</span><small>{sketch.chords.length} chords · {sketch.revisions.length} revisions</small></button>) : <div className="empty-sketch"><p>Capture an unfinished idea. Understanding can follow the sound.</p><button className="primary-action" onClick={() => dispatch({ type: "createSketch" })}>Start your first sketch</button></div>}
       </aside>
       <div className="studio-main">

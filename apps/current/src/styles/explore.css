@@ -1,0 +1,473 @@
+/*
+ * EXPLORE AND THE FRETBOARD. The neck is drawn as a ruled chart: fret wires are hairlines,
+ * the nut is a heavy ink rule, strings run through each row (the wound strings heavier),
+ * and each sounding position carries a square tag naming its relationship.
+ */
+
+.context-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.context-controls label:not(.toggle) {
+  min-width: 8rem;
+}
+
+.context-controls .toggle {
+  padding: 0 var(--space-3);
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+}
+
+.relationship-ribbon,
+.pitch-analysis,
+.chord-analysis,
+.fretboard-explorer,
+.glossary-card {
+  min-width: 0;
+  padding: var(--space-5);
+}
+
+/* Scale degrees: seven ruled cells, each naming degree, note and interval. */
+.relationship-ribbon > div {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-top: var(--space-3);
+}
+
+.relationship-ribbon button {
+  display: grid;
+  gap: var(--space-1);
+  min-height: var(--touch-min);
+  padding: var(--space-3);
+  border: 0;
+  background: var(--paper-bright);
+  color: var(--ink);
+  text-align: left;
+}
+
+.relationship-ribbon button:hover:not(.is-active) {
+  background: var(--paper);
+}
+
+.relationship-ribbon small {
+  color: var(--piece-accent);
+  font: var(--font-label);
+}
+
+.relationship-ribbon strong {
+  font: var(--font-name);
+}
+
+.relationship-ribbon span {
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+  line-height: var(--lh-tight);
+}
+
+.explore-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--grid-gap);
+}
+
+.pitch-analysis h2,
+.chord-analysis h2 {
+  font: var(--font-name-large);
+}
+
+/* An analysis note: a ruled box with a brass rule; in-key pitches take the tonic rule. */
+.chromatic-label,
+.shape-assessment {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  border: var(--rule);
+  border-left: var(--rule-heavy) solid var(--rel-target);
+  background: var(--paper);
+}
+
+.chromatic-label strong,
+.shape-assessment strong {
+  font: var(--font-item);
+}
+
+.chromatic-label span,
+.shape-assessment span,
+.shape-assessment small {
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.shape-assessment span {
+  font-family: var(--mono);
+}
+
+.chromatic-label.relation-diatonic {
+  border-left-color: var(--rel-tonic);
+  background: var(--piece-field);
+}
+
+/* Chord picker: Roman numerals in a ruled row; the chosen chord is filled with ink. */
+.chord-picker {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-bottom: var(--space-5);
+}
+
+.chord-picker button {
+  display: grid;
+  gap: var(--space-1);
+  min-height: var(--touch-min);
+  padding: var(--space-2) var(--space-1);
+  place-content: center;
+  border: 0;
+  background: var(--paper-bright);
+  color: var(--ink);
+  font: var(--font-subhead);
+}
+
+.chord-picker button:hover:not(.is-active) {
+  background: var(--paper);
+}
+
+.chord-picker button.is-active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.chord-picker small {
+  font: var(--font-meta);
+}
+
+.fretboard-explorer > header {
+  margin-bottom: var(--space-4);
+}
+
+.fretboard-explorer {
+  overflow-x: auto;
+}
+
+/* THE FRETBOARD. The neck scrolls sideways; each position keeps a full touch target. */
+.fretboard-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: var(--line-dark) transparent;
+}
+
+.fretboard-key {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  width: fit-content;
+  min-width: 100%;
+  margin-bottom: var(--space-3);
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.fretboard-key span {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.fretboard-key b {
+  color: var(--ink);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.fretboard {
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+}
+
+.fretboard-row {
+  display: grid;
+  grid-template-columns: 3rem repeat(var(--fret-count), minmax(4.25rem, 1fr));
+}
+
+.fretboard-header {
+  border-bottom: var(--rule-ink);
+}
+
+.fretboard-header span {
+  position: relative;
+  display: grid;
+  min-height: var(--space-7);
+  place-items: center;
+  color: var(--ink-soft);
+  font: var(--font-label);
+}
+
+/* Inlay markers: the site's small accent square, beneath the fret number. */
+.fretboard-header .has-marker::after {
+  position: absolute;
+  bottom: var(--space-1);
+  width: var(--space-2);
+  height: var(--space-2);
+  background: var(--piece-accent);
+  content: "";
+}
+
+.string-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: var(--touch-min);
+  border-right: var(--rule-ink);
+  background: var(--paper-bright);
+  color: var(--ink-soft);
+  font: var(--font-meta);
+}
+
+.string-label b {
+  color: var(--ink);
+  font-weight: var(--weight-bold);
+}
+
+.fret {
+  position: relative;
+  display: grid;
+  min-width: 4.25rem;
+  min-height: var(--touch-min);
+  padding: var(--space-1) 0;
+  place-items: center;
+  border: 0;
+  border-right: var(--rule);
+  background: transparent;
+  color: var(--ink);
+}
+
+/* The nut: a heavy ink rule after the open strings. */
+.fret[data-fret="0"] {
+  border-right: var(--rule-heavy) solid var(--ink);
+  background: var(--paper);
+}
+
+.fret:hover {
+  background: var(--paper);
+}
+
+/* The string itself, heavier for the three wound strings. */
+.fret::before {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--ink-soft);
+  content: "";
+}
+
+.string-row:nth-child(n + 5) .fret::before {
+  height: 2px;
+}
+
+/* A sounding position: a square tag on the string that names its relationship. */
+.fret > span {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 1px;
+  min-width: var(--space-7);
+  min-height: var(--space-7);
+  padding: var(--space-1);
+  place-content: center;
+  border: 1px solid var(--ink);
+  background: var(--rel-scale);
+  color: var(--rel-scale-text);
+  text-align: center;
+}
+
+.fret small {
+  font: var(--weight-semi) var(--type-meta) / var(--lh-tight) var(--serif);
+  white-space: nowrap;
+}
+
+.fret.is-chord > span,
+.fret.is-shape > span {
+  border-color: var(--rel-chord);
+  background: var(--rel-chord);
+  color: var(--rel-chord-text);
+}
+
+.fret.is-tonic > span {
+  border-color: var(--rel-tonic);
+  background: var(--rel-tonic);
+  color: var(--rel-tonic-text);
+}
+
+/* The learner's choice: rosewood, framed by a paper and ink ring so it reads without colour. */
+.fret.is-selected-pitch > span,
+.fret.is-selected-position > span,
+.fret.is-interval-root > span {
+  border-color: var(--rel-select);
+  background: var(--rel-select);
+  color: var(--rel-select-text);
+  box-shadow:
+    0 0 0 2px var(--paper-bright),
+    0 0 0 3px var(--ink);
+}
+
+.fret.is-interval-target > span {
+  border-color: var(--ink);
+  border-style: dashed;
+  background: var(--rel-target);
+  color: var(--rel-target-text);
+}
+
+.fret:not(.is-visible) > span {
+  display: none;
+}
+
+.fret:focus-visible {
+  z-index: 2;
+  outline: var(--focus-width) solid var(--focus-colour);
+  outline-offset: calc(-1 * var(--focus-width));
+}
+
+/* Shown while keyboard focus is on the neck; always available to assistive technology through aria-describedby. */
+.fretboard-keyboard-help {
+  margin: 0 0 var(--space-3);
+  color: var(--ink);
+  font-size: var(--type-small);
+}
+
+.fretboard-scroll:not(:has(:focus-visible)) .fretboard-keyboard-help {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The glossary: a two-column listing of terms. */
+.glossary-card > header {
+  margin-bottom: var(--space-4);
+}
+
+.glossary-list {
+  display: grid;
+  margin: 0;
+  border-top: var(--rule-ink);
+}
+
+.glossary-list div {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr);
+  gap: var(--space-2) var(--space-5);
+  padding: var(--space-3) 0;
+  border-bottom: var(--rule);
+}
+
+.glossary-list dt {
+  font: var(--font-item);
+}
+
+.glossary-list dd {
+  max-width: var(--measure);
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: var(--lh-ui);
+}
+
+/* The one-note lesson's Explore context. */
+.pilot-context {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.pilot-context > p,
+.pilot-third-comparison p {
+  max-width: var(--measure);
+}
+
+.pilot-context details {
+  border: var(--rule);
+  background: var(--paper);
+}
+
+.pilot-context summary {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  font-weight: var(--weight-semi);
+}
+
+.pilot-context details > :not(summary) {
+  margin: 0 var(--space-4) var(--space-3);
+}
+
+.pilot-third-comparison {
+  padding: var(--space-3) var(--space-4);
+  border-left: var(--rule-heavy) solid var(--rel-tonic);
+  background: var(--piece-field);
+}
+
+@media (max-width: 900px) {
+  .explore-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .relationship-ribbon > div {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  /* Seven degrees or chords never fill the wrapped grid evenly: the last cell closes the row. */
+  .relationship-ribbon button:last-child {
+    grid-column: span 2;
+  }
+
+  .context-controls {
+    width: 100%;
+  }
+
+  .context-controls label:not(.toggle) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .relationship-ribbon,
+  .pitch-analysis,
+  .chord-analysis,
+  .fretboard-explorer,
+  .glossary-card,
+  .pilot-context {
+    padding: var(--space-4);
+  }
+
+  .glossary-list div {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .relationship-ribbon > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chord-picker {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .chord-picker button:last-child {
+    grid-column: span 2;
+  }
+}

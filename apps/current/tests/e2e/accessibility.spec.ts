@@ -28,7 +28,7 @@ async function startLearning(page: Page) {
 
 test("core learning screens and dialogs meet automated WCAG 2.2 A and AA checks in both themes", async ({ page }) => {
   const failures: string[] = [];
-  const nav = () => page.locator(".primary-sidebar nav:visible, .mobile-nav:visible");
+  const nav = () => page.locator(".primary-nav:visible, .mobile-nav:visible");
   const scan = async (theme: string, screen: string, dialog = false) => {
     let builder = new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa"]);
     if (dialog) builder = builder.include("dialog");
@@ -83,11 +83,11 @@ test("phone navigation, save status and motion control remain readable and keybo
   await page.setViewportSize({ width: 390, height: 844 });
   await startLearning(page);
   const nav = page.getByRole("navigation", { name: "Mobile learning navigation" });
-  const status = page.locator(".mobile-topbar .save-indicator");
+  const status = page.locator(".app-header .save-indicator");
   for (const theme of ["light", "dark"]) {
     const sizes = await page.evaluate(() => ({
       labels: [...document.querySelectorAll(".mobile-nav span")].map((node) => parseFloat(getComputedStyle(node).fontSize)),
-      save: parseFloat(getComputedStyle(document.querySelector(".mobile-topbar .save-indicator")!).fontSize)
+      save: parseFloat(getComputedStyle(document.querySelector(".app-header .save-indicator")!).fontSize)
     }));
     expect(sizes.labels.every((size) => size >= 12), `${theme}: bottom navigation labels`).toBe(true);
     expect(sizes.save, `${theme}: local save status`).toBeGreaterThanOrEqual(12);
@@ -98,7 +98,8 @@ test("phone navigation, save status and motion control remain readable and keybo
     await learn.focus();
     const ring = await learn.evaluate((button) => {
       const style = getComputedStyle(button);
-      return { width: style.outlineWidth, style: style.outlineStyle, color: style.outlineColor, surface: getComputedStyle(document.documentElement).getPropertyValue("--night").trim() };
+      // Measure the ring against the surface the button actually sits on.
+      return { width: style.outlineWidth, style: style.outlineStyle, color: style.outlineColor, surface: style.backgroundColor };
     });
     expect(ring, `${theme}: mobile navigation focus ring`).toMatchObject({ width: "3px", style: "solid" });
     expect(contrast(ring.color, ring.surface), `${theme}: focus ring contrast`).toBeGreaterThanOrEqual(3);

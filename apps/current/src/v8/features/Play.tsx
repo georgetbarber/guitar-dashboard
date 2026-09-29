@@ -14,7 +14,6 @@ import { useV8Store } from "../store";
 import { sketchFromFreePlay } from "../freePlayFragment";
 import { hearFreePlayPreview } from "../freePlayAudio";
 
-const MODE_ICONS: Record<FreePlayMode, string> = { groove: "◉", riff: "⌁", degree: "◎", chord: "◇" };
 const SESSION_LENGTH = 8;
 
 function PromptRelationship({ prompt }: { prompt: FreePlayPrompt }) {
@@ -129,7 +128,7 @@ export function Play() {
           {(Object.keys(FREE_PLAY_MODE_INFO) as FreePlayMode[]).map((mode) => {
             const info = FREE_PLAY_MODE_INFO[mode];
             const ready = availableModes.includes(mode);
-            return <article className={`play-mode-card mode-${mode} ${ready ? "is-ready" : "is-locked"}`} key={mode}><span className="mode-icon">{MODE_ICONS[mode]}</span><div><small>{ready ? "Ready now" : info.unlock}</small><h3>{info.label}</h3><p>{info.invitation}</p></div><button className={ready ? "secondary-action" : "text-action"} disabled={!ready} onClick={() => start(mode)}>{ready ? `Play ${info.label}` : "Build this relationship in Learn"}</button></article>;
+            return <article className={`play-mode-card mode-${mode} ${ready ? "is-ready" : "is-locked"}`} key={mode}><div><small>{ready ? "Ready now" : info.unlock}</small><h3>{info.label}</h3><p>{info.invitation}</p></div><button className={ready ? "secondary-action" : "text-action"} disabled={!ready} onClick={() => start(mode)}>{ready ? `Play ${info.label}` : "Build this relationship in Learn"}</button></article>;
           })}
         </div>
       </section>
@@ -147,7 +146,7 @@ export function Play() {
     return (
       <div className="play-page page-stack">
         <section className="play-complete">
-          <span className="play-complete-mark">✦</span><span className="eyebrow">Flow complete · nothing was graded</span>
+          <span className="eyebrow">Flow complete · nothing was graded</span>
           <h1>You kept music moving.</h1>
           <p>You marked {followed} prompt{followed === 1 ? "" : "s"} as played{skipped ? `, skipped ${skipped}` : ""}{unreported ? `, and moved past ${unreported} automatically after the guide` : ""}. These are your choices, not a measured record of playing.</p>
           <div className="play-complete-modes">{usedModes.map((mode) => <span key={mode}>{mode}</span>)}</div>
@@ -171,7 +170,7 @@ export function Play() {
       <div className="play-session-layout">
         <aside className="play-mode-rail">
           <span className="eyebrow">Change the next action</span>
-          {(Object.keys(FREE_PLAY_MODE_INFO) as FreePlayMode[]).map((mode) => <button className={prompt.mode === mode ? "is-active" : ""} disabled={!availableModes.includes(mode)} onClick={() => switchCurrentMode(mode)} key={mode}><i>{MODE_ICONS[mode]}</i><span><strong>{FREE_PLAY_MODE_INFO[mode].label}</strong><small>{availableModes.includes(mode) ? "Ready at your level" : FREE_PLAY_MODE_INFO[mode].unlock}</small></span></button>)}
+          {(Object.keys(FREE_PLAY_MODE_INFO) as FreePlayMode[]).map((mode) => <button className={prompt.mode === mode ? "is-active" : ""} disabled={!availableModes.includes(mode)} onClick={() => switchCurrentMode(mode)} key={mode}><span><strong>{FREE_PLAY_MODE_INFO[mode].label}</strong><small>{availableModes.includes(mode) ? "Ready at your level" : FREE_PLAY_MODE_INFO[mode].unlock}</small></span></button>)}
         </aside>
         <main className={`play-stage mode-${prompt.mode}`}>
           <div className="play-stage-top"><span>{FREE_PLAY_MODE_INFO[prompt.mode].label}</span><span>{tempo}{prompt.stretch ? " · gentle stretch" : ""}</span></div>
@@ -183,7 +182,7 @@ export function Play() {
             {physicalOpen && <aside><span>Connect it to the hand</span><p>{prompt.physicalCue}</p></aside>}
             {variationOpen && <aside className="is-variation"><span>Make it yours</span><p>{prompt.variation}</p></aside>}
           </div>
-          <div className="play-sound-actions"><button className="secondary-action" onClick={() => playGuide(prompt)}>▶ Hear the guide</button><button className={physicalOpen ? "is-active" : ""} onClick={() => setPhysicalOpen((value) => !value)}>Hand cue</button><button className={hintOpen ? "is-active" : ""} onClick={() => setHintOpen((value) => !value)}>Reveal names</button><button className={variationOpen ? "is-active" : ""} onClick={() => setVariationOpen((value) => !value)}>Make it mine</button></div>
+          <div className="play-sound-actions"><button className="secondary-action" onClick={() => playGuide(prompt)}>▶ Hear the guide</button><button aria-pressed={physicalOpen} onClick={() => setPhysicalOpen((value) => !value)}>Hand cue</button><button aria-pressed={hintOpen} onClick={() => setHintOpen((value) => !value)}>Reveal names</button><button aria-pressed={variationOpen} onClick={() => setVariationOpen((value) => !value)}>Make it mine</button></div>
           <div className="play-flow-options"><button aria-pressed={repeatGuide} onClick={() => setRepeatGuide((value) => !value)}>Repeat the guide 4 times</button><button aria-pressed={autoAdvance} onClick={() => { setAutoAdvance((value) => !value); clearBoundary(); }}>Move to the next prompt when the guide ends</button><small>Automatic movement never marks a prompt as played. Press Hear the guide to use these options.</small></div>
           <button className="text-action" onClick={() => capture(prompt)}>Keep this fragment in Create →</button>
           {captureError && <p role="alert">{captureError}</p>}

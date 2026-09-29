@@ -1,0 +1,946 @@
+/*
+ * THE ACTIVITY PLAYER AND THE ONE-NOTE LESSON. A full-screen page: the activity named in
+ * the display face, the prompt and playing tasks in the main column, and the learner's own
+ * report in a contents-style panel beside it. Notation is set in mono, like printed tab.
+ */
+
+.activity-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--paper);
+}
+
+.app-dialog.activity-overlay {
+  padding: 0;
+}
+
+.activity-player {
+  width: var(--frame);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: var(--space-5) 0 var(--space-9);
+}
+
+.activity-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-5);
+  margin-bottom: var(--grid-gap);
+  padding-bottom: var(--space-6);
+  border-bottom: var(--rule-ink);
+}
+
+.activity-header h1 {
+  margin: var(--space-3) 0 var(--space-4);
+}
+
+.activity-header p {
+  max-width: var(--measure);
+  font: var(--font-lede);
+}
+
+.activity-header span {
+  color: var(--ink-soft);
+  font: var(--weight-bold) var(--type-meta) / var(--lh-ui) var(--mono);
+  text-transform: uppercase;
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 21rem;
+  align-items: start;
+  gap: var(--grid-gap);
+}
+
+.activity-main,
+.activity-check {
+  padding: var(--space-6);
+}
+
+/* The activity kind: a sentence-case label in the accent, not an uppercase kicker. */
+.activity-kind {
+  display: block;
+  color: var(--piece-accent);
+  font: var(--weight-semi) var(--type-small) / var(--lh-tight) var(--serif);
+}
+
+.activity-kind::first-letter {
+  text-transform: uppercase;
+}
+
+.activity-main > h2 {
+  max-width: 34ch;
+  margin: var(--space-2) 0 var(--space-5);
+  font-size: var(--type-lead);
+}
+
+/* The prompt is the one thing to read first: a pull-quote rule in the accent. */
+.activity-prompt {
+  max-width: var(--measure);
+  padding-left: var(--space-5);
+  border-left: var(--rule-heavy) solid var(--piece-accent);
+  color: var(--ink);
+  font: var(--weight-regular) var(--type-subhead) / var(--lh-ui) var(--serif);
+}
+
+.response-guide,
+.do-now {
+  max-width: 48rem;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4);
+  border: var(--rule);
+  background: var(--paper);
+}
+
+.do-now {
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+}
+
+.response-guide strong,
+.do-now strong,
+.guidance strong,
+.creative-bridge strong {
+  display: block;
+  margin-bottom: var(--space-2);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.response-guide p,
+.do-now p {
+  margin: 0 0 var(--space-1);
+  color: var(--ink);
+}
+
+.response-guide small {
+  color: var(--ink-soft);
+}
+
+.success-criterion {
+  margin: var(--space-3) 0 var(--space-4);
+}
+
+.success-criterion small,
+.assistance-state small,
+.activity-check > span {
+  display: block;
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.success-criterion p {
+  margin: var(--space-2) 0 0;
+  color: var(--ink);
+  font-weight: var(--weight-semi);
+}
+
+.outcome-lead {
+  margin: var(--space-4) 0 0;
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.help-note {
+  display: block;
+  margin: var(--space-3) 0 0;
+  color: var(--muted);
+  line-height: var(--lh-ui);
+}
+
+/* Audio playback feedback: the words carry the state, the mark only echoes it. */
+.audio-feedback {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border: var(--rule);
+  background: var(--paper);
+}
+
+.audio-feedback p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.audio-dot {
+  opacity: 0.35;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.audio-feedback.is-playing {
+  border-color: var(--piece-accent);
+  box-shadow: inset var(--rule-heavy) 0 0 var(--piece-accent);
+}
+
+.audio-feedback.is-playing .audio-dot {
+  opacity: 1;
+}
+
+.audio-feedback.is-playing p {
+  color: var(--ink);
+}
+
+/* The attempt pad: dashed until the learner has tried, then solid. */
+.attempt-pad {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 7rem;
+  margin: var(--space-5) 0;
+  padding: var(--space-5);
+  border: 1px dashed var(--ink);
+  background: var(--paper-bright);
+  color: var(--ink);
+  font: var(--font-subhead);
+  text-align: left;
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+.attempt-pad:hover {
+  border-color: var(--piece-accent);
+}
+
+.attempt-pad span {
+  color: var(--ink-soft);
+  font: var(--weight-regular) var(--type-small) / var(--lh-ui) var(--serif);
+}
+
+.attempt-pad.is-done {
+  border-style: solid;
+  background: var(--piece-field);
+  box-shadow: inset var(--rule-heavy) 0 0 var(--ink);
+}
+
+.creative-bridge {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  border: var(--rule-ink);
+  background: var(--paper);
+}
+
+.creative-bridge div {
+  display: grid;
+}
+
+.creative-bridge span {
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.creative-bridge .text-action {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+/* A question-length label stays in the reading serif. */
+.reflection-field {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-5) 0;
+  font: var(--font-item);
+}
+
+.help-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: var(--rule);
+}
+
+.help-actions button {
+  min-height: var(--touch-min);
+  padding: var(--space-2) var(--space-4);
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+  color: var(--ink);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.help-actions button:hover:not(:disabled) {
+  border-color: var(--piece-accent);
+  color: var(--piece-accent);
+}
+
+.guidance {
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  border: var(--rule);
+  border-left: var(--rule-heavy) solid var(--piece-accent);
+  background: var(--paper);
+}
+
+.guidance p {
+  margin: 0;
+  color: var(--ink);
+}
+
+.guidance.reveal {
+  border-left-color: var(--rel-target);
+}
+
+/* The report panel. */
+.activity-check {
+  position: sticky;
+  top: var(--space-4);
+}
+
+.activity-check > p {
+  font-size: var(--type-small);
+}
+
+.activity-check details {
+  margin: var(--space-4) 0;
+  border: var(--rule);
+  background: var(--paper);
+}
+
+.activity-check details summary {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  font-weight: var(--weight-semi);
+}
+
+.activity-check details > :not(summary) {
+  margin: 0 var(--space-4) var(--space-3);
+}
+
+.activity-check details label {
+  margin-top: var(--space-3);
+}
+
+.assistance-state {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border: var(--rule);
+  background: var(--shell-field);
+}
+
+.assistance-state strong {
+  font: var(--font-item);
+}
+
+.assistance-state strong::first-letter {
+  text-transform: uppercase;
+}
+
+.assistance-state span {
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+/* The outcomes are a listing: one ruled row per honest answer. */
+.outcome-buttons {
+  display: grid;
+  margin: var(--space-3) 0;
+  border: var(--rule-ink);
+}
+
+.outcome-buttons button {
+  display: grid;
+  gap: var(--space-1);
+  min-height: var(--touch-min);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  background: var(--paper-bright);
+  color: var(--ink);
+  text-align: left;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.outcome-buttons button + button {
+  border-top: var(--rule);
+}
+
+.outcome-buttons button:hover {
+  background: var(--piece-field);
+}
+
+.outcome-buttons strong {
+  font: var(--font-item);
+}
+
+.outcome-buttons span {
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.record-save-status {
+  margin: var(--space-2) 0 0;
+  color: var(--ink);
+  font: var(--weight-bold) var(--type-meta) / var(--lh-ui) var(--mono);
+  text-transform: uppercase;
+}
+
+.record-save-status[data-status="failed"] {
+  color: var(--danger);
+}
+
+/* Completion. */
+.done-panel {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  max-width: var(--measure);
+  margin: var(--space-6) auto;
+  padding: var(--space-7) var(--space-6);
+  text-align: center;
+}
+
+.done-check {
+  display: grid;
+  width: var(--touch-min);
+  height: var(--touch-min);
+  place-items: center;
+  border: var(--rule-ink);
+  background: var(--piece-field);
+  color: var(--ink);
+  font: var(--weight-bold) var(--type-subhead) / var(--lh-display) var(--mono);
+}
+
+.done-panel h2 {
+  margin: var(--space-2) 0 0;
+  font: var(--font-name);
+}
+
+.done-panel p small {
+  color: var(--ink-soft);
+}
+
+.done-actions {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  margin-top: var(--space-4);
+}
+
+.done-actions .primary-action {
+  min-width: 14rem;
+}
+
+/* The notation guide: tab, degrees and counts, set in mono on a ruled panel like printed tab. */
+.micro-study {
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr);
+  margin: var(--space-5) 0;
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+}
+
+.micro-study figcaption {
+  display: grid;
+  align-content: center;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border-right: var(--rule);
+  background: var(--piece-field);
+}
+
+.micro-study figcaption strong {
+  font: var(--font-name);
+}
+
+.micro-study figcaption span,
+.micro-study figcaption small {
+  color: var(--ink-soft);
+  font: var(--weight-regular) var(--type-meta) / var(--lh-ui) var(--mono);
+  text-transform: uppercase;
+}
+
+.tab-staff {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  overflow-x: auto;
+  color: var(--ink);
+}
+
+.tab-staff code {
+  font: var(--weight-regular) var(--type-small) / var(--lh-ui) var(--mono);
+  white-space: pre;
+}
+
+.tab-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* One label style for every notation line: the words, not six colours, tell them apart. */
+.line-label {
+  flex: none;
+  min-width: 5.5rem;
+  padding: var(--space-1) var(--space-2);
+  border: var(--rule);
+  background: var(--paper);
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.tab-legend {
+  grid-column: 1 / -1;
+  padding: 0 var(--space-4) var(--space-3);
+  font-size: var(--type-small);
+}
+
+.tab-legend summary {
+  display: flex;
+  align-items: center;
+  font-weight: var(--weight-semi);
+}
+
+.tab-legend ul {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-5);
+}
+
+.tab-legend li {
+  color: var(--ink-soft);
+}
+
+.rhythm-notation {
+  margin: var(--space-5) 0;
+  padding: var(--space-4);
+  border: var(--rule);
+  background: var(--paper-bright);
+}
+
+.rhythm-notation svg {
+  width: 100%;
+  max-height: 150px;
+}
+
+.rhythm-notation line,
+.rhythm-notation path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.rhythm-notation circle {
+  fill: var(--ink);
+}
+
+.rhythm-notation text {
+  fill: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.rhythm-notation figcaption,
+.rhythm-description,
+.rhythm-words {
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.rhythm-words {
+  font-family: var(--mono);
+}
+
+/* The one-note study: two bars as a ruled count grid, a tab line and the open string. */
+.pilot-study {
+  display: grid;
+  gap: var(--space-4);
+  margin: var(--space-5) 0;
+  padding: var(--space-5);
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+}
+
+.pilot-study figcaption {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.pilot-study figcaption strong {
+  font: var(--font-subhead);
+}
+
+.pilot-study figcaption small,
+.pilot-study > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.pilot-bars {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.pilot-bar {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.pilot-bar > strong {
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.pilot-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  border: var(--rule-ink);
+  background: var(--line-dark);
+}
+
+.pilot-counts > div {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-2) var(--space-1);
+  background: var(--piece-field);
+  text-align: center;
+}
+
+.pilot-counts > div.is-rest {
+  background: var(--paper-bright);
+}
+
+/* The sounding beat: an ink frame inside the cell, so it reads without colour. */
+.pilot-counts > div.is-current {
+  box-shadow: inset 0 0 0 var(--rule-heavy) var(--ink);
+}
+
+.pilot-counts span {
+  color: var(--ink-soft);
+  font: var(--weight-bold) var(--type-subhead) / var(--lh-tight) var(--mono);
+}
+
+.pilot-counts strong {
+  font: var(--weight-semi) var(--type-small) / var(--lh-tight) var(--serif);
+}
+
+.pilot-tab {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  padding-top: var(--space-2);
+  border-top: var(--rule-ink);
+}
+
+.pilot-tab span {
+  font: var(--weight-bold) var(--type-subhead) / var(--lh-tight) var(--mono);
+  text-align: center;
+}
+
+.pilot-tab span.is-current {
+  color: var(--piece-accent);
+  text-decoration: underline;
+  text-decoration-thickness: var(--rule-heavy);
+  text-underline-offset: 0.25em;
+}
+
+.pilot-guitar {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+}
+
+.pilot-guitar strong {
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.pilot-guitar span,
+.pilot-guitar small {
+  font-size: var(--type-small);
+}
+
+.pilot-guitar small {
+  color: var(--ink-soft);
+}
+
+.pilot-guitar.is-sounding {
+  background: var(--piece-field);
+  box-shadow: inset var(--rule-heavy) 0 0 var(--ink);
+}
+
+.pilot-guitar.is-muted {
+  border-style: dashed;
+  background: var(--paper);
+}
+
+/* A miniature neck: strings as rules, the target as a finger dot in the tonic colour. */
+.pilot-fretboard {
+  display: grid;
+  gap: var(--space-1);
+  max-width: 22rem;
+}
+
+.pilot-string-row {
+  display: grid;
+  grid-template-columns: var(--space-5) var(--space-7) repeat(3, minmax(0, 1fr));
+  align-items: center;
+  min-height: var(--space-5);
+}
+
+.pilot-string-row > span {
+  font: var(--font-label);
+}
+
+.pilot-string-row b {
+  display: grid;
+  width: var(--space-5);
+  height: var(--space-5);
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  font: var(--weight-bold) var(--type-meta) / var(--lh-display) var(--mono);
+}
+
+.pilot-string-row b.target {
+  border-color: var(--rel-tonic);
+}
+
+.pilot-guitar.is-sounding .pilot-string-row b.target {
+  background: var(--rel-tonic);
+  color: var(--rel-tonic-text);
+}
+
+.pilot-guitar.is-muted .pilot-string-row b.target {
+  border-style: dashed;
+}
+
+.pilot-string-row i {
+  display: block;
+  height: 1px;
+  border-right: 2px solid var(--line-dark);
+  background: var(--ink-soft);
+}
+
+/* The guided lesson: a ruled step bar, then lesson and side panels. */
+.pilot-episode {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* The full lesson sits on the same frame as the activity player. */
+section.pilot-episode:not(.card) {
+  width: var(--frame);
+  margin: 0 auto;
+  padding: var(--space-5) 0 var(--space-9);
+}
+
+section.pilot-episode > .activity-header {
+  margin-bottom: 0;
+}
+
+.pilot-notice {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: var(--rule);
+  border-left: var(--rule-heavy) solid var(--piece-accent);
+  background: var(--paper-bright);
+  color: var(--ink);
+  font-size: var(--type-small);
+}
+
+.pilot-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  border: var(--rule-ink);
+  background: var(--line-dark);
+}
+
+.pilot-steps button {
+  flex: 1 1 auto;
+  min-height: var(--touch-min);
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  background: var(--paper-bright);
+  color: var(--ink);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.pilot-steps button[aria-current] {
+  background: var(--piece-field);
+  box-shadow: inset 0 calc(-1 * var(--rule-heavy)) 0 var(--ink);
+}
+
+.pilot-steps button:disabled {
+  color: var(--muted);
+}
+
+.pilot-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(16rem, 1fr);
+  align-items: start;
+  gap: var(--grid-gap);
+}
+
+.pilot-main,
+.pilot-side {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-5);
+}
+
+.pilot-main > h2,
+.pilot-side > h2,
+.pilot-recording h3 {
+  margin: 0;
+}
+
+.pilot-main > p,
+.pilot-side > p,
+.pilot-recording p {
+  margin: 0;
+  font-size: var(--type-text);
+}
+
+.pilot-controls,
+.pilot-play-actions,
+.pilot-outcomes,
+.pilot-variation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.pilot-controls select {
+  width: auto;
+}
+
+.pilot-controls .pilot-loop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+}
+
+.pilot-playing {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border: var(--rule);
+  background: var(--piece-field);
+  color: var(--ink);
+  font: var(--weight-bold) var(--type-meta) / var(--lh-ui) var(--mono);
+  text-transform: uppercase;
+}
+
+.pilot-check,
+.pilot-recording,
+.pilot-return {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: var(--rule);
+}
+
+.pilot-check label {
+  display: grid;
+  gap: var(--space-2);
+  font-weight: var(--weight-semi);
+}
+
+.pilot-check p {
+  margin: 0;
+}
+
+.pilot-outcomes button {
+  min-height: var(--touch-min);
+  padding: var(--space-2) var(--space-4);
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+  color: var(--ink);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.pilot-outcomes button:hover:not(:disabled) {
+  border-color: var(--piece-accent);
+  color: var(--piece-accent);
+}
+
+.pilot-outcomes button:disabled {
+  border-color: var(--line-dark);
+  color: var(--muted);
+}
+
+.pilot-side > button {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.pilot-recording audio {
+  max-width: 100%;
+}
+
+.pilot-variation p {
+  flex-basis: 100%;
+}
+
+@media (max-width: 900px) {
+  .activity-grid,
+  .pilot-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-check {
+    position: static;
+  }
+}
+
+@media (max-width: 680px) {
+  .activity-player {
+    padding-top: var(--space-4);
+  }
+
+  .activity-header {
+    gap: var(--space-3);
+    padding-bottom: var(--space-4);
+  }
+
+  .activity-main,
+  .activity-check,
+  .pilot-main,
+  .pilot-side {
+    padding: var(--space-4);
+  }
+
+  .micro-study,
+  .creative-bridge {
+    grid-template-columns: 1fr;
+  }
+
+  .micro-study figcaption {
+    border-right: 0;
+    border-bottom: var(--rule);
+  }
+
+  .pilot-study {
+    padding: var(--space-4);
+  }
+}

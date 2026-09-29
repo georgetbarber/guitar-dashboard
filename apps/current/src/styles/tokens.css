@@ -1,0 +1,244 @@
+/*
+ * GUITAR ACADEMY TOKENS — the By George design system, adapted for a learning app.
+ *
+ * Every colour, face, size, weight, line-height, spacing step and duration in the app
+ * comes from this file. Component styles never write a raw literal: change the token,
+ * not the usages.
+ *
+ * Three typefaces, self-hosted so they never depend on the learner's device, and subset
+ * to Latin-1 plus typographic punctuation to keep the offline shell inside its budget.
+ * Music symbols (♭ ♯ →) fall back to the system serif, as they did before.
+ *   --display  Libre Caslon Display  names things (page titles, units, sketches, chords)
+ *   --serif    Newsreader            everything you read
+ *   --mono     IBM Plex Mono         facts, labels, controls, tab and fret numbers
+ */
+@font-face {
+  font-family: "Newsreader";
+  font-style: normal;
+  font-weight: 400 750;
+  font-display: swap;
+  src: url("./fonts/newsreader.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Libre Caslon Display";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/libre-caslon-display.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 700 750;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-700.woff2") format("woff2");
+}
+
+:root {
+  color-scheme: light;
+
+  /* Paper and ink. Warm paper, never pure white. */
+  --paper: #f2eee8;
+  --paper-bright: #faf8f3;
+  --ink: #131917;
+  --ink-prose: #1d2422;
+  --ink-soft: #303936;
+  --muted: #626d69;
+  --line: #cbc9c2;
+  --line-dark: #969d98;
+  --line-ink: var(--ink);
+
+  /* The shell's teal identifies the product: active, hover, focus and structure. */
+  --shell-accent: #0d5d60;
+  --shell-accent-dark: #08464a;
+  --shell-field: #dbe9e6;
+  --shell-dark: #12201e;
+  --piece-accent: var(--shell-accent);
+  --piece-field: var(--shell-field);
+  --piece-dark: var(--shell-dark);
+
+  /* Dark grounds: at most one per screen, and always purposeful. */
+  --night: var(--ink);
+  --night-text: #f7f5ef;
+  --night-text-soft: color-mix(in srgb, var(--night-text) 78%, transparent);
+  --night-line: color-mix(in srgb, var(--night-text) 24%, transparent);
+  --on-strong: var(--paper);
+  --scrim: rgb(19 25 23 / 0.42);
+
+  /*
+   * THE RELATIONSHIP PALETTE. The app's one bounded palette of its own: it encodes the
+   * musical role of a pitch on the fretboard and in the Play stage. Every role is also
+   * named in text, so colour is never the only signal.
+   *   tonic   the tonal centre (the shell teal: home)
+   *   chord   chord tones and voicing positions (string steel)
+   *   select  the pitch or position the learner chose (rosewood)
+   *   target  an interval target (fret brass)
+   *   scale   other members of the active collection (teal field)
+   */
+  --rel-tonic: var(--shell-accent);
+  --rel-tonic-text: var(--on-strong);
+  --rel-chord: #34506e;
+  --rel-chord-text: var(--on-strong);
+  --rel-select: #8f3a1f;
+  --rel-select-text: var(--on-strong);
+  --rel-target: #c9973a;
+  --rel-target-text: var(--ink);
+  --rel-scale: var(--shell-field);
+  --rel-scale-text: var(--ink);
+  /* The same roles drawn on a dark ground (the Play stage), where the fills above fall
+     below 3:1. */
+  --rel-tonic-night: #7cc4bf;
+  --rel-chord-night: #9db6d6;
+  --rel-select-night: #e59a7c;
+  --rel-target-night: #e3b861;
+
+  /* Status. Used only as a rule or a word's colour, never as a whole surface. */
+  --danger: #9b2c1f;
+  --caution: #8a6212;
+  --caution-rule: var(--rel-target);
+
+  /* Three typefaces. Never a fourth. */
+  --display: "Libre Caslon Display", Georgia, "Times New Roman", serif;
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Twelve sizes. Nothing is smaller than --type-meta. */
+  --type-display: 4.6rem;
+  --type-page: 4rem;
+  --type-feature: 3.4rem;
+  --type-section: 2.6rem;
+  --type-heading: 2.2rem;
+  --type-card: 1.85rem;
+  --type-lead: 1.55rem;
+  --type-subhead: 1.35rem;
+  --type-body: 1.18rem;
+  --type-text: 1.05rem;
+  --type-small: 0.92rem;
+  --type-meta: 0.75rem;
+
+  /* Three weights. Libre Caslon Display has one; never set a weight on it. */
+  --weight-regular: 400;
+  --weight-semi: 600;
+  --weight-bold: 750;
+
+  /* Four line-heights, by role. */
+  --lh-display: 1;
+  --lh-tight: 1.2;
+  --lh-ui: 1.45;
+  --lh-prose: 1.7;
+
+  /* Type roles: the combinations components actually use, named once. */
+  --font-label: var(--weight-bold) var(--type-meta) / var(--lh-tight) var(--mono); /* mono labels, controls and facts */
+  --font-meta: var(--weight-regular) var(--type-meta) / var(--lh-tight) var(--mono); /* regular mono facts: tempo, dates, counts */
+  --font-item: var(--weight-semi) var(--type-text) / var(--lh-tight) var(--serif); /* the title of a row, option or small panel */
+  --font-subhead: var(--weight-semi) var(--type-subhead) / var(--lh-tight) var(--serif); /* small headings */
+  --font-lede: var(--weight-regular) var(--type-lead) / var(--lh-ui) var(--serif); /* ledes under a title */
+  --font-name: var(--weight-regular) var(--type-card) / var(--lh-display) var(--display); /* names a unit, sketch, chord or piece */
+  --font-name-large: var(--weight-regular) var(--type-feature) / var(--lh-display) var(--display); /* a larger name or figure */
+
+  /* Spacing steps. Every fixed padding, margin and gap is one of these. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.5rem;
+  --space-8: 3rem;
+  --space-9: 4rem;
+  --space-10: 6rem;
+
+  /* Two page widths, two text widths, two section spacings. */
+  --frame: min(84rem, calc(100vw - 4rem));
+  --reading: min(36rem, calc(100vw - 2.5rem));
+  --measure: 36rem;
+  --measure-narrow: 28rem;
+  --section-y: clamp(3rem, 6vw, 6rem);
+  --section-y-lg: clamp(4rem, 9vw, 8.5rem);
+  --page-gutter: clamp(1rem, 4vw, 5rem);
+  --grid-gap: clamp(1.25rem, 2vw, 2.5rem);
+
+  /* Rules, focus and touch. Square edges everywhere. */
+  --rule: 1px solid var(--line-dark);
+  --rule-ink: 1px solid var(--ink);
+  --rule-quiet: 1px solid var(--line);
+  --rule-heavy: 3px;
+  --radius-none: 0;
+  --focus-width: 3px;
+  --focus-offset: 4px;
+  --focus-colour: var(--piece-accent);
+  --touch-min: 48px;
+  --header-height: 72px;
+  --mobile-nav-height: 56px;
+
+  /* Motion: two durations, one curve. */
+  --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --dur: 160ms;
+  --dur-slow: 320ms;
+}
+
+/*
+ * DARK THEME. By George has no dark site, so this inverts its night grounds: the page
+ * sits on --night, text is --night-text, and the teal and relationship fills lighten
+ * until they keep their contrast. Solid controls still invert against the page.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #131917;
+  --paper-bright: #1b2321;
+  --ink: #f7f5ef;
+  --ink-prose: #ece9e1;
+  --ink-soft: #d6d3ca;
+  --muted: #a9b0ab;
+  --line: #34403c;
+  --line-dark: #66716c;
+  --shell-accent: #7cc4bf;
+  --shell-accent-dark: #9ad3cf;
+  --shell-field: #1f3a38;
+  --shell-dark: #0a100f;
+  --night: #0a100f;
+  --night-text: #f7f5ef;
+  --on-strong: #131917;
+  --scrim: rgb(0 0 0 / 0.5);
+  --rel-chord: #9db6d6;
+  --rel-select: #e59a7c;
+  --rel-target: #e3b861;
+  --rel-target-text: #131917;
+  --danger: #f09988;
+  --caution: #e3b861;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --frame: calc(100vw - 2rem);
+  }
+}
+
+/* Large tiers step down on phones; they never grow on a smaller screen. */
+@media (max-width: 680px) {
+  :root {
+    --header-height: 64px;
+    --type-display: 3.6rem;
+    --type-page: 3.1rem;
+    --type-feature: 3.1rem;
+    --type-section: 2.2rem;
+    --type-lead: 1.25rem;
+    --type-body: 1.08rem;
+  }
+}
+
+@media (max-width: 390px) {
+  :root {
+    --type-display: 3.25rem;
+    --type-page: 2.6rem;
+    --type-feature: 2.8rem;
+    --type-section: 1.85rem;
+  }
+}
