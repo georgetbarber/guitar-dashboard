@@ -177,7 +177,8 @@ if [ "$BRANCH" = "main" ]; then
 else
   release_sha="$target_sha"
   echo "Pushing committed $BRANCH version to GitHub main..."
-  git -C "$ROOT" push origin "$release_sha:refs/heads/main"
+  # Braces keep zsh from treating :r as a parameter modifier.
+  git -C "$ROOT" push origin "${release_sha}:refs/heads/main"
   if ! git -C "$ROOT" branch -f main "$release_sha"; then
     echo "GitHub main is updated, but local main could not be moved. Reconcile that checkout before its next release."
   fi
