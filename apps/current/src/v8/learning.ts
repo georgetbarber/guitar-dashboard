@@ -55,10 +55,10 @@ export function completedActivityIdsFromEvidence(evidence: CompetencyEvidence[])
 
 export function masteryFor(competencyId: string, evidence: CompetencyEvidence[]): MasterySummary {
   const relevant = liveObservations(evidence).filter((item) => item.competencyId === competencyId);
-  // All observations currently written by the app are self-reports. An
-  // unaided report is useful history, but it cannot verify sound or technique.
-  // Reserve Secure for a future checked method tied to the actual capability.
-  const reported = relevant.filter((item) => item.assistance === "none" && item.outcome === "successful");
+  // Broad lesson outcomes are self-reports. An on-screen theory answer checks
+  // a separate named capability, never the sound or technique in a lesson.
+  const reported = relevant.filter((item) => (item.method === undefined || item.method === "self-reported")
+    && item.assistance === "none" && item.outcome === "successful");
   const reportedSuccessDays = new Set(reported.map((item) => item.localDate ?? item.occurredAt.slice(0, 10))).size;
   const successfulDays = 0;
   const contextCount = 0;

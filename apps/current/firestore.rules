@@ -53,9 +53,24 @@ service cloud.firestore {
           'outcome', 'occurredAt', 'activityId',
           // method, artifactId and retracts are optional: records written before
           // they existed stay valid, and hasOnly permits a subset.
-          'method', 'artifactId', 'retracts', 'localDate'
+          'method', 'artifactId', 'retracts', 'localDate',
+          'checkId', 'contentVersion', 'response'
         ])
-        && (!('method' in data) || data.method == 'self-reported')
+        && (
+          (!('method' in data) || data.method == 'self-reported')
+            && !('checkId' in data) && !('contentVersion' in data) && !('response' in data)
+          || ('method' in data) && data.method == 'exact-answer'
+            && ('checkId' in data) && data.checkId is string && data.checkId.size() <= 160
+            && ('contentVersion' in data) && data.contentVersion is int
+            && data.contentVersion >= 1 && data.contentVersion <= 1000
+            && ('response' in data) && data.response is string && data.response.size() <= 80
+            && data.source == 'recognition'
+            && data.assistance in ['none', 'hint']
+            && data.outcome in ['successful', 'retry']
+            && data.context is map
+            && ('key' in data.context) && data.context.key is string
+            && ('mode' in data.context) && data.context.mode in ['major', 'minor', 'dorian', 'mixolydian', 'blues']
+        )
         && (!('localDate' in data) || (data.localDate is string && data.localDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
         && (!('artifactId' in data) || (data.artifactId is string && data.artifactId.size() <= 160))
         && (!('retracts' in data) || (data.retracts is string && data.retracts.size() <= 160))

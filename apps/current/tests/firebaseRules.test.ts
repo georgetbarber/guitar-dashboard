@@ -159,6 +159,25 @@ describe("Firestore tenant rules", () => {
     }));
   });
 
+  it("keeps exact-answer evidence distinct from self-reports at the cloud boundary", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    const checked = {
+      ...evidence, id: "checked-1", competencyId: "knowledge.interval",
+      activityId: "concept-check:interval-1", source: "recognition",
+      context: { key: "C", mode: "major" }, method: "exact-answer",
+      checkId: "interval-1", contentVersion: 1, response: "major third"
+    };
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/checked-1"), checked));
+    const noVersion: Record<string, unknown> = { ...checked, id: "checked-no-version" };
+    delete noVersion.contentVersion;
+    await assertFails(setDoc(doc(database, "users/learner-a/evidence/checked-no-version"), {
+      ...noVersion
+    }));
+    await assertFails(setDoc(doc(database, "users/learner-a/evidence/fake-self-report"), {
+      ...checked, id: "fake-self-report", method: "self-reported"
+    }));
+  });
+
   it("still accepts a record written before those fields existed", async () => {
     const database = environment.authenticatedContext("learner-a").firestore();
     await assertSucceeds(setDoc(doc(database, "users/learner-a/evidence/evidence-5"), { ...evidence, id: "evidence-5" }));

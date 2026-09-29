@@ -1,4 +1,5 @@
 import type { CloudProfile } from "./sync";
+import { checkedAnswerIsValid, conceptCheckById } from "./conceptChecks";
 import type { CompetencyEvidence, LearnerSettings, Sketch, V8State } from "./types";
 import { SKETCH_SYNC_FIELDS } from "./types";
 
@@ -134,8 +135,16 @@ function evidence(value: unknown, path: string) {
   choice(v.assistance, ["none", "hint", "reveal", "guided"], `${path}.assistance`);
   choice(v.outcome, ["successful", "partial", "retry"], `${path}.outcome`); date(v.occurredAt, `${path}.occurredAt`);
   if (v.localDate !== undefined) localDate(v.localDate, `${path}.localDate`);
-  // Absent on records written before the field existed; those are self-reported too.
-  if (v.method !== undefined) choice(v.method, ["self-reported"], `${path}.method`);
+  // Absent on legacy records means self-reported. A checked answer must carry
+  // enough information to retain its meaning across content revisions.
+  if (v.method !== undefined) choice(v.method, ["self-reported", "exact-answer"], `${path}.method`);
+  if (v.method === "exact-answer") {
+    id(v.checkId, `${path}.checkId`);
+    number(v.contentVersion, `${path}.contentVersion`, 1, 1000, true);
+    str(v.response, `${path}.response`);
+    if ((v.response as string).length > 80) fail(`${path}.response length`);
+    if (v.source !== "recognition" || !["none", "hint"].includes(v.assistance as string) || v.outcome === "partial") fail(`${path}.exact-answer method`);
+  } else if (v.checkId !== undefined || v.contentVersion !== undefined || v.response !== undefined) fail(`${path}.unexpected check fields`);
   if (v.artifactId !== undefined) id(v.artifactId, `${path}.artifactId`);
   if (v.retracts !== undefined) id(v.retracts, `${path}.retracts`);
   const c = object(v.context, `${path}.context`);
@@ -148,6 +157,11 @@ function evidence(value: unknown, path: string) {
     if (!Array.isArray(c.fretRegion) || c.fretRegion.length !== 2) fail(`${path}.fretRegion`);
     list(c.fretRegion, `${path}.fretRegion`, (f, p) => number(f, p, 0, 36, true));
     if (c.fretRegion[0] > c.fretRegion[1]) fail(`${path}.fretRegion order`);
+  }
+  if (v.method === "exact-answer") {
+    if (c.key === undefined || c.mode === undefined) fail(`${path}.checked answer context`);
+    const known = conceptCheckById(v.checkId as string);
+    if ((v.contentVersion === 1 && !known) || (known && v.contentVersion === known.version && !checkedAnswerIsValid(v as unknown as CompetencyEvidence))) fail(`${path}.checked answer`);
   }
 }
 function deletions(value: unknown, path: string) { for (const [key, time] of Object.entries(object(value, path))) { id(key, `${path} key`); date(time, `${path}.${key}`); } }

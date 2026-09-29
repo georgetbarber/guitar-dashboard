@@ -133,9 +133,31 @@ test("keeps local learning and Free Play available when the connection drops", a
 test("waits for real learning evidence before suggesting Strengthen work", async ({ page }) => {
   await completeDiagnostic(page);
   await learnViews(page).getByRole("button", { name: /Strengthen/ }).click();
-  await expect(page.getByRole("heading", { name: "Nothing to strengthen yet." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nothing to strengthen from playing yet." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Go to Continue" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Skill focuses" })).toHaveCount(0);
+});
+
+test("checks a named relationship, then offers changed-example recall on a later day", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-09-27T10:00:00Z") });
+  await completeDiagnostic(page);
+  await learnViews(page).getByRole("button", { name: /Strengthen/ }).click();
+  await expect(page.getByText("From C up to E, what interval connects the two notes?")).toBeHidden();
+  await page.locator(".concept-checks summary").click();
+  await expect(page.getByText("From C up to E, what interval connects the two notes?")).toBeVisible();
+  await expect(page.getByText("C to E spans 4 semitones")).toBeHidden();
+  await page.getByRole("radio", { name: "major third", exact: true }).check();
+  await page.getByRole("button", { name: "Check my answer" }).click();
+  await expect(page.getByText("Correct on this question")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nothing to strengthen from playing yet." })).toBeVisible();
+  await page.clock.fastForward("24:00:00");
+  await learnViews(page).getByRole("button", { name: /Continue/ }).click();
+  await expect(page.getByRole("heading", { name: "Can you name the relationship in a changed example?" })).toBeVisible();
+  await page.getByRole("button", { name: "Open the new question" }).click();
+  await expect(page.getByText("From A up to C, what interval connects the two notes?")).toBeVisible();
+  await page.getByRole("radio", { name: "minor third", exact: true }).check();
+  await page.getByRole("button", { name: "Check my answer" }).click();
+  await expect(page.getByText("Correct unaided answers on different days and changed examples are recorded.")).toBeVisible();
 });
 
 test("records hints separately from independent learning evidence", async ({ page }) => {

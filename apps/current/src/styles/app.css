@@ -258,6 +258,20 @@ textarea { min-height: 92px; resize: vertical; }
 .pilot-capabilities ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .65rem; padding: 0; list-style: none; }
 .pilot-capabilities li { display: grid; gap: .25rem; padding: .7rem; border-radius: 12px; background: var(--paper-2); }
 .pilot-capabilities li small { color: var(--muted); }
+.concept-checks { padding: .8rem; }
+.concept-checks summary { display: grid; gap: .2rem; min-height: 44px; cursor: pointer; }
+.concept-checks summary strong { font-size: 1rem; }
+.concept-checks:not([open]) .concept-check-body { display: none; }
+.concept-check-body { display: grid; gap: .7rem; padding-top: .7rem; }
+.concept-check-body > p { max-width: 65ch; }
+.concept-check-kinds, .concept-check-options { display: flex; flex-wrap: wrap; gap: .55rem; }
+.concept-check-kinds button { min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-2); color: var(--ink); }
+.concept-check-kinds button.is-active { border-color: var(--coral); background: var(--paper); }
+.concept-check-question { display: grid; gap: .7rem; padding: .8rem; border-radius: 12px; background: var(--paper-2); }
+.concept-check-question > strong { font-size: 1rem; }
+.concept-check-options label { display: inline-flex; align-items: center; gap: .35rem; min-height: 44px; padding: .4rem .6rem; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); cursor: pointer; }
+.concept-check-question > button { justify-self: start; }
+.concept-result { display: grid; gap: .55rem; }
 .mastery-grid article { display: grid; gap: .3rem; padding: .75rem; border-radius: 12px; background: var(--paper-2); }
 .mastery-grid article > strong { font-size: .72rem; text-transform: capitalize; }
 .mastery-grid small { color: var(--muted); font-size: .62rem; }

@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { ACTIVITIES, STAGES, unitById } from "../curriculum";
 import { liveObservations, masteryFor, masteryNextStep, nextUnit, recommendPractice, recommendedPracticeStrand, repairFor } from "../learning";
 import { useV8Store } from "../store";
+import { COMPETENCY_STRANDS } from "../types";
 import type { ActivityDefinition, CompetencyStrand, MasteryState, V8State } from "../types";
+import { ConceptChecks } from "../components/ConceptChecks";
 
 interface SkillFocus {
   strand: CompetencyStrand;
@@ -50,7 +52,8 @@ export function Practice() {
   const [mode, setMode] = useState<CompetencyStrand>(() => recommendedStrand ?? "sound");
   const selected = SKILL_FOCUSES.find((item) => item.strand === mode) ?? SKILL_FOCUSES[0];
   const current = nextUnit(state);
-  const observations = useMemo(() => liveObservations(state.evidence), [state.evidence]);
+  const observations = useMemo(() => liveObservations(state.evidence).filter((item) =>
+    COMPETENCY_STRANDS.some((strand) => item.competencyId.startsWith(`${strand}:`))), [state.evidence]);
   const observedCompetencyIds = useMemo(() => new Set(observations.map((item) => item.competencyId)), [observations]);
   const available = useMemo(() => ACTIVITIES.filter((activity) => {
     const unit = unitById(activity.unitId);
@@ -63,10 +66,11 @@ export function Practice() {
 
   return (
     <div className="page-stack">
-      <header className="page-header compact"><div><span className="eyebrow">Learn · Strengthen</span><h1>Strengthen what your attempts suggest.</h1><p>This area uses relationships you have already encountered. Suggestions respond to the results you reported, including where help was used. They are not a judgement of your playing.</p></div></header>
+      <header className="page-header compact"><div><span className="eyebrow">Learn · Strengthen</span><h1>Strengthen what your attempts suggest.</h1><p>Playing suggestions use relationships you have already encountered. They respond to the results you reported, including where help was used; they are not a judgement of your playing.</p></div></header>
+      <ConceptChecks />
 
       {!observations.length
-        ? <section className="strengthen-empty card"><div><span className="eyebrow">No learning evidence yet</span><h2>Nothing to strengthen yet.</h2><p>Complete your first attempt in Continue. Once the app has something real to respond to, this area will suggest a focused review and explain why.</p></div><button className="primary-action" onClick={() => navigate("today")}>Go to Continue</button></section>
+        ? <section className="strengthen-empty card"><div><span className="eyebrow">No playing-practice report yet</span><h2>Nothing to strengthen from playing yet.</h2><p>Complete your first musical attempt in Continue. A correct on-screen theory answer remains separate from what happened on the guitar.</p></div><button className="primary-action" onClick={() => navigate("today")}>Go to Continue</button></section>
         : <>
             <div className="practice-section-heading"><div><span className="eyebrow">Choose a skill</span><h2>Review by musical ability, not lesson category.</h2></div><p>The suggested focus is selected automatically; you can choose another skill whenever you have evidence for it.</p></div>
             <section className="practice-modes" aria-label="Skill focuses">

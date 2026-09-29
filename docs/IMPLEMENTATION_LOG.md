@@ -1390,3 +1390,19 @@ Activity reports now ask optionally which key, guitar and tempo were actually us
 Local verification: 284 unit/interface tests across 40 files; typecheck/production build, lint, formatting, guest-bundle and offline-shell checks passed. Browser journeys: 76 passed on desktop and phone-sized Chromium; the two production-only checks were skipped in the development run. Firebase emulator rules have a new valid/invalid local-date test, but no Java runtime is installed here, so that rule has **not** been emulator-verified. No guitar performance, microphone measurement, physical-phone trial, independent learner trial, CI run or deployment is claimed.
 
 **Next:** add optional placement sampling; exact-answer checks tied to named capabilities and content versions; distinct measured-pitch evidence only after suitable signal and latency handling; actual changed-example transfer; structured recording comparison; and real-input trials. The broader Phase 5 gate remains open.
+
+---
+
+## Phase 5B — first exact-answer checks and delayed conceptual recall (29 September 2026)
+
+**Status: four theory relationships implemented and locally verified; the wider Phase 5 assessment gate remains open.**
+
+Strengthen now offers an optional, initially folded-away check for an interval, scale degree, chord tone or Roman numeral. Each has two versioned examples drawn from the shared music-theory model, with changed notes, key or quality. The question and a non-answer-bearing hint are shown before submission; the answer and reasoning appear only afterward. These are written relationship checks. They do not play audio, listen to the learner, assess fretboard movement or complete a guitar-playing lesson.
+
+An answer record names the check, content version, chosen response, actual prompted key/mode, hint use, UTC timestamp and learner-local date. It carries the distinct `exact-answer` method; pilot and generic playing reports remain `self-reported`. The local validator checks the outcome against the answer for known question versions and rejects tampered current answers. A future question version may be retained through sync, but is not counted by this build. The Firestore rule admits only structurally complete exact-answer records and continues to reject unlabelled claims of measurement; it cannot itself calculate music-theory correctness. Older evidence records remain valid. A correction appends a retraction rather than rewriting an answer.
+
+A correct unaided answer on one day can make a changed example available in Continue on a later learner-local day. The app records when both were answered correctly without claiming broad mastery. Assisted answers, a repeated example on the same day, self-reported playing and future-version records cannot satisfy that recall condition. Failed later answers do not erase earlier correct work. Strengthen's playing recommendations remain based only on the playing-related strands, so a correct on-screen answer cannot masquerade as guitar skill.
+
+Local verification: 289 unit/interface tests across 41 files; build, lint, formatting, guest-bundle and offline-shell checks passed. The full browser run passed 78 desktop/phone-sized Chromium checks, with two production-only checks skipped in development mode. The Firebase emulator cases were extended for the new evidence shape, but this Mac still has no Java runtime, so the rules change is not emulator-verified here. No real guitar or microphone assessment was performed.
+
+**Next:** optional placement across sound control, ear, fretboard and chord knowledge; richer recall and transfer tied to actual changed examples; then microphone assessment and structured recording self-review with real-input trials. The checked-answer method must remain separate from any future measured-pitch or teacher-observed method.

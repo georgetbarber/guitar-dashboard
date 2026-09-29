@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { buildReturnSession, buildSession, daysSinceLastAttempt, liveObservations, nextUnit, pathSummary, sessionActivityComplete, unitProgress } from "../learning";
 import { activityById, CURRICULUM, STAGES } from "../curriculum";
 import { pilotCapabilitySnapshots } from "../capabilities";
+import { dueConceptKind } from "../conceptChecks";
 import { useV8Store } from "../store";
 
 export function Today() {
@@ -25,6 +26,7 @@ export function Today() {
   const reportedAttempts = new Set(sessionReports.map((item) => `${item.activityId}|${item.occurredAt}`)).size;
   const favorites = (state.favoriteActivityIds ?? []).map(activityById).filter((item) => item !== null);
   const pilotCapabilities = pilotCapabilitySnapshots(state);
+  const dueConcept = dueConceptKind(state.evidence);
   return (
     <div className="page-stack today-page">
       <section className="today-focus">
@@ -55,6 +57,7 @@ export function Today() {
       </section>
 
       {sessionComplete && <section className="card session-ending"><span className="eyebrow">Session finished · on your report</span><h2>You worked through this music.</h2><p>You reported {reportedAttempts} attempt{reportedAttempts === 1 ? "" : "s"} across {session.items.length} activities. This records your own observations; it does not claim to have heard or graded your playing.</p><p>Next useful step: repeat one phrase after a break, then try changing just one thing in Free Play.</p><button className="secondary-action" onClick={() => navigate("play")}>Try a Free Play variation</button></section>}
+      {dueConcept && <section className="card"><span className="eyebrow">Short recall check</span><h2>Can you name the relationship in a changed example?</h2><p>You answered a {dueConcept.replaceAll("-", " ")} question correctly on an earlier day. A new example is ready; a gap is a chance to check recall, not evidence that you forgot.</p><button className="secondary-action" onClick={() => navigate("practice")}>Open the new question</button></section>}
       {unit.id === "unit-01" && <section className="card pilot-capabilities"><span className="eyebrow">What this lesson can show</span><h2>One phrase, several different skills.</h2><p>The whole-phrase check is your report. It does not separately test your hearing, naming or fretboard location, and it does not measure your playing.</p><ul>{pilotCapabilities.map(({ capability, latestReport, status }) => <li key={capability.id}><strong>{capability.title}</strong><small>{capability.action} · {status === "not-checked" ? "No separate check yet" : `${latestReport?.outcome.replace("retry", "needs another pass")} reported for the full phrase on ${latestReport?.localDate ?? latestReport?.occurredAt.slice(0, 10)}`}</small></li>)}</ul></section>}
       <section className="session-plan card">
         <header><div><span className="eyebrow">{session.kind === "return" ? "Short return" : "Guided session"}</span><h2>{session.title}</h2></div><strong>{session.totalMinutes} min guidance</strong></header>

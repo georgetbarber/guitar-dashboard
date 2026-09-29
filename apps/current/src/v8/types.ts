@@ -20,16 +20,8 @@ export interface EvidenceContext {
   instrument?: Instrument;
 }
 
-/**
- * How an outcome was established.
- *
- * Only one value exists because only one thing happens today: the learner reads
- * the success criterion and reports what occurred. Nothing in V8 measures a
- * performance or checks an answer, and naming those here before they exist
- * would be the same overstatement this field is meant to remove. Phase 5 adds
- * them, and the rules and validator gain their values with them.
- */
-export type EvidenceMethod = "self-reported";
+/** A deterministic on-screen answer check is distinct from a report about playing. */
+export type EvidenceMethod = "self-reported" | "exact-answer";
 
 export interface CompetencyEvidence {
   id: string;
@@ -44,6 +36,10 @@ export interface CompetencyEvidence {
   activityId: string;
   /** Absent on records written before this field existed; those are all self-reported too. */
   method?: EvidenceMethod;
+  /** Exact-answer checks keep their question identity, version and selected answer. */
+  checkId?: string;
+  contentVersion?: number;
+  response?: string;
   /** The sketch this observation points at, for work the learner actually saved. */
   artifactId?: string;
   /**
@@ -159,7 +155,7 @@ export interface PilotAttempt {
   materialVersion: number;
   kind: "first-check" | "later-check";
   assistance: Assistance;
-  method: EvidenceMethod;
+  method: "self-reported";
   tempo: number;
   outcome: EvidenceOutcome;
   observation: string;
