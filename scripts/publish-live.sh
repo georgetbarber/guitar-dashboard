@@ -70,8 +70,10 @@ if [ "$BRANCH" = "main" ]; then
   echo "This will verify the app, commit every change shown above, push main to GitHub,"
   echo "deploy Firebase Hosting, and wait until the live update is complete."
 else
-  echo "Committed version to publish from '$BRANCH':"
+  echo "Committed branch tip to publish from '$BRANCH':"
   git -C "$ROOT" --no-pager log -1 --format='  %h %s' "$target_sha"
+  echo "Commits beyond local main:"
+  git -C "$ROOT" --no-pager log --oneline main.."$target_sha"
   echo
   if [ -n "$(git -C "$ROOT" status --porcelain)" ]; then
     echo "These ongoing edits will stay in this checkout and are excluded:"
