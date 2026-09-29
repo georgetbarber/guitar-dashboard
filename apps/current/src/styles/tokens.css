@@ -6,8 +6,10 @@
  * not the usages.
  *
  * Three typefaces, self-hosted so they never depend on the learner's device, and subset
- * to Latin-1 plus typographic punctuation to keep the offline shell inside its budget.
- * Music symbols (♭ ♯ →) fall back to the system serif, as they did before.
+ * to keep the offline shell inside its budget: Newsreader keeps Latin-1 for everything a
+ * learner reads or writes; the display and mono faces keep ASCII plus the symbols the app
+ * sets in them (° · × ø, dashes, quotes). Music symbols (♭ ♯ →) and any other character
+ * fall back to the system serif, as they did before.
  *   --display  Libre Caslon Display  names things (page titles, units, sketches, chords)
  *   --serif    Newsreader            everything you read
  *   --mono     IBM Plex Mono         facts, labels, controls, tab and fret numbers

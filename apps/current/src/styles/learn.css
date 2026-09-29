@@ -698,25 +698,29 @@
 
 /* Concept checks and the placement sampler: folded panels that open into a worked task. */
 .concept-checks,
-.placement-sampler {
+.placement-sampler,
+.pitch-check {
   min-width: 0;
   padding: var(--space-4) var(--space-5);
 }
 
 .concept-checks summary,
-.placement-sampler summary {
+.placement-sampler summary,
+.pitch-check summary {
   display: grid;
   align-content: center;
   gap: var(--space-1);
 }
 
 .concept-checks summary strong,
-.placement-sampler summary strong {
+.placement-sampler summary strong,
+.pitch-check summary strong {
   font: var(--font-subhead);
 }
 
 .concept-checks summary span,
-.placement-sampler summary span {
+.placement-sampler summary span,
+.pitch-check summary span {
   color: var(--ink-soft);
   font-size: var(--type-small);
 }
@@ -726,14 +730,16 @@
 }
 
 .concept-check-body,
-.placement-content {
+.placement-content,
+.pitch-check-body {
   display: grid;
   gap: var(--space-4);
   padding-top: var(--space-4);
 }
 
 .concept-check-body > p,
-.placement-content > p {
+.placement-content > p,
+.pitch-check-body > p {
   max-width: var(--measure);
   margin: 0;
 }
@@ -792,6 +798,17 @@
 .concept-check-options label:has(input:checked) {
   background: var(--piece-field);
   box-shadow: inset 0 calc(-1 * var(--rule-heavy)) 0 var(--ink);
+}
+
+/* A pitch-check result: a ruled note with the accent rule, never a verdict colour. */
+.pitch-check-result {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: var(--rule);
+  border-left: var(--rule-heavy) solid var(--piece-accent);
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .concept-result {

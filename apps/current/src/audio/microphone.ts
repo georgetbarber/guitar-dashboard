@@ -17,22 +17,29 @@ export async function openMicrophone(): Promise<MicrophoneSession> {
       autoGainControl: false
     }
   });
-  const audioContext = new AudioContext();
-  const analyser = audioContext.createAnalyser();
-  analyser.fftSize = 4096;
-  analyser.smoothingTimeConstant = 0.15;
-  audioContext.createMediaStreamSource(stream).connect(analyser);
-  const samples = new Float32Array(analyser.fftSize);
-  return {
-    stream,
-    audioContext,
-    analyser,
-    samples,
-    close: () => {
-      stream.getTracks().forEach((track) => track.stop());
-      void audioContext.close();
-    }
-  };
+  let audioContext: AudioContext | null = null;
+  try {
+    audioContext = new AudioContext();
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 4096;
+    analyser.smoothingTimeConstant = 0.15;
+    audioContext.createMediaStreamSource(stream).connect(analyser);
+    const samples = new Float32Array(analyser.fftSize);
+    return {
+      stream,
+      audioContext,
+      analyser,
+      samples,
+      close: () => {
+        stream.getTracks().forEach((track) => track.stop());
+        void audioContext?.close();
+      }
+    };
+  } catch (error) {
+    stream.getTracks().forEach((track) => track.stop());
+    if (audioContext) void audioContext.close();
+    throw error;
+  }
 }
 
 export interface TakeRecorder {
