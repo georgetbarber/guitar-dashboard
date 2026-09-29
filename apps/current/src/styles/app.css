@@ -288,6 +288,12 @@ textarea { min-height: 92px; resize: vertical; }
 .placement-manual { display: flex; flex-wrap: wrap; align-items: center; }
 .placement-manual p { width: 100%; }
 .placement-manual button[aria-pressed="true"] { border-color: var(--moss); background: var(--moss-soft); }
+.pitch-check { padding: .8rem; }
+.pitch-check summary { display: grid; gap: .2rem; min-height: 44px; cursor: pointer; }
+.pitch-check summary strong { font-size: 1rem; }
+.pitch-check-body { display: grid; gap: .7rem; padding-top: .7rem; }
+.pitch-check-body > p { max-width: 70ch; }
+.pitch-check-result { display: grid; gap: .35rem; padding: .8rem; border-radius: 12px; background: var(--paper-2); }
 .mastery-grid article { display: grid; gap: .3rem; padding: .75rem; border-radius: 12px; background: var(--paper-2); }
 .mastery-grid article > strong { font-size: .72rem; text-transform: capitalize; }
 .mastery-grid small { color: var(--muted); font-size: .62rem; }
@@ -774,7 +780,7 @@ textarea { min-height: 92px; resize: vertical; }
 }
 
 @media (max-width: 700px) {
-  .v8-shell { display: block; padding-bottom: 72px; }
+  .v8-shell { display: block; padding-bottom: 112px; }
   .primary-sidebar { display: none; }
   .v8-shell > main { padding: .6rem; }
   .mobile-nav { position: fixed; z-index: 60; right: .45rem; bottom: .45rem; left: .45rem; display: grid; grid-template-columns: repeat(4, 1fr); padding: .35rem; border: 1px solid rgba(255,255,255,.1); border-radius: 16px; color: #a9b8b1; background: color-mix(in srgb, var(--night) 94%, transparent); box-shadow: 0 15px 45px rgba(0,0,0,.3); backdrop-filter: blur(14px); }
@@ -930,7 +936,7 @@ textarea { min-height: 92px; resize: vertical; }
 }
 /* Short viewports, including a laptop at 200% zoom: keep the fixed navigation from taking a fifth of the screen. */
 @media (max-width: 700px) and (max-height: 500px) {
-  .v8-shell { padding-bottom: 52px; }
+  .v8-shell { padding-bottom: 92px; }
   .mobile-nav { bottom: .25rem; padding: .2rem; }
   .mobile-nav button { display: flex; gap: .35rem; align-items: center; justify-content: center; min-height: 40px; }
   .play-session-footer { bottom: 52px; }

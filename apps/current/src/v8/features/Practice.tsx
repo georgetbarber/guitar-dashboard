@@ -5,6 +5,7 @@ import { useV8Store } from "../store";
 import { COMPETENCY_STRANDS } from "../types";
 import type { ActivityDefinition, CompetencyStrand, MasteryState, V8State } from "../types";
 import { ConceptChecks } from "../components/ConceptChecks";
+import { PitchCheck } from "../components/PitchCheck";
 
 interface SkillFocus {
   strand: CompetencyStrand;
@@ -68,6 +69,7 @@ export function Practice() {
     <div className="page-stack">
       <header className="page-header compact"><div><span className="eyebrow">Learn · Strengthen</span><h1>Strengthen what your attempts suggest.</h1><p>Playing suggestions use relationships you have already encountered. They respond to the results you reported, including where help was used; they are not a judgement of your playing.</p></div></header>
       <ConceptChecks />
+      <PitchCheck />
 
       {!observations.length
         ? <section className="strengthen-empty card"><div><span className="eyebrow">No playing-practice report yet</span><h2>Nothing to strengthen from playing yet.</h2><p>Complete your first musical attempt in Continue. A correct on-screen theory answer remains separate from what happened on the guitar.</p></div><button className="primary-action" onClick={() => navigate("today")}>Go to Continue</button></section>

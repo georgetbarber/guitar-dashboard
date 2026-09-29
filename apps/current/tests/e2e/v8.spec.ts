@@ -463,6 +463,67 @@ test("a denied microphone leaves the pilot lesson playable and private", async (
   await expect(page.getByRole("heading", { name: "Turn one relationship into music." })).toBeVisible();
 });
 
+test("a denied optional pitch check remains uncertain and does not create playing evidence", async ({ page, context }) => {
+  await context.clearPermissions();
+  await page.addInitScript(() => Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: () => Promise.reject(new DOMException("Permission denied", "NotAllowedError")) } }));
+  await completeDiagnostic(page);
+  await learnViews(page).getByRole("button", { name: /Strengthen/ }).click();
+  await page.locator(".pitch-check summary").click();
+  await page.getByRole("button", { name: "Use microphone for one note" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: /microphone was unavailable or permission was declined/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nothing to strengthen from playing yet." })).toBeVisible();
+  await learnViews(page).getByRole("button", { name: /Course map/ }).click();
+  await expect(page.locator(".path-total strong")).toHaveText("0");
+});
+
+test("a clean simulated note yields only a temporary pitch estimate", async ({ page }) => {
+  await page.addInitScript(() => {
+    const targetHz = 440 * 2 ** ((64 - 69) / 12);
+    let sampleIndex = 0;
+    let stopped = 0;
+    Object.defineProperty(window, "__pitchMicStops", { get: () => stopped });
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: async () => ({ getTracks: () => [{ stop: () => { stopped += 1; } }] }) },
+    });
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: class {
+        sampleRate = 48_000;
+        state = "running";
+        createAnalyser() {
+          return {
+            fftSize: 4096,
+            smoothingTimeConstant: 0,
+            getFloatTimeDomainData(samples: Float32Array) {
+              for (let index = 0; index < samples.length; index += 1) {
+                const time = (sampleIndex + index) / 48_000;
+                samples[index] = 0.2 * Math.sin(2 * Math.PI * targetHz * time)
+                  + 0.07 * Math.sin(4 * Math.PI * targetHz * time);
+              }
+              sampleIndex += samples.length;
+            },
+          };
+        }
+        createMediaStreamSource() { return { connect: () => undefined }; }
+        close() { return Promise.resolve(); }
+      },
+    });
+  });
+  await completeDiagnostic(page);
+  await learnViews(page).getByRole("button", { name: /Strengthen/ }).click();
+  await page.locator(".pitch-check summary").click();
+  await page.getByRole("button", { name: "Use microphone for one note" }).click();
+  await expect(page.getByText("Pitch-only estimate")).toBeVisible();
+  await expect(page.locator(".pitch-check-result")).toContainText("near E4");
+  await expect(page.getByRole("heading", { name: "Nothing to strengthen from playing yet." })).toBeVisible();
+  expect(await page.evaluate(() => (window as typeof window & { __pitchMicStops: number }).__pitchMicStops)).toBe(1);
+  await page.reload();
+  await expect(page.locator(".pitch-check-result")).toHaveCount(0);
+  await learnViews(page).getByRole("button", { name: /Course map/ }).click();
+  await expect(page.locator(".path-total strong")).toHaveText("0");
+});
+
 test("exports a complete local backup", async ({ page }) => {
   await completeDiagnostic(page);
   await page.getByRole("button", { name: /settings and (?:data|sync)/i }).filter({ visible: true }).click();
