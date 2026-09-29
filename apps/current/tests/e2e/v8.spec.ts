@@ -36,6 +36,45 @@ test("first launch explains the learning contract before entering the app", asyn
   await expect(page.getByText("acoustic", { exact: true }).first()).toBeVisible();
 });
 
+test("samples starting skills separately and keeps the learner's starting choice", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Build freedom from sound, time and relationships." })).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.locator(".placement-sampler summary").click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  const ear = page.locator('.placement-domain[aria-label="Hear an interval change"]');
+  await expect(ear.getByRole("radio", { name: "wider" })).toBeDisabled();
+  await ear.getByRole("button", { name: "Play both note pairs" }).click();
+  await expect(ear.getByRole("radio", { name: "wider" })).toBeDisabled();
+  await ear.getByRole("radio", { name: "wider" }).check();
+  await ear.getByRole("button", { name: "Check this answer" }).click();
+  await expect(ear.getByText("Correct on this question")).toBeVisible();
+  await expect(ear.getByText("Saved on this device.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Suggested start: Unit 1" })).toBeVisible();
+  await page.getByRole("button", { name: "Start your path" }).click();
+  await expect(page.getByRole("heading", { name: "Turn one relationship into music." })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Turn one relationship into music." })).toBeVisible();
+  await learnViews(page).getByRole("button", { name: /Course map/ }).click();
+  await expect(page.locator(".path-total strong")).toHaveText("0");
+  await page.locator(".placement-sampler summary").click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await expect(page.locator(".placement-results")).toContainText("One on-screen answer checked correct");
+  // Browser clicks simulate learner reports; they are not observed guitar performance.
+  await page.locator('.placement-domain[aria-label="Pulse through silence"]').getByRole("button", { name: "Play clicks and silence" }).click();
+  await expect(page.locator('.placement-domain[aria-label="Pulse through silence"]').getByRole("button", { name: "I could do this" })).toBeDisabled();
+  await page.locator('.placement-domain[aria-label="Pulse through silence"]').getByRole("button", { name: "I could do this" }).click();
+  await page.locator('.placement-domain[aria-label="Note release"]').getByRole("button", { name: "I could do this" }).click();
+  await expect(page.getByRole("heading", { name: "Suggested start: Unit 3" })).toBeVisible();
+  await page.getByRole("button", { name: "Use this suggested start" }).click();
+  await expect(page.getByRole("button", { name: "Start at Unit 3" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".unit-card").nth(2).locator(".unit-status")).toContainText("Current");
+  await expect(page.locator(".path-total strong")).toHaveText("0");
+  await learnViews(page).getByRole("button", { name: /Continue/ }).click();
+  await expect(page.getByLabel("Current course location")).toContainText("Current unit · 3 of 6");
+});
+
 test("keeps attempted conditions and pilot capability reports distinct", async ({ page }) => {
   await completeDiagnostic(page);
   await expect(page.getByRole("heading", { name: "One phrase, several different skills." })).toBeVisible();

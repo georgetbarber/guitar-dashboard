@@ -1,8 +1,9 @@
 import { CURRICULUM, STAGES } from "../curriculum";
-import { nextUnit, unitProgress } from "../learning";
+import { buildSession, nextUnit, unitProgress } from "../learning";
 import { useV8Store } from "../store";
 import type { ActivityKind, CurriculumUnit } from "../types";
 import { OfflineLessonStatus } from "../components/OfflineLessonStatus";
+import { PlacementSampler } from "../components/PlacementSampler";
 
 const ACTIVITY_LABELS: Record<ActivityKind, string> = {
   "listen-compare": "Listen",
@@ -28,10 +29,17 @@ export function Path() {
     .find((candidate) => candidate && unitProgress(state, candidate.id) < 100);
   const activeLocked = isLocked(active);
   const activeBlocker = blockerFor(active);
+  const chooseStart = (startingBaseline: typeof state.settings.startingBaseline) => {
+    if (startingBaseline === state.settings.startingBaseline) return;
+    const settings = { ...state.settings, startingBaseline };
+    dispatch({ type: "updateSettings", settings: { startingBaseline } });
+    dispatch({ type: "beginSession", plan: buildSession({ ...state, settings, sessionPlan: null }) });
+  };
 
   return (
     <div className="page-stack">
       <header className="page-header"><div><span className="eyebrow">Learn · Course map</span><h1>See how your learning connects.</h1><p>Eight stages contain forty-eight units. Each unit develops one musical outcome through short listening, playing, understanding, creative and reflective activities. Dates never gate your progress.</p></div><div className="path-total"><strong>{CURRICULUM.filter((unit) => unitProgress(state, unit.id) === 100).length}</strong><span>of 48 units</span></div></header>
+      <PlacementSampler selectedBaseline={state.settings.startingBaseline} onChoose={chooseStart} showChoices />
       <div className="path-layout">
         <nav className="stage-list card" aria-label="Curriculum stages">
           <header><strong>Stages</strong><small>Choose a chapter to see its units.</small></header>

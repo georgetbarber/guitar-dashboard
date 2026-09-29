@@ -272,6 +272,22 @@ textarea { min-height: 92px; resize: vertical; }
 .concept-check-options label { display: inline-flex; align-items: center; gap: .35rem; min-height: 44px; padding: .4rem .6rem; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); cursor: pointer; }
 .concept-check-question > button { justify-self: start; }
 .concept-result { display: grid; gap: .55rem; }
+.placement-sampler { padding: .8rem; min-width: 0; }
+.diagnostic-choices + .placement-sampler { margin-top: 1rem; }
+.placement-sampler summary { display: grid; gap: .2rem; min-height: 44px; cursor: pointer; }
+.placement-sampler summary span { color: var(--muted); font-size: .75rem; }
+.placement-content { display: grid; gap: 1rem; padding-top: .75rem; }
+.placement-content > p { max-width: 68ch; }
+.placement-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: .55rem; }
+.placement-results > div, .placement-domain, .placement-suggestion, .placement-manual { display: grid; gap: .65rem; min-width: 0; padding: .85rem; border-radius: 12px; background: var(--paper-2); }
+.placement-results > div { gap: .25rem; }
+.placement-results small, .placement-domain small { color: var(--muted); }
+.placement-domain h4, .placement-suggestion h4 { margin: 0; }
+.placement-domain > button, .placement-suggestion > button { justify-self: start; }
+.placement-domain .concept-check-options { margin: .2rem 0; }
+.placement-manual { display: flex; flex-wrap: wrap; align-items: center; }
+.placement-manual p { width: 100%; }
+.placement-manual button[aria-pressed="true"] { border-color: var(--moss); background: var(--moss-soft); }
 .mastery-grid article { display: grid; gap: .3rem; padding: .75rem; border-radius: 12px; background: var(--paper-2); }
 .mastery-grid article > strong { font-size: .72rem; text-transform: capitalize; }
 .mastery-grid small { color: var(--muted); font-size: .62rem; }

@@ -1,5 +1,7 @@
-import { buildChords, buildScale, createContext, intervalName } from "../core/music/theory";
+import { buildChords, buildScale, createContext, intervalName, noteName } from "../core/music/theory";
 import type { ModeId } from "../core/music/types";
+import { positionMidi, STANDARD_TUNING_MIDI } from "./structuredMusic";
+import type { GuitarString } from "./structuredMusic";
 import { localDateAt } from "./dates";
 import { newId } from "./identity";
 import { liveObservations } from "./learning";
@@ -7,11 +9,12 @@ import type { CompetencyEvidence } from "./types";
 
 export const CONCEPT_KINDS = ["interval", "degree", "chord-tone", "roman-numeral"] as const;
 export type ConceptKind = (typeof CONCEPT_KINDS)[number];
+export type PlacementCheckKind = "placement-ear" | "placement-fretboard";
 
 export interface ConceptCheck {
   id: string;
   version: 1;
-  kind: ConceptKind;
+  kind: ConceptKind | PlacementCheckKind;
   capabilityId: string;
   key: string;
   mode: ModeId;
@@ -20,6 +23,8 @@ export interface ConceptCheck {
   answer: string;
   hint: string;
   explanation: string;
+  /** Sound is a question stimulus, never an answer-bearing label. */
+  audioPairs?: readonly [readonly [number, number], readonly [number, number]];
 }
 
 function check(kind: ConceptKind, variant: number, key: string, mode: ModeId): ConceptCheck {
@@ -85,8 +90,47 @@ export const CONCEPT_CHECKS: readonly ConceptCheck[] = [
   check("roman-numeral", 2, "A", "minor"),
 ];
 
+function fretboardCheck(variant: number, key: string, string: GuitarString, fret: number): ConceptCheck {
+  const context = createContext(key, "major");
+  const midi = positionMidi(STANDARD_TUNING_MIDI, { string, fret });
+  const pitch = noteName(midi % 12);
+  const openName = noteName(STANDARD_TUNING_MIDI[6 - string] % 12);
+  const stringLabel = `${string === 1 ? "high " : string === 6 ? "low " : ""}${openName} string (string ${string})`;
+  const degree = buildScale(context).find((tone) => tone.pitchClass === midi % 12)?.degreeLabel;
+  if (!degree) throw new Error("The placement note must belong to its named key.");
+  return {
+    id: `placement-fretboard-${variant}`, version: 1, kind: "placement-fretboard",
+    capabilityId: "knowledge.fretboard-degree", key, mode: "major",
+    question: `In ${key} major, what scale degree is at fret ${fret} on the ${stringLabel} in standard tuning?`,
+    choices: ["1", "3", "5", "7"], answer: degree,
+    hint: "Count up from the open string, then compare that note with the key's home note.",
+    explanation: `String ${string} at fret ${fret} is ${pitch}; in ${key} major that is degree ${degree}. This checks a map answer, not finding it with your hand.`,
+  };
+}
+
+export const PLACEMENT_CHECKS: readonly ConceptCheck[] = [
+  {
+    id: "placement-ear-1", version: 1, kind: "placement-ear", capabilityId: "knowledge.ear-interval-contrast",
+    key: "C", mode: "major", question: "Using C major as a reference, listen to two pairs beginning on C. How does the second span compare?",
+    choices: ["narrower", "wider", "the same"], answer: "wider",
+    hint: "Attend to the distance between each pair's notes, not their loudness or timing.",
+    explanation: "The first pair rises three semitones; the second rises four. The second interval is wider. An answer alone cannot prove what you heard.",
+    audioPairs: [[60, 63], [60, 64]],
+  },
+  {
+    id: "placement-ear-2", version: 1, kind: "placement-ear", capabilityId: "knowledge.ear-interval-contrast",
+    key: "D", mode: "major", question: "Using D major as a reference, listen to two pairs beginning on D. How does the second span compare?",
+    choices: ["narrower", "wider", "the same"], answer: "narrower",
+    hint: "Attend to the distance between each pair's notes, not their loudness or timing.",
+    explanation: "The first pair rises four semitones; the second rises three. The second interval is narrower. An answer alone cannot prove what you heard.",
+    audioPairs: [[62, 66], [62, 65]],
+  },
+  fretboardCheck(1, "C", 1, 3),
+  fretboardCheck(2, "D", 2, 3),
+];
+
 export function conceptCheckById(id: string): ConceptCheck | undefined {
-  return CONCEPT_CHECKS.find((item) => item.id === id);
+  return [...CONCEPT_CHECKS, ...PLACEMENT_CHECKS].find((item) => item.id === id);
 }
 
 export function checkedAnswerIsValid(item: CompetencyEvidence): boolean {
