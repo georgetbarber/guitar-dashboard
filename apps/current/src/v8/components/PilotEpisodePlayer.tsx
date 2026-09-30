@@ -5,7 +5,7 @@ import { newId } from "../identity";
 import { localDateAt } from "../dates";
 import { createEvidence } from "../learning";
 import { ONE_NOTE_ANSWER_SHIFT, ONE_NOTE_QUESTION_ANSWER, PILOT_EPISODE } from "../pilotEpisode";
-import { firstPilotSuccess, isLaterCheckDue, pilotAttempts, pilotLaterSuccess } from "../pilotProgress";
+import { firstPilotSuccess, isLaterCheckDue, newPilotCursor, pilotAttempts, pilotLaterSuccess } from "../pilotProgress";
 import { PILOT_REVIEW_FOCUSES, PILOT_REVIEW_FOCUS_IDS, pilotReviews } from "../pilotReview";
 import { useV8Store } from "../store";
 import type { EvidenceOutcome, PilotAttempt, PilotCursor, PilotListeningReview, PilotReviewFocus } from "../types";
@@ -15,21 +15,6 @@ import { useUpdateHold } from "./UpdateNotice";
 
 const MATERIAL = ONE_NOTE_QUESTION_ANSWER;
 const RHYTHM_ACTIVITY_ID = "unit-01-rhythm";
-
-function newCursor(): PilotCursor {
-  return {
-    id: newId("episode-session"),
-    episodeId: PILOT_EPISODE.id,
-    episodeVersion: PILOT_EPISODE.version,
-    materialId: MATERIAL.id,
-    materialVersion: MATERIAL.version,
-    step: "learn",
-    sectionId: "whole",
-    tempo: MATERIAL.tempo.default,
-    assistance: "none",
-    updatedAt: new Date().toISOString(),
-  };
-}
 
 export function PilotEpisodePlayer({
   onClose,
@@ -73,7 +58,7 @@ export function PilotEpisodePlayer({
   const recordingAttemptRef = useRef(false);
 
   useEffect(() => {
-    if (!cursor) dispatch({ type: "beginPilot", cursor: newCursor() });
+    if (!cursor) dispatch({ type: "beginPilot", cursor: newPilotCursor() });
   }, [cursor, dispatch]);
   useEffect(() => {
     const refresh = () => setNow(new Date());
@@ -169,6 +154,7 @@ export function PilotEpisodePlayer({
     );
   const attempts = pilotAttempts(state);
   const reviews = pilotReviews(state);
+  const activeReview = reviews.find((review) => review.id === cursor.reviewId);
   const firstSuccess = firstPilotSuccess(attempts);
   const laterSuccess = pilotLaterSuccess(attempts);
   const due = isLaterCheckDue(firstSuccess, now);
@@ -202,6 +188,7 @@ export function PilotEpisodePlayer({
         tempo: step === "return" ? PILOT_EPISODE.delayedCheck.tempo : cursor.tempo,
         assistance: "none",
         attemptId: step === "try" || step === "return" ? newId("episode-attempt") : undefined,
+        reviewId: step === "learn" || step === "vary" || step === "return" ? undefined : cursor.reviewId,
       },
     });
   };
@@ -463,6 +450,11 @@ export function PilotEpisodePlayer({
                   ? PILOT_EPISODE.delayedCheck.instruction
                   : move?.instruction}
           </p>
+          {activeReview && <aside className="pilot-review-cue">
+            <strong>Your change to test from the last written review</strong>
+            <p>{activeReview.nextChange}</p>
+            <small>This is your own plan, not a finding from the microphone. Keep it in mind as you practise; you can make a fresh temporary take afterward.</small>
+          </aside>}
           <PilotStudy
             material={cursor.step === "vary" ? ONE_NOTE_ANSWER_SHIFT : MATERIAL}
             tempo={cursor.tempo}
@@ -550,6 +542,14 @@ export function PilotEpisodePlayer({
           {cursor.step === "learn" && (
             <button className="secondary-action" onClick={() => changeStep("practise")}>
               Practise with the count →
+            </button>
+          )}
+          {cursor.step === "practise" && (
+            cursor.sectionId !== "whole" && <button className="secondary-action" onClick={() => {
+              stop();
+              dispatch({ type: "updatePilot", patch: { sectionId: "whole" } });
+            }}>
+              Return to both bars →
             </button>
           )}
           {cursor.step === "practise" && (
@@ -773,7 +773,7 @@ export function PilotEpisodePlayer({
               setPlayed(false);
               setObservation("");
               setEvidenceIds([]);
-              dispatch({ type: "restartPilot", cursor: newCursor() });
+              dispatch({ type: "restartPilot", cursor: newPilotCursor() });
             }}
           >
             Start the pilot again

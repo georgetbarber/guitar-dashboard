@@ -142,6 +142,8 @@ export interface PilotCursor {
   /** Generated when a check begins and reused if the record action is retried. */
   attemptId?: string;
   repairId?: string;
+  /** A learner's saved review whose next change they chose to practise. */
+  reviewId?: string;
   updatedAt: string;
 }
 

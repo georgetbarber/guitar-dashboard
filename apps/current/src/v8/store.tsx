@@ -84,7 +84,7 @@ type Action =
   | { type: "recordActivity"; activityId: string; evidence: CompetencyEvidence[]; reflection?: string }
   | { type: "beginPilot"; cursor: PilotCursor }
   | { type: "restartPilot"; cursor: PilotCursor }
-  | { type: "updatePilot"; patch: Partial<Pick<PilotCursor, "step" | "sectionId" | "tempo" | "repairId" | "assistance" | "attemptId">> }
+  | { type: "updatePilot"; patch: Partial<Pick<PilotCursor, "step" | "sectionId" | "tempo" | "repairId" | "assistance" | "attemptId" | "reviewId">> }
   | { type: "recordPilotAttempt"; attempt: PilotAttempt }
   | { type: "recordPilotReview"; review: PilotListeningReview }
   | { type: "savePilotVariation"; variation: PilotVariation }
@@ -194,6 +194,7 @@ function reducer(state: V8State, action: Action): V8State {
         pilotAttempts: [...(state.pilotAttempts ?? []), action.attempt],
         pilotCursor: state.pilotCursor ? { ...state.pilotCursor,
           step: action.attempt.kind === "later-check" ? "return" : action.attempt.outcome === "successful" ? "vary" : "repair",
+          reviewId: action.attempt.outcome === "successful" ? undefined : state.pilotCursor.reviewId,
           updatedAt: changedAt } : state.pilotCursor,
         updatedAt: changedAt
       };

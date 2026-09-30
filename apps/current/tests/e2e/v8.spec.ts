@@ -175,6 +175,7 @@ test("waits for real learning evidence before suggesting Strengthen work", async
   await expect(page.getByRole("heading", { name: "Nothing to strengthen from playing yet." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Go to Continue" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Skill focuses" })).toHaveCount(0);
+  await expect(page.locator(".practice-review")).toHaveCount(0);
 });
 
 test("checks a named relationship, then offers changed-example recall on a later day", async ({ page }) => {
@@ -514,6 +515,36 @@ test("keeps a focused recording self-review without keeping audio or advancing p
   await expect(page.locator(".pilot-review-history")).toContainText("The final rest still seemed to ring.");
   await expect(page.locator(".pilot-review-history")).toContainText("Lift the picking hand at the final rest.");
   await expect(page.getByRole("button", { name: "Record a temporary take" })).toBeEnabled();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await learnViews(page).getByRole("button", { name: /Course map/ }).click();
+  await expect(page.locator(".path-total strong")).toHaveText("0");
+  await learnViews(page).getByRole("button", { name: /Strengthen/ }).click();
+  const nextPractice = page.locator(".practice-review");
+  await expect(nextPractice).toContainText("Lift the picking hand at the final rest.");
+  await expect(nextPractice).toContainText("Rehearse the first sound and rest at 50 BPM");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  await nextPractice.getByRole("button", { name: "Try this change in the lesson" }).click();
+  await expect(page.getByRole("heading", { name: "My note rings through the rest." })).toBeVisible();
+  await expect(page.locator(".pilot-review-cue")).toContainText("Lift the picking hand at the final rest.");
+  await page.getByRole("button", { name: "Return to both bars" }).click();
+  await expect(page.getByRole("heading", { name: "Play beside the count" })).toBeVisible();
+  await expect(page.locator(".pilot-review-cue")).toContainText("Lift the picking hand at the final rest.");
+  await page.getByRole("button", { name: "Record a temporary take" }).click();
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  const secondReview = page.locator(".pilot-review-form");
+  await secondReview.getByLabel("Listening focus").selectOption("tone");
+  await secondReview.getByLabel("What were you trying to make the phrase do?").fill("Give the question a softer touch.");
+  await secondReview.getByLabel(/Which attack had the sound you wanted/).fill("The first attack sounded too sharp.");
+  await secondReview.getByLabel("What one change will you test next?").fill("Pluck the first note more gently.");
+  await page.getByRole("button", { name: "Discard take" }).click();
+  await secondReview.getByRole("button", { name: "Save written review" }).click();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await expect(page.locator(".practice-review")).toContainText("Pluck the first note more gently.");
+  await page.locator(".practice-review").getByRole("button", { name: "Try this change in the lesson" }).click();
+  await expect(page.getByRole("heading", { name: "Play beside the count" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Play" })).toHaveValue("question");
+  await page.getByRole("button", { name: "Return to both bars" }).click();
+  await expect(page.getByRole("combobox", { name: "Play" })).toHaveValue("whole");
   await page.getByRole("button", { name: "Close lesson" }).click();
   await learnViews(page).getByRole("button", { name: /Course map/ }).click();
   await expect(page.locator(".path-total strong")).toHaveText("0");

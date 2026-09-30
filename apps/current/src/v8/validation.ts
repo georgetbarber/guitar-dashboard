@@ -179,6 +179,7 @@ function pilotCursor(value: unknown, path: string) {
   if (v.attemptId !== undefined) id(v.attemptId, `${path}.attemptId`);
   number(v.tempo, `${path}.tempo`, 20, 400, true);
   if (v.repairId !== undefined) id(v.repairId, `${path}.repairId`);
+  if (v.reviewId !== undefined) id(v.reviewId, `${path}.reviewId`);
   date(v.updatedAt, `${path}.updatedAt`);
 }
 function pilotAttempt(value: unknown, path: string) {

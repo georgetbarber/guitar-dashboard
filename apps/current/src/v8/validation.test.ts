@@ -16,6 +16,7 @@ import { DEFAULT_STATE } from "./store";
 import { acceptEvidence, acceptProfile, acceptSketches, cloudProfile, describeRejected } from "./sync";
 import { createEvidence } from "./learning";
 import { ONE_NOTE_ANSWER_SHIFT, ONE_NOTE_QUESTION_ANSWER, PILOT_EPISODE } from "./pilotEpisode";
+import { newPilotCursor } from "./pilotProgress";
 import type { PilotListeningReview, V8State } from "./types";
 
 async function resetDatabase() {
@@ -106,12 +107,14 @@ describe("the stored workspace is validated before it is trusted (B08)", () => {
       nextChange: "Lift my picking hand at that rest.", method: "self-reported",
       createdAt: "2026-09-30T10:02:00.000Z", localDate: "2026-09-30",
     };
-    const state = { ...validState(), pilotReviews: [review] };
+    const state = { ...validState(), pilotReviews: [review],
+      pilotCursor: { ...newPilotCursor(), reviewId: review.id } };
     await savePersistedState(state, "anonymous");
     const loaded = await loadWorkspace("anonymous");
     expect(loaded.status).toBe("ok");
     if (loaded.status === "ok") {
       expect(loaded.state.pilotReviews).toEqual([review]);
+      expect(loaded.state.pilotCursor?.reviewId).toBe(review.id);
       expect(loaded.state.evidence).toEqual([]);
       expect(cloudProfile(loaded.state)).not.toHaveProperty("pilotReviews");
     }
