@@ -36,8 +36,10 @@ stays on that device by default. From a finished project, a signed-in learner ca
 explicitly select one individual take to make available on their own devices;
 unselected audio never uploads. Settings reports retained-audio usage and can
 clear device copies without touching learning progress. Microphone feedback
-remains limited to reliable monophonic pitch, separated rhythm attacks and
-recorded self-comparison; V8 does not claim polyphonic performance recognition.
+offers temporary pitch-only estimates for one sustained note and short note
+sequences separated by clear silence. It has not been checked with a real guitar
+and phone, and it does not assess timing, technique or polyphonic playing.
+Recorded self-comparison remains the learner's own observation.
 There are no analytics.
 
 The private live deployment is available at
@@ -72,7 +74,7 @@ Lint checks the maintained application source and applies additional promise and
 
 Both hosting workflows run the desktop and phone browser journeys before publication. The live workflow serialises publication without cancelling an active deployment and refuses a checkout that is no longer current `main`. These configured checks do not constitute evidence of a successful CI run.
 
-The guest-bundle check follows the production manifest's static imports and fails if startup directly imports the account or Firebase chunk. An older installation with an account workspace or existing guest learning still checks for a retained login once; later signed-out visits skip that code. The service worker currently precaches all JavaScript, including account code; cache policy and transfer-size work remain in Phase 2B.
+The guest-bundle check follows the production manifest's static imports and fails if startup directly imports the account or Firebase chunk. An older installation with an account workspace or existing guest learning still checks for a retained login once; later signed-out visits skip that code. The service worker currently precaches all JavaScript, including account code; that cache cost remains a measured release concern.
 
 The app runs at [http://localhost:4184](http://localhost:4184).
 

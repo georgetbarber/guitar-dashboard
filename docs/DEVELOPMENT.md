@@ -2,8 +2,9 @@
 
 ## Requirements
 
-- Node.js 20 or newer
+- Node.js 22.22.2 or newer in the Node 22 release line
 - npm
+- Java 21 for the Firebase rules emulator
 - Python 3 only for the original prototype validator
 - A Chromium-compatible browser for end-to-end tests
 
@@ -11,7 +12,7 @@
 
 ```bash
 cd apps/current
-npm install
+npm ci
 npm run dev
 ```
 

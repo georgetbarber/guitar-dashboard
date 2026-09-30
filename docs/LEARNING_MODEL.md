@@ -90,6 +90,10 @@ root, building a scale or triad, identifying a heard relationship, choosing a
 chord tone, or playing a shape. Click counts and elapsed time are not sufficient
 evidence by themselves.
 
-The current app records attempts, correctness, streak, context, due date, and a
-simple expanding review interval. This is useful scheduling evidence, not a
-claim of complete musical mastery.
+The current app keeps self-reported playing attempts separate from checked
+on-screen theory answers and written listening reviews. Narrow concept checks
+can be due again after a local-day delay and use changed examples; they do not
+prove that a guitar action happened. The microphone's temporary pitch-only
+estimates are not retained as learning evidence. Physical skill remains
+unverified until an appropriate real-input assessment exists. No general
+streak or expanding mastery interval is implemented.
