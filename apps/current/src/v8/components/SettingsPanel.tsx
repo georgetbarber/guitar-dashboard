@@ -47,7 +47,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   };
   const protectOfflineData = async () => {
     const current = await storagePersistenceStatus();
-    if (current) { setMessage("This browser already protects Guitar Academy's offline data from routine storage cleanup."); return; }
+    if (current) { setMessage("This browser already protects Interval's offline data from routine storage cleanup."); return; }
     const granted = await requestPersistentStorage();
     setMessage(granted === null ? "This browser does not offer persistent offline storage." : granted ? "Offline learning data is now protected from routine browser cleanup." : "The browser did not grant protected storage. Complete backups remain the safest long-term copy.");
   };
@@ -59,8 +59,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           <div><span className="eyebrow">Across your devices</span><h3>{cloud.user ? `Signed in as ${cloud.user.email ?? "your Google account"}` : cloud.configured ? "Sign in to synchronise" : "Sync is not set up"}</h3><p>{cloud.message}</p></div>
           {cloud.user ? <button className="secondary-action" disabled={Boolean(restore || restoreBusy)} onClick={() => { if (confirm("Sign out and open this device's separate guest workspace? The signed-in account's offline history will remain isolated on this device.")) void cloud.signOut(); }}>Sign out</button> : cloud.configured ? <button className="primary-action" disabled={Boolean(restore || restoreBusy)} onClick={() => void cloud.signIn().catch(() => undefined)}>{cloud.signInReady ? "Open Google sign-in" : "Prepare Google sign-in"}</button> : null}
         </section>
-        <section className="install-panel" aria-label="Install Guitar Academy">
-          <div><span className="eyebrow">Pixel and offline use</span><h3>{standalone ? "Opened in app mode" : "Install Guitar Academy"}</h3><p>The app shell works offline. Learning changes queue safely and synchronise when the connection returns.</p></div>
+        <section className="install-panel" aria-label="Install Interval">
+          <div><span className="eyebrow">Pixel and offline use</span><h3>{standalone ? "Opened in app mode" : "Install Interval"}</h3><p>The app shell works offline. Learning changes queue safely and synchronise when the connection returns.</p></div>
           {standalone && <span>If you removed the installation while this window was open, close it completely. Then open <strong>learn-the-guitar.web.app</strong> in Chrome and choose <strong>Install app</strong>.</span>}
           {!standalone && installPrompt && <button className="primary-action" onClick={() => void showInstallPrompt()}>Install app</button>}
           {!standalone && !installPrompt && <span>In Chrome, open the browser menu and choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.</span>}
@@ -85,11 +85,11 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             setMessage("All retained recordings were removed. Progress and sketches were not changed.");
           }}>Delete retained recordings</button>
           <button className="danger-action" disabled={Boolean(restore || restoreBusy)} onClick={async () => {
-            if (!confirm("Erase every Guitar Academy workspace, recording and offline account copy from this device? Cloud data will remain. Export a backup first if you need one.")) return;
+            if (!confirm("Erase every Interval workspace, recording and offline account copy from this device? Cloud data will remain. Export a backup first if you need one.")) return;
             if (!confirm("This device data cannot be recovered after erasing. Continue?")) return;
             try { await cloud.eraseDeviceData(); }
             catch (error) { setMessage(error instanceof Error ? error.message : "This device could not be erased."); }
-          }}>Erase all Guitar Academy data from this device</button>
+          }}>Erase all Interval data from this device</button>
           <input ref={fileRef} hidden type="file" accept=".guitar-academy,application/json" onChange={async (event) => {
             const file = event.target.files?.[0];
             if (!file || restore || restoreBusy) return;

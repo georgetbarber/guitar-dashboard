@@ -13,8 +13,8 @@ export default defineConfig({
     VitePWA({
       registerType: "prompt",
       manifest: {
-        name: "Guitar Academy",
-        short_name: "Guitar Academy",
+        name: "Interval",
+        short_name: "Interval",
         description: "A relationship-first path from hearing and playing to original music.",
         theme_color: "#f2eee8",
         background_color: "#f2eee8",

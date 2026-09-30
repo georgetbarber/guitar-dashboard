@@ -50,7 +50,7 @@ export function UpdateNotice() {
   return (
     <section className="update-notice" role="status" aria-label="Update available">
       <div className="save-failure-copy">
-        <strong>A new version of Guitar Academy is ready.</strong>
+        <strong>A new version of Interval is ready.</strong>
         <p>
           {reasons.length
             ? `It will not interrupt ${reasons.join(" or ")} — choose it and it will apply the moment that finishes.`

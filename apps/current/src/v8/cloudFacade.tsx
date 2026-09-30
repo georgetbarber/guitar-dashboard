@@ -99,10 +99,10 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
             ? "Google sign-in is ready. Choose Open Google sign-in to continue."
             : CLOUD_CONFIGURED
               ? "Prepare Google sign-in to synchronise devices."
-              : "Sync across devices is not set up in this copy of Guitar Academy. Your learning stays on this device; a complete backup moves it."),
+              : "Sync across devices is not set up in this copy of Interval. Your learning stays on this device; a complete backup moves it."),
     accountChoice: null,
     signIn: async () => {
-      if (!CLOUD_CONFIGURED) throw new Error("Sync across devices is not set up in this copy of Guitar Academy.");
+      if (!CLOUD_CONFIGURED) throw new Error("Sync across devices is not set up in this copy of Interval.");
       if (readyModule) {
         try {
           await readyModule.beginPreparedSignIn();

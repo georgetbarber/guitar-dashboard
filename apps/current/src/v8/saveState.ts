@@ -58,9 +58,9 @@ export function failedFrom(current: LocalSaveState, error: unknown): LocalSaveSt
 
 export function describeSaveFailure(error: unknown): string {
   const name = error instanceof DOMException ? error.name : "";
-  if (name === "QuotaExceededError") return "This device has no storage space left for Guitar Academy, so the change could not be written.";
+  if (name === "QuotaExceededError") return "This device has no storage space left for Interval, so the change could not be written.";
   if (name === "InvalidStateError" || name === "UnknownError" || name === "SecurityError") {
-    return "This browser is blocking Guitar Academy's storage, which private browsing windows commonly do.";
+    return "This browser is blocking Interval's storage, which private browsing windows commonly do.";
   }
   return error instanceof Error && error.message ? error.message : "This device would not store the change.";
 }

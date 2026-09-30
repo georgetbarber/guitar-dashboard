@@ -99,7 +99,7 @@ export function WorkspaceRecoveryNotice() {
         <strong>This device's saved work could not be read, so nothing is being saved right now.</strong>
         <p>{workspaceIssue.reason}</p>
         <p>
-          The stored copy has not been changed or deleted. Download it first — a later version of Guitar Academy may be
+          The stored copy has not been changed or deleted. Download it first — a later version of Interval may be
           able to read it, and it is the only copy. Starting fresh replaces it as soon as you make your next change.
         </p>
       </div>

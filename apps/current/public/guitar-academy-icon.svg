@@ -1,7 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
-  <title id="title">Guitar Academy</title>
-  <rect width="512" height="512" rx="112" fill="#15241f"/>
-  <circle cx="256" cy="256" r="178" fill="#e7eee9"/>
-  <path d="M174 171h164v42H222v65h94v40h-94v23h116v42H174z" fill="#de6748"/>
-  <circle cx="337" cy="300" r="21" fill="#2f765c"/>
+  <title id="title">Interval</title>
+  <rect width="512" height="512" fill="#f2eee8"/>
+  <path d="M96 192h320M96 320h320" stroke="#969d98" stroke-width="12"/>
+  <path d="M176 320L336 192" stroke="#131917" stroke-width="12"/>
+  <circle cx="176" cy="320" r="40" fill="#131917"/>
+  <circle cx="336" cy="192" r="40" fill="#0d5d60"/>
 </svg>

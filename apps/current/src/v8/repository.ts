@@ -269,7 +269,7 @@ export async function eraseAllDeviceData(): Promise<void> {
     const request = indexedDB.deleteDatabase(DB_NAME);
     request.addEventListener("success", () => resolve());
     request.addEventListener("error", () => reject(request.error));
-    request.addEventListener("blocked", () => reject(new Error("Close other Guitar Academy tabs, then try erasing this device again.")));
+    request.addEventListener("blocked", () => reject(new Error("Close other Interval tabs, then try erasing this device again.")));
   });
   try {
     for (let index = localStorage.length - 1; index >= 0; index -= 1) {
@@ -700,7 +700,7 @@ async function readBinaryArchive(file: File, prefix: Uint8Array): Promise<Parsed
 
 function validateArchiveHeader(header: ArchiveHeader) {
   if (header.format !== "guitar-academy" || header.archiveVersion !== 2 || header.stateVersion !== 8 || header.state?.version !== 8) {
-    throw new Error("This file is not a Guitar Academy backup this version can read.");
+    throw new Error("This file is not an Interval backup this version can read.");
   }
   if (!Array.isArray(header.recordings)) throw new Error("This backup is missing its recording index.");
   /*
@@ -724,9 +724,9 @@ function validateArchiveHeader(header: ArchiveHeader) {
 async function readLegacyArchive(file: File): Promise<ParsedArchive> {
   let archive: LegacyArchive;
   try { archive = JSON.parse(await file.text()) as LegacyArchive; }
-  catch { throw new Error("This file is not a Guitar Academy backup this version can read."); }
+  catch { throw new Error("This file is not an Interval backup this version can read."); }
   if (archive?.format !== "guitar-academy" || archive.version !== 8 || archive.state?.version !== 8) {
-    throw new Error("This file is not a Guitar Academy backup this version can read.");
+    throw new Error("This file is not an Interval backup this version can read.");
   }
   validateState(archive.state);
   const recordings = (archive.recordings ?? []).map((recording) => ({ id: recording.id, blob: dataToBlob(recording.data) }));

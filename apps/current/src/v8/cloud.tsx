@@ -52,7 +52,7 @@ const recordingStorage = app && firebaseConfig.storageBucket && RECORDING_SHARIN
 
 /** Called from a second user gesture after the account SDK has finished loading. */
 export async function beginPreparedSignIn(): Promise<void> {
-  if (!auth) throw new Error("Sync across devices is not set up in this copy of Guitar Academy.");
+  if (!auth) throw new Error("Sync across devices is not set up in this copy of Interval.");
   await signInWithPopup(auth, new GoogleAuthProvider());
   writeCloudSessionHint("account");
 }
@@ -179,7 +179,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [pendingUser, setPendingUser] = useState<User | null>(null);
   const [status, setStatus] = useState<SyncStatus>(CLOUD_CONFIGURED ? "signed-out" : "local-only");
-  const [message, setMessage] = useState(CLOUD_CONFIGURED ? "Sign in to synchronise devices." : "Sync across devices is not set up in this copy of Guitar Academy. Your learning stays on this device; a complete backup moves it.");
+  const [message, setMessage] = useState(CLOUD_CONFIGURED ? "Sign in to synchronise devices." : "Sync across devices is not set up in this copy of Interval. Your learning stays on this device; a complete backup moves it.");
   const [remoteReady, setRemoteReady] = useState(false);
   const [connectivityRevision, setConnectivityRevision] = useState(0);
   const cacheRef = useRef<SyncCache>(emptyCache());
@@ -406,7 +406,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     },
     uploadFinishedTake: async (sketchId, takeId) => {
       if (!user) throw new Error("Sign in before sharing a take.");
-      if (!recordingStorage) throw new Error("Sharing recordings is not set up in this copy of Guitar Academy. The take remains on this device.");
+      if (!recordingStorage) throw new Error("Sharing recordings is not set up in this copy of Interval. The take remains on this device.");
       if (!navigator.onLine) throw new Error("Reconnect before sharing a take. The private device copy remains safe.");
       const sketch = state.sketches.find((item) => item.id === sketchId);
       if (!sketch || sketch.status !== "finished") throw new Error("Only a take from a finished project can be shared across devices.");

@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 async function completeDiagnostic(page: Page) {
   await page.goto("/");
-  await expect(page).toHaveTitle("Guitar Academy");
+  await expect(page).toHaveTitle("Interval");
   const onboarding = page.getByRole("heading", { name: "Build freedom from sound, time and relationships." });
   const home = page.getByRole("heading", { name: "Turn one relationship into music." });
   // Wait past the loading screen: counting immediately can find neither and skip onboarding.
@@ -527,7 +527,7 @@ test("a clean simulated note yields only a temporary pitch estimate", async ({ p
 test("exports a complete local backup", async ({ page }) => {
   await completeDiagnostic(page);
   await page.getByRole("button", { name: /settings and (?:data|sync)/i }).filter({ visible: true }).click();
-  await expect(page.getByRole("heading", { name: "Install Guitar Academy" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Install Interval" })).toBeVisible();
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export complete backup" }).click();
   const download = await downloadPromise;

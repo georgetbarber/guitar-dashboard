@@ -1450,3 +1450,13 @@ Phase 5D's pitch-check card was merged in and restyled in the same system.
 **Verification:** 296 unit/interface tests across 43 files; build, lint, formatting, guest-bundle and offline-shell (1273.4 KiB) checks passed. The full browser run passed 84 desktop/phone-sized Chromium checks with two workers, including the WCAG 2.2 A/AA scans in both themes; the two production-only offline-shell checks and the font check also passed against a production preview. The long accessibility scan can exceed its 30-second timeout when four browser workers run at once; this happens identically on the previous commit and is not a style regression. Screens were reviewed at 1440px and 390px (320px spot-checked) in both themes.
 
 **Next:** decide whether the wordmark should carry the By George full stop; refresh the app icon, which still uses the previous palette; and consider a fretboard colour key beside the text legend.
+
+## Name — Interval (30 September 2026)
+
+**Status: implemented and verified locally; not yet published.** Outside the plan: George chose the name on 26 September.
+
+The app is now called **Interval**: every note understood by its distance from another, which is the relationship-first method it teaches. All learner-facing text, the page title, the web-app manifest and the wordmark use it, and the wordmark carries the By George full stop (answering the question left by the design-system entry above). The icon is redrawn in the new palette: two notes on two strings joined by a line, on paper. Storage keys, the IndexedDB name, the `.guitar-academy` backup extension, the icon file names and the live address are unchanged, so nothing on a learner's device moves.
+
+This replaces the earlier `design/by-george-look` branch, whose separate "Paper" skin and look switch were superseded by the design-system entry above; only the name, icon and full stop were carried over.
+
+**Verification:** 296 unit/interface tests across 43 files; lint, formatting, build, guest-bundle (377.3 KiB) and offline-shell (1262.0 KiB, down from 1273.4 with the lighter icons) checks passed. The browser run passed 84 desktop/phone Chromium checks with two workers (two production-only checks skipped), and both production-only checks plus the font check passed against a production preview. One earlier run of the same suite had a single failure that did not recur, consistent with the known accessibility-scan timeout noted above. Not verified: an installed phone app picking up the new name and icon.

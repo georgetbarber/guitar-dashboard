@@ -51,6 +51,11 @@
   white-space: nowrap;
 }
 
+/* The full stop is the family signature the site's own wordmark carries. */
+.wordmark::after {
+  content: ".";
+}
+
 button.wordmark:hover {
   color: var(--piece-accent);
 }
