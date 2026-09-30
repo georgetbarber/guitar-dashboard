@@ -422,6 +422,16 @@ textarea { min-height: 92px; resize: vertical; }
 .pilot-outcomes button:disabled { opacity: .55; cursor: not-allowed; }
 .pilot-side > button { text-align: left; }
 .pilot-recording audio { max-width: 100%; }
+.pilot-review, .pilot-review-form { display: grid; gap: .65rem; min-width: 0; }
+.pilot-review-form { padding: .8rem; border-radius: 10px; background: var(--paper-2); }
+.pilot-review-form label { display: grid; gap: .3rem; font-size: .82rem; font-weight: 700; }
+.pilot-review-form select, .pilot-review-form textarea { width: 100%; min-width: 0; padding: .6rem; border: 1px solid var(--control-line); border-radius: 8px; color: var(--ink); background: var(--paper); }
+.pilot-review-form textarea { min-height: 72px; resize: vertical; }
+.pilot-review-form small, .pilot-review-history small { color: var(--muted); }
+.pilot-review-history summary { min-height: 44px; cursor: pointer; font-weight: 700; }
+.pilot-review-history ol { display: grid; gap: .7rem; padding-left: 1.2rem; }
+.pilot-review-history li { display: grid; gap: .3rem; overflow-wrap: anywhere; }
+.pilot-review-history li span { font-size: .82rem; }
 .pilot-variation p { flex-basis: 100%; }
 @media (max-width: 760px) { .pilot-layout { grid-template-columns: minmax(0, 1fr); } }
 .micro-study figcaption { display: grid; align-content: center; gap: .25rem; }

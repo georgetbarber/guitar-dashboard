@@ -12,7 +12,7 @@ import { ONE_NOTE_QUESTION_ANSWER } from "./pilotEpisode";
 import { mergeCloudSnapshot } from "./sync";
 import type { CloudSnapshot } from "./sync";
 import { SKETCH_SYNC_FIELDS } from "./types";
-import type { CompetencyEvidence, ExploreFocus, LearnerSettings, PilotAttempt, PilotCursor, PilotVariation, RecordedTake, RouteId, SessionPlan, Sketch, V8State } from "./types";
+import type { CompetencyEvidence, ExploreFocus, LearnerSettings, PilotAttempt, PilotCursor, PilotListeningReview, PilotVariation, RecordedTake, RouteId, SessionPlan, Sketch, V8State } from "./types";
 
 const ROUTES: RouteId[] = ["today", "path", "practice", "play", "create", "explore"];
 const ROUTE_PATHS: Record<RouteId, string> = {
@@ -60,6 +60,7 @@ export const DEFAULT_STATE: V8State = {
   evidence: [],
   pilotCursor: null,
   pilotAttempts: [],
+  pilotReviews: [],
   pilotVariations: [],
   sessionPlan: null,
   sessionCursor: 0,
@@ -77,7 +78,7 @@ type Action =
   | { type: "hydrate"; state: V8State }
   | { type: "navigate"; route: RouteId; push?: boolean }
   | { type: "openUnit"; unitId: string }
-  | { type: "openActivity"; activityId: string }
+  | { type: "openActivity"; activityId: string | null }
   | { type: "suspendActivity"; route: RouteId }
   | { type: "resumeActivity" }
   | { type: "recordActivity"; activityId: string; evidence: CompetencyEvidence[]; reflection?: string }
@@ -85,6 +86,7 @@ type Action =
   | { type: "restartPilot"; cursor: PilotCursor }
   | { type: "updatePilot"; patch: Partial<Pick<PilotCursor, "step" | "sectionId" | "tempo" | "repairId" | "assistance" | "attemptId">> }
   | { type: "recordPilotAttempt"; attempt: PilotAttempt }
+  | { type: "recordPilotReview"; review: PilotListeningReview }
   | { type: "savePilotVariation"; variation: PilotVariation }
   | { type: "beginSession"; plan: SessionPlan }
   | { type: "setPersonalGoal"; goal: string }
@@ -195,6 +197,9 @@ function reducer(state: V8State, action: Action): V8State {
           updatedAt: changedAt } : state.pilotCursor,
         updatedAt: changedAt
       };
+    case "recordPilotReview":
+      if ((state.pilotReviews ?? []).some((review) => review.id === action.review.id)) return state;
+      return { ...state, pilotReviews: [...(state.pilotReviews ?? []), action.review], updatedAt: changedAt };
     case "savePilotVariation":
       if ((state.pilotVariations ?? []).some((variation) => variation.id === action.variation.id)) return state;
       return { ...state, pilotVariations: [...(state.pilotVariations ?? []), action.variation], updatedAt: changedAt };

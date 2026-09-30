@@ -463,6 +463,62 @@ test("a denied microphone leaves the pilot lesson playable and private", async (
   await expect(page.getByRole("heading", { name: "Turn one relationship into music." })).toBeVisible();
 });
 
+test("keeps a focused recording self-review without keeping audio or advancing playing progress", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: async () => new MediaStream() },
+    });
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: class {
+        createAnalyser() { return { fftSize: 4096, smoothingTimeConstant: 0 }; }
+        createMediaStreamSource() { return { connect: () => undefined }; }
+        close() { return Promise.resolve(); }
+      },
+    });
+    Object.defineProperty(window, "MediaRecorder", {
+      configurable: true,
+      value: class extends EventTarget {
+        mimeType = "audio/webm";
+        start() { /* Simulated recorder; no real microphone is used. */ }
+        stop() {
+          this.dispatchEvent(new BlobEvent("dataavailable", { data: new Blob(["test take"], { type: this.mimeType }) }));
+          this.dispatchEvent(new Event("stop"));
+        }
+      },
+    });
+  });
+  await completeDiagnostic(page);
+  await page.getByRole("button", { name: "Start the one-note lesson" }).click();
+  await page.getByRole("button", { name: "Record a temporary take" }).click();
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  const review = page.locator(".pilot-review-form");
+  await expect(review).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  await review.getByLabel("Listening focus").selectOption("muting");
+  await review.getByLabel("What were you trying to make the phrase do?").fill("Leave a clean rest after the question.");
+  await review.getByLabel(/At which rest did sound continue/).fill("The final rest still seemed to ring.");
+  await review.getByLabel("What one change will you test next?").fill("Lift the picking hand at the final rest.");
+  await page.getByRole("button", { name: "Discard take" }).click();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /Save or clear your unfinished listening review/ })).toBeVisible();
+  await review.getByRole("button", { name: "Save written review" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /written self-review was added/ })).toBeVisible();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await expect(page.locator(".save-indicator:visible")).toHaveText("Saved on this device");
+  await page.reload();
+  await page.getByRole("button", { name: "Continue the one-note lesson" }).click();
+  await page.getByText("Earlier self-reviews (1)").click();
+  await expect(page.locator(".pilot-review-history")).toContainText("The final rest still seemed to ring.");
+  await expect(page.locator(".pilot-review-history")).toContainText("Lift the picking hand at the final rest.");
+  await expect(page.getByRole("button", { name: "Record a temporary take" })).toBeEnabled();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await learnViews(page).getByRole("button", { name: /Course map/ }).click();
+  await expect(page.locator(".path-total strong")).toHaveText("0");
+});
+
 test("a denied optional pitch check remains uncertain and does not create playing evidence", async ({ page, context }) => {
   await context.clearPermissions();
   await page.addInitScript(() => Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: () => Promise.reject(new DOMException("Permission denied", "NotAllowedError")) } }));

@@ -40,7 +40,7 @@ function V8Application() {
   const cloud = useCloudSync();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const activityCloseRef = useRef<(() => void) | null>(null);
-  const closeActivity = () => dispatch({ type: "openActivity", activityId: "" });
+  const closeActivity = () => dispatch({ type: "openActivity", activityId: null });
   if (cloud.accountChoice) return <AccountWorkspaceChoice />;
   if (!hydrated) return <div className="loading-screen"><span>GA</span><p>Loading your learning path…</p></div>;
   if (!state.settings.diagnosticComplete) return <Diagnostic />;

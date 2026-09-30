@@ -164,6 +164,25 @@ export interface PilotAttempt {
   localDate?: string;
 }
 
+export type PilotReviewFocus = "phrasing" | "muting" | "tension" | "tone" | "intention";
+
+/** A learner's written comparison after a temporary take, never measured evidence. */
+export interface PilotListeningReview {
+  id: string;
+  episodeId: string;
+  episodeVersion: number;
+  materialId: string;
+  materialVersion: number;
+  takeCapturedAt: string;
+  focus: PilotReviewFocus;
+  intended: string;
+  noticed: string;
+  nextChange: string;
+  method: "self-reported";
+  createdAt: string;
+  localDate: string;
+}
+
 export interface PilotVariation {
   id: string;
   sourceMaterialId: string;
@@ -298,6 +317,7 @@ export interface V8State {
   /** Pilot state is local to this workspace and included in its backup. */
   pilotCursor?: PilotCursor | null;
   pilotAttempts?: PilotAttempt[];
+  pilotReviews?: PilotListeningReview[];
   pilotVariations?: PilotVariation[];
   /** The current device's guided route; stays fixed across detours and reloads. */
   sessionPlan?: SessionPlan | null;

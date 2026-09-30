@@ -6,8 +6,9 @@ import { localDateAt } from "../dates";
 import { createEvidence } from "../learning";
 import { ONE_NOTE_ANSWER_SHIFT, ONE_NOTE_QUESTION_ANSWER, PILOT_EPISODE } from "../pilotEpisode";
 import { firstPilotSuccess, isLaterCheckDue, pilotAttempts, pilotLaterSuccess } from "../pilotProgress";
+import { PILOT_REVIEW_FOCUSES, PILOT_REVIEW_FOCUS_IDS, pilotReviews } from "../pilotReview";
 import { useV8Store } from "../store";
-import type { EvidenceOutcome, PilotAttempt, PilotCursor } from "../types";
+import type { EvidenceOutcome, PilotAttempt, PilotCursor, PilotListeningReview, PilotReviewFocus } from "../types";
 import { PilotStudy } from "./PilotStudy";
 import { RecordSaveStatus } from "./SaveStatus";
 import { useUpdateHold } from "./UpdateNotice";
@@ -55,6 +56,12 @@ export function PilotEpisodePlayer({
   const [takeUrl, setTakeUrl] = useState<string | null>(null);
   const [takeDownloaded, setTakeDownloaded] = useState(false);
   const [takeFilename, setTakeFilename] = useState("one-note-question-answer.webm");
+  const [takeCapturedAt, setTakeCapturedAt] = useState<string | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewFocus, setReviewFocus] = useState<PilotReviewFocus>("phrasing");
+  const [reviewIntended, setReviewIntended] = useState("");
+  const [reviewNoticed, setReviewNoticed] = useState("");
+  const [reviewNextChange, setReviewNextChange] = useState("");
   const [evidenceIds, setEvidenceIds] = useState<string[]>([]);
   const [now, setNow] = useState(() => new Date());
   const stopRef = useRef<(() => void) | null>(null);
@@ -87,7 +94,9 @@ export function PilotEpisodePlayer({
     },
     [],
   );
-  useUpdateHold(playing || recording || Boolean(takeUrl), "the pilot lesson or a temporary recording");
+  const reviewDirty = Boolean(reviewIntended.trim() || reviewNoticed.trim() || reviewNextChange.trim());
+  const reviewReady = [reviewIntended, reviewNoticed, reviewNextChange].every((value) => value.trim().length >= 8);
+  useUpdateHold(playing || recording || Boolean(takeUrl) || reviewDirty, "the pilot lesson, a temporary recording or an unfinished review");
 
   const stop = () => {
     playGeneration.current++;
@@ -105,12 +114,17 @@ export function PilotEpisodePlayer({
       setNotice("This take lives only in this tab. Download it or discard it before leaving.");
       return;
     }
+    if (reviewDirty) {
+      setNotice("Save or clear your unfinished listening review before leaving this lesson.");
+      setReviewOpen(true);
+      return;
+    }
     stop();
     onClose?.();
   };
   const explorePhrase = () => {
-    if (recording || (takeUrl && !takeDownloaded)) {
-      setNotice("Stop and download or discard your temporary take before opening Explore.");
+    if (recording || (takeUrl && !takeDownloaded) || reviewDirty) {
+      setNotice("Stop and download or discard your temporary take, then save or clear your review before opening Explore.");
       return;
     }
     if (!cursor) return;
@@ -130,8 +144,8 @@ export function PilotEpisodePlayer({
     history.pushState({}, "", "/explore");
   };
   const makeSketch = () => {
-    if (recording || (takeUrl && !takeDownloaded)) {
-      setNotice("Stop and download or discard your temporary take before opening Create.");
+    if (recording || (takeUrl && !takeDownloaded) || reviewDirty) {
+      setNotice("Stop and download or discard your temporary take, then save or clear your review before opening Create.");
       return;
     }
     if (!cursor) return;
@@ -154,6 +168,7 @@ export function PilotEpisodePlayer({
       </section>
     );
   const attempts = pilotAttempts(state);
+  const reviews = pilotReviews(state);
   const firstSuccess = firstPilotSuccess(attempts);
   const laterSuccess = pilotLaterSuccess(attempts);
   const due = isLaterCheckDue(firstSuccess, now);
@@ -281,6 +296,11 @@ export function PilotEpisodePlayer({
   };
   const startRecording = async () => {
     if (takeUrl) return;
+    if (reviewDirty) {
+      setNotice("Save or clear your unfinished listening review before making another take.");
+      setReviewOpen(true);
+      return;
+    }
     stop();
     const generation = ++micGeneration.current;
     try {
@@ -310,7 +330,9 @@ export function PilotEpisodePlayer({
       takeUrlRef.current = url;
       setTakeUrl(url);
       setTakeDownloaded(false);
-      setNotice("Temporary take ready. Play it beside the reference, then download or discard it.");
+      setTakeCapturedAt(new Date().toISOString());
+      setReviewOpen(true);
+      setNotice("Temporary take ready. Play it beside the reference, then write one focused review. Download or discard the audio separately.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "The recording could not be saved. Please try again.");
     } finally {
@@ -326,6 +348,34 @@ export function PilotEpisodePlayer({
     setTakeUrl(null);
     setTakeDownloaded(false);
     setNotice("Temporary take discarded.");
+  };
+  const clearReviewDraft = () => {
+    setReviewIntended("");
+    setReviewNoticed("");
+    setReviewNextChange("");
+  };
+  const saveReview = () => {
+    if (!takeCapturedAt || !reviewReady) return;
+    const capturedAt = new Date();
+    const review: PilotListeningReview = {
+      id: newId("pilot-review"),
+      episodeId: PILOT_EPISODE.id,
+      episodeVersion: PILOT_EPISODE.version,
+      materialId: MATERIAL.id,
+      materialVersion: MATERIAL.version,
+      takeCapturedAt,
+      focus: reviewFocus,
+      intended: reviewIntended.trim(),
+      noticed: reviewNoticed.trim(),
+      nextChange: reviewNextChange.trim(),
+      method: "self-reported",
+      createdAt: capturedAt.toISOString(),
+      localDate: localDateAt(capturedAt),
+    };
+    dispatch({ type: "recordPilotReview", review });
+    clearReviewDraft();
+    setReviewOpen(false);
+    setNotice("Your written self-review was added to this device workspace. Check the save status before leaving. The audio stays separate and temporary unless you download it.");
   };
 
   return (
@@ -649,6 +699,55 @@ export function PilotEpisodePlayer({
                   Discard take
                 </button>
               </>
+            )}
+            {takeCapturedAt && (
+              <div className="pilot-review">
+                <button className="text-action" aria-expanded={reviewOpen} onClick={() => setReviewOpen(!reviewOpen)}>
+                  {reviewOpen ? "Hide focused self-review" : "Write a focused self-review"}
+                </button>
+                {reviewOpen && (
+                  <div className="pilot-review-form">
+                    <p>Compare the reference with your take, then choose one thing to notice. These are your notes, not an automatic judgement. The recording cannot reveal physical tension.</p>
+                    <label>
+                      Listening focus
+                      <select value={reviewFocus} onChange={(event) => setReviewFocus(event.target.value as PilotReviewFocus)}>
+                        {PILOT_REVIEW_FOCUS_IDS.map((focus) => <option key={focus} value={focus}>{PILOT_REVIEW_FOCUSES[focus].label}</option>)}
+                      </select>
+                    </label>
+                    <label>
+                      What were you trying to make the phrase do?
+                      <textarea maxLength={240} value={reviewIntended} onChange={(event) => setReviewIntended(event.target.value)} placeholder="For example, make the answer feel calm after the question." />
+                    </label>
+                    <label>
+                      {PILOT_REVIEW_FOCUSES[reviewFocus].prompt}
+                      <textarea maxLength={240} value={reviewNoticed} onChange={(event) => setReviewNoticed(event.target.value)} placeholder="Name a moment you noticed, or say that you could not tell." />
+                    </label>
+                    <label>
+                      What one change will you test next?
+                      <textarea maxLength={240} value={reviewNextChange} onChange={(event) => setReviewNextChange(event.target.value)} placeholder="Choose one small change you can hear or feel." />
+                    </label>
+                    <div className="action-row">
+                      <button className="primary-action" disabled={!reviewReady} onClick={saveReview}>Save written review</button>
+                      <button className="text-action" disabled={!reviewDirty} onClick={clearReviewDraft}>Clear unfinished review</button>
+                    </div>
+                    <small>The words are kept in this device workspace and backup after saving. They do not change your course progress or retain the audio.</small>
+                  </div>
+                )}
+              </div>
+            )}
+            {reviews.length > 0 && (
+              <details className="pilot-review-history">
+                <summary>Earlier self-reviews ({reviews.length})</summary>
+                <ol>{[...reviews].reverse().map((review) => (
+                  <li key={review.id}>
+                    <strong>{PILOT_REVIEW_FOCUSES[review.focus].label} · {review.localDate}</strong>
+                    <span><b>Intended:</b> {review.intended}</span>
+                    <span><b>Noticed:</b> {review.noticed}</span>
+                    <span><b>Try next:</b> {review.nextChange}</span>
+                  </li>
+                ))}</ol>
+                <small>These are your written self-reports, separate from playing checks and retained recordings.</small>
+              </details>
             )}
           </div>
           {firstSuccess && (

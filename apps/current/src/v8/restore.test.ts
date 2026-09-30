@@ -15,7 +15,8 @@ import {
   setActiveWorkspace
 } from "./repository";
 import { DEFAULT_STATE } from "./store";
-import type { RecordedTake, Sketch, V8State } from "./types";
+import { ONE_NOTE_QUESTION_ANSWER, PILOT_EPISODE } from "./pilotEpisode";
+import type { PilotListeningReview, RecordedTake, Sketch, V8State } from "./types";
 
 async function resetDatabase() {
   await new Promise<void>((resolve, reject) => {
@@ -112,6 +113,35 @@ describe("a restore is staged and activated, never written live (B04)", () => {
     expect(restored.lastReflection).toBe("before the restore");
     expect((await loadWorkspace("anonymous")).status).toBe("ok");
     expect(await (await loadBlob("take-a"))?.text()).toBe("first take");
+  });
+
+  it("round-trips a written pilot review without requiring a retained recording", async () => {
+    const review: PilotListeningReview = {
+      id: "review-only", episodeId: PILOT_EPISODE.id, episodeVersion: PILOT_EPISODE.version,
+      materialId: ONE_NOTE_QUESTION_ANSWER.id, materialVersion: ONE_NOTE_QUESTION_ANSWER.version,
+      takeCapturedAt: "2026-09-30T09:00:00.000Z", focus: "phrasing",
+      intended: "Let the answer feel complete.", noticed: "The last note ended abruptly.",
+      nextChange: "Leave the last note ringing longer.", method: "self-reported",
+      createdAt: "2026-09-30T09:02:00.000Z", localDate: "2026-09-30",
+    };
+    const preview = await prepareRestore(await archiveOf({ ...stateWith([], ""), pilotReviews: [review] }), "anonymous");
+    expect(preview.recordings).toBe(0);
+    expect((await activateRestore(preview.operationId)).pilotReviews).toEqual([review]);
+  });
+
+  it("restores an older backup that stored the closed lesson as an empty activity ID", async () => {
+    const oldState = { ...stateWith([], "older lesson notes"), activeActivityId: "" };
+    const binary = await archiveOf(oldState);
+    const preview = await prepareRestore(binary, "anonymous");
+    expect((await activateRestore(preview.operationId)).activeActivityId).toBeNull();
+    expect((await loadWorkspace("anonymous")).status).toBe("ok");
+
+    const legacy = new File([JSON.stringify({
+      format: "guitar-academy", version: 8, exportedAt: "2026-09-30T10:00:00.000Z",
+      state: oldState, recordings: [],
+    })], "older.guitar-academy");
+    const second = await prepareRestore(legacy, "anonymous");
+    expect((await activateRestore(second.operationId)).activeActivityId).toBeNull();
   });
 
   it("changes nothing at all until the restore is activated", async () => {
