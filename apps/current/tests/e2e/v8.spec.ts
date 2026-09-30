@@ -605,6 +605,61 @@ test("a clean simulated note yields only a temporary pitch estimate", async ({ p
   await expect(page.locator(".pitch-check-result")).toContainText("near E4");
   await expect(page.getByRole("heading", { name: "Nothing to strengthen from playing yet." })).toBeVisible();
   expect(await page.evaluate(() => (window as typeof window & { __pitchMicStops: number }).__pitchMicStops)).toBe(1);
+  await page.getByRole("button", { name: "Use microphone for one note" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /Listening… play the shown pattern/ })).toBeVisible();
+  await page.locator(".pitch-check summary").click();
+  await expect(page.locator(".pitch-check-body")).toBeHidden();
+  expect(await page.evaluate(() => (window as typeof window & { __pitchMicStops: number }).__pitchMicStops)).toBe(2);
+  await page.reload();
+  await expect(page.locator(".pitch-check-result")).toHaveCount(0);
+  await learnViews(page).getByRole("button", { name: /Course map/ }).click();
+  await expect(page.locator(".path-total strong")).toHaveText("0");
+});
+
+test("a simulated three-note signal stays a temporary pitch-order estimate", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.addInitScript(() => {
+    let stopped = 0;
+    Object.defineProperty(window, "__pitchMicStops", { get: () => stopped });
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: async () => ({ getTracks: () => [{ stop: () => { stopped += 1; } }] }) },
+    });
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: class {
+        sampleRate = 48_000;
+        state = "running";
+        createAnalyser() {
+          let frame = 0;
+          return {
+            fftSize: 4096,
+            smoothingTimeConstant: 0,
+            getFloatTimeDomainData(samples: Float32Array) {
+              const current = frame++;
+              const midi = current >= 4 && current < 13 ? 64 : current >= 17 && current < 26 ? 67 : current >= 30 && current < 39 ? 64 : null;
+              const frequency = midi === null ? 0 : 440 * 2 ** ((midi - 69) / 12);
+              for (let index = 0; index < samples.length; index += 1) {
+                samples[index] = midi === null ? 0 : 0.2 * Math.sin(2 * Math.PI * frequency * ((current * samples.length + index) / 48_000));
+              }
+            },
+          };
+        }
+        createMediaStreamSource() { return { connect: () => undefined }; }
+        close() { return Promise.resolve(); }
+      },
+    });
+  });
+  await completeDiagnostic(page);
+  await learnViews(page).getByRole("button", { name: /Strengthen/ }).click();
+  await page.locator(".pitch-check summary").click();
+  await page.getByRole("button", { name: "Three-note shape" }).click();
+  await expect(page.locator(".pitch-check-body")).toContainText("G is a minor third above E");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  await page.getByRole("button", { name: "Use microphone for three notes" }).click();
+  await expect(page.locator(".pitch-check-result")).toContainText("E4 → G4 → E4", { timeout: 12_000 });
+  await expect(page.locator(".pitch-check-result")).toContainText("does not judge your rhythm");
+  expect(await page.evaluate(() => (window as typeof window & { __pitchMicStops: number }).__pitchMicStops)).toBe(1);
   await page.reload();
   await expect(page.locator(".pitch-check-result")).toHaveCount(0);
   await learnViews(page).getByRole("button", { name: /Course map/ }).click();

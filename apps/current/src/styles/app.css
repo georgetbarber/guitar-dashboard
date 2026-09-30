@@ -297,7 +297,11 @@ textarea { min-height: 92px; resize: vertical; }
 .pitch-check summary { display: grid; gap: .2rem; min-height: 44px; cursor: pointer; }
 .pitch-check summary strong { font-size: 1rem; }
 .pitch-check-body { display: grid; gap: .7rem; padding-top: .7rem; }
+.pitch-check:not([open]) .pitch-check-body { display: none; }
 .pitch-check-body > p { max-width: 70ch; }
+.pitch-check-modes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.pitch-check-modes button { min-height: 44px; padding: .5rem .7rem; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-2); color: var(--ink); }
+.pitch-check-modes button[aria-pressed="true"] { border-color: var(--coral); background: var(--coral-soft); }
 .pitch-check-result { display: grid; gap: .35rem; padding: .8rem; border-radius: 12px; background: var(--paper-2); }
 .mastery-grid article { display: grid; gap: .3rem; padding: .75rem; border-radius: 12px; background: var(--paper-2); }
 .mastery-grid article > strong { font-size: .72rem; text-transform: capitalize; }
