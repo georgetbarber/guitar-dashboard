@@ -64,3 +64,6 @@ relationships.
 - Do not read SSH keys, browser data, keychains, tokens, passwords, or personal
   files.
 - Do not push to GitHub unless explicitly asked.
+- Before starting work, run `git fetch origin` and compare this branch with
+  `origin/main`. If GitHub is ahead, say so and bring it in before building on
+  an older version.
