@@ -1,7 +1,7 @@
 # Future Features
 
 This is the working backlog for additions that are intentionally not part of
-the current Guitar Academy release. A feature belongs here before it becomes a
+the current Interval release. A feature belongs here before it becomes a
 build task. The current app should remain relationship-first, playable, and
 honest about what it can hear, display, and assess.
 

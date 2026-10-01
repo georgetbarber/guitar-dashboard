@@ -1,6 +1,6 @@
-# Guitar Academy
+# Interval
 
-Guitar Academy is a relationship-first guitar-learning project. It teaches how
+Interval is a relationship-first guitar-learning project. It teaches how
 sound, intervals, scale degrees, chord tones, harmonic function, and fretboard
 shapes connect, rather than presenting theory as facts to memorise.
 

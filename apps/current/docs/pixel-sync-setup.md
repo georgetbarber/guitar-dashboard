@@ -97,7 +97,7 @@ If the app was removed but an old app window still says it is installed, close
 that window completely from Android's recent-apps screen. Open Chrome itself,
 visit the live address, and use **Install app** or **Add to Home screen** from the
 Chrome menu. If Chrome still treats it as installed, check **Android Settings →
-Apps → Guitar Academy**; removing a home-screen icon does not uninstall the app.
+Apps → Interval**; removing a home-screen icon does not uninstall the app.
 
 If the development server is unavailable, export a complete backup from the local
 address and import it at the live address before relying on cloud sync.

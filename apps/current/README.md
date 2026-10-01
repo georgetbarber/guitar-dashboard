@@ -1,4 +1,4 @@
-# Guitar Academy V8 — Musical Freedom Learning System
+# Interval (V8) — Musical Freedom Learning System
 
 V8 is the active application. It is a private, local-first guitar curriculum
 designed to develop musical agency: hear an idea, understand its relationships,

@@ -38,7 +38,7 @@ reject_secret_paths() {
   fi
 }
 
-echo "Guitar Academy publisher"
+echo "Interval publisher"
 echo "========================"
 echo
 
@@ -162,7 +162,7 @@ if [ "$BRANCH" = "main" ] && [ -n "$(git -C "$ROOT" status --porcelain)" ]; then
   echo
   echo "Creating the release commit..."
   git -C "$ROOT" --no-pager diff --cached --stat
-  commit_message="Publish Guitar Academy $(date '+%Y-%m-%d %H:%M')"
+  commit_message="Publish Interval $(date '+%Y-%m-%d %H:%M')"
   git -C "$ROOT" commit -m "$commit_message"
 elif [ "$BRANCH" = "main" ]; then
   echo
@@ -235,5 +235,5 @@ fi
 echo
 echo "Published successfully: $LIVE_URL"
 echo "The app downloads the new version in the background and then OFFERS it:"
-echo "open Guitar Academy and choose \"Update now\" when the notice appears. It never"
+echo "open Interval and choose \"Update now\" when the notice appears. It never"
 echo "reloads on its own, so nothing is interrupted mid-recording or mid-edit."

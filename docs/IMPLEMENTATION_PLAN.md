@@ -1,4 +1,4 @@
-# Guitar Academy improvement plan
+# Interval improvement plan
 
 **Status (28 September 2026): Phases 0 and 1 implemented; Phase 2 engineering packages 2B-1 to 2B-6 and 2A-1 to 2A-5 locally checked. Phase 3's one-note pilot and Phase 4's connected software journey are implemented and locally checked. Their human guitar/content review, independent learner trial and real-device checks remain open. B30 retains seven documented development-only advisory paths pending compatible upstream fixes. See [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) for evidence and limits.**
 

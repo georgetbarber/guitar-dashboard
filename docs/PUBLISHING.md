@@ -1,4 +1,4 @@
-# Publish Guitar Academy
+# Publish Interval
 
 On macOS, double-click `PUBLISH_LIVE.command` at the repository root.
 
