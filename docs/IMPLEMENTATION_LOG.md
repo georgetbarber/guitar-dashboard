@@ -1507,10 +1507,22 @@ Phase 8's four optional ideas have a provisional admission order and concrete ex
 
 ## Name — Interval (30 September 2026)
 
-**Status: implemented and verified locally; not yet published.** Outside the plan: George chose the name on 26 September.
+**Status: implemented and verified locally; released with the 1 October consolidation below.** Outside the plan: George chose the name on 26 September.
 
 The app is now called **Interval**: every note understood by its distance from another, which is the relationship-first method it teaches. All learner-facing text, the page title, the web-app manifest and the wordmark use it, and the wordmark carries the By George full stop (answering the question left by the design-system entry above). The icon is redrawn in the new palette: two notes on two strings joined by a line, on paper. Storage keys, the IndexedDB name, the `.guitar-academy` backup extension, the icon file names and the live address are unchanged, so nothing on a learner's device moves.
 
 This replaces the earlier `design/by-george-look` branch, whose separate "Paper" skin and look switch were superseded by the design-system entry above; only the name, icon and full stop were carried over.
 
 **Verification:** 296 unit/interface tests across 43 files; lint, formatting, build, guest-bundle (377.3 KiB) and offline-shell (1262.0 KiB, down from 1273.4 with the lighter icons) checks passed. The browser run passed 84 desktop/phone Chromium checks with two workers (two production-only checks skipped), and both production-only checks plus the font check passed against a production preview. One earlier run of the same suite had a single failure that did not recur, consistent with the known accessibility-scan timeout noted above. Not verified: an installed phone app picking up the new name and icon.
+
+## Release consolidation (1 October 2026)
+
+**Status: one release line again — `main` holds every finished piece of work; only Phase 6 work in progress lives outside it.**
+
+A cloud session published the By George redesign straight to GitHub on 29 September while local work continued on `codex/phase-5-evidence-feedback`, built on the version before it. This consolidation brings the two lines together on `main`: the redesign, the Interval name and its documentation, Phase 5E–5G, and the Phases 6–8 entry package (its lesson drafts are data and tests only; nothing in the app uses them yet). The new self-review form, review history, review cue, Strengthen route and pitch-check modes are restyled in the design system in place of their old `app.css` rules. `AGENTS.md` now tells every session to fetch and compare with `origin/main` before starting, and the full WCAG browser scan has a 90-second limit because it could pass 30 seconds under two workers without any violation.
+
+Housekeeping: merged branches (`codex/phase-4-connected-journey`, `codex/public-hardening`, the superseded `design/by-george-look`) and a 26 September stash whose edits were already in `main` in later form are removed.
+
+**Verification:** 309 unit/interface tests across 46 files; lint, formatting, build, guest-bundle and offline-shell (1275.7 KiB raw against the 1280 KiB review threshold) checks passed. 88 desktop/phone Chromium browser checks passed with two workers (two production-only checks skipped), and both production-only offline checks and the font check passed against a production preview. Not verified: real guitar and phone input, and an installed phone app picking up the new name and icon.
+
+**Next:** Phase 6 continues on its own branch, which first takes in this `main` (a fast-forward; the redesign does not touch the files being edited there). The offline shell is within 5 KiB of its review threshold, so the next asset growth should prompt that review.
