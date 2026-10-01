@@ -1502,3 +1502,15 @@ The Unit 10 draft revealed a false abstraction: `PilotStudy` accepted any struct
 The third-comparison draft is still not routed into Learn or marked reviewed; only its score and playback adapters are exercised in tests. The chord-transition draft remains separate because simultaneous chord notes are not representable in this monophonic score. A draft capability name was narrowed from “transfer” to “locate” because the draft has no changed-root transfer yet.
 
 **Verification:** 313 unit/interface tests across 47 files, production build, lint, formatting, guest-bundle and offline-shell checks passed. The full desktop/phone-sized browser suite passed 88 checks, with two production-only checks skipped in development mode. Tests assert the third draft's visible notes/frets and its playback cues separately, and check that the concealed view does not expose the answer. No real guitar, physical phone, independent learner, emulator, CI or deployment verification is claimed. The Phase 5 real-input gate and Phase 6 review/batch gates remain open.
+
+---
+
+## Phase 6 chord-score groundwork (1 October 2026)
+
+**Status: separate chord draft can render and sound in tests; it is not a live lesson.**
+
+The C–Am draft now names its tuning, metre and bar count as part of the material. `timedChords` derives low-to-high fretted MIDI notes from each timed event and the exact guitar positions. `ChordStudy` renders the same events as two bars, names the three unchanged string/fret positions, highlights the current change and can start or stop the existing synthetic voicing engine. The four-beat study and two-count variation use the same path. A concealed mode removes chord names, frets, tonal centre and shared-position answers, including accessible labels. The preview itself says it is a draft and that the synth is not a hand demonstration or assessment.
+
+The draft validator now rejects duplicate voicing/event IDs and a chord event that crosses a bar boundary, in addition to wrong pitches and gaps. No chord material is connected to Learn, no result is written to learning evidence, and no real guitar technique or tempo accuracy is inferred. Normal and slow hand demonstrations, a changed-context transfer, physical playability review and an uncoached learner attempt remain required before Unit 6 is considered authored or reviewed.
+
+**Verification:** 316 unit/interface tests across 48 files, production build, lint and formatting passed. The new tests assert C x32010 → MIDI 48/52/55/60/64 and Am x02210 → 45/52/57/60/64, unchanged D2/B1/high-E-open positions, the two timelines, synthetic-engine arguments and answer concealment. Because the preview is unreferenced by the app entry point, the production bundle has no new chord-study code. No guitar, physical phone, independent learner, emulator, CI or deployment verification is claimed.

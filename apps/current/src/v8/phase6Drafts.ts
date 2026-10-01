@@ -154,6 +154,9 @@ export interface DraftChordStudy {
   review: { status: "draft" };
   unitId: "unit-06";
   tonalCenter: "C major";
+  tuningMidi: MusicalMaterial["tuningMidi"];
+  metre: MusicalMaterial["metre"];
+  bars: number;
   tempo: { minimum: 40; default: 60; maximum: 72 };
   voicings: readonly DraftChordVoicing[];
   events: readonly { id: string; atBeat: number; beats: number; chordId: DraftChordVoicing["id"] }[];
@@ -171,6 +174,9 @@ export const COMMON_TONE_CHANGE_DRAFT: DraftChordStudy = {
   review: { status: "draft" },
   unitId: "unit-06",
   tonalCenter: "C major",
+  tuningMidi: STANDARD_TUNING_MIDI,
+  metre: { numerator: 4, denominator: 4 },
+  bars: 2,
   tempo: { minimum: 40, default: 60, maximum: 72 },
   voicings: [
     {
@@ -282,7 +288,14 @@ export function validatePhase6Drafts(chordDraft: DraftChordStudy = COMMON_TONE_C
     ...validateMaterial(THIRD_COLOUR_REVERSED_DRAFT).map((error) => `Third variation: ${error}`),
   ];
   const chordModel = buildChords(createContext("C", "major"));
+  if (!Number.isInteger(chordDraft.bars) || chordDraft.bars < 1 || chordDraft.bars > 16)
+    errors.push("Chord study: invalid bar count.");
+  if (chordDraft.tuningMidi.some((midi) => !Number.isInteger(midi) || midi < 0 || midi > 127))
+    errors.push("Chord study: invalid tuning.");
+  const voicingIds = new Set<string>();
   for (const voicing of chordDraft.voicings) {
+    if (voicingIds.has(voicing.id)) errors.push(`${voicing.id}: duplicate voicing ID.`);
+    voicingIds.add(voicing.id);
     const chord = chordModel.find((item) => item.symbol === voicing.id);
     const strings = voicing.positions.map((position) => position.string);
     if (new Set(strings).size !== strings.length || strings.some((string) => string < 1 || string > 6))
@@ -296,24 +309,35 @@ export function validatePhase6Drafts(chordDraft: DraftChordStudy = COMMON_TONE_C
       continue;
     }
     const played = new Set(
-      voicing.positions.map((position) => normalize(positionMidi(STANDARD_TUNING_MIDI, position))),
+      voicing.positions.map((position) => normalize(positionMidi(chordDraft.tuningMidi, position))),
     );
     const expected = new Set(chord.tones.map((tone) => tone.pitchClass));
     if (played.size !== expected.size || [...played].some((pitch) => !expected.has(pitch)))
       errors.push(`${voicing.id}: frets do not sound the named chord.`);
   }
-  const voicingIds = new Set(chordDraft.voicings.map((voicing) => voicing.id));
   for (const [label, events] of [
     ["study", chordDraft.events],
     ["variation", chordDraft.variation],
   ] as const) {
     let nextBeat = 0;
+    const eventIds = new Set<string>();
     for (const event of events) {
-      if (event.atBeat !== nextBeat || event.beats <= 0 || !voicingIds.has(event.chordId))
+      if (
+        !event.id ||
+        eventIds.has(event.id) ||
+        !Number.isInteger(event.atBeat) ||
+        !Number.isInteger(event.beats) ||
+        event.atBeat !== nextBeat ||
+        event.beats <= 0 ||
+        (event.atBeat % chordDraft.metre.numerator) + event.beats > chordDraft.metre.numerator ||
+        !voicingIds.has(event.chordId)
+      )
         errors.push(`${label}: invalid chord event ${event.id}.`);
+      eventIds.add(event.id);
       nextBeat = event.atBeat + event.beats;
     }
-    if (nextBeat !== 8) errors.push(`${label}: expected exactly two bars.`);
+    if (nextBeat !== chordDraft.bars * chordDraft.metre.numerator)
+      errors.push(`${label}: events do not fill the study.`);
   }
   return errors;
 }

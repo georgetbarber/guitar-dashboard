@@ -392,6 +392,9 @@ textarea { min-height: 92px; resize: vertical; }
 .pilot-counts > div.is-current { outline: 3px solid var(--gold); outline-offset: 2px; }
 .pilot-counts span { color: var(--muted); font-size: 1.05rem; font-weight: 700; }
 .pilot-counts strong { font-size: .9rem; }
+.chord-study-counts small { font-size: .8rem; overflow-wrap: anywhere; }
+.chord-study-controls { display: flex; flex-wrap: wrap; gap: .5rem; }
+.chord-study-controls button { min-height: 44px; }
 .pilot-tab { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .3rem; padding-top: .35rem; border-top: 2px solid var(--line); }
 .pilot-tab span { text-align: center; font-size: 1rem; font-weight: 700; }
 .pilot-tab span.is-current { color: var(--moss); text-decoration: underline; text-decoration-thickness: 3px; }
