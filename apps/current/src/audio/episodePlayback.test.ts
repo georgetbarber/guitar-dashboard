@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ONE_NOTE_ANSWER_SHIFT, ONE_NOTE_QUESTION_ANSWER } from "../v8/pilotEpisode";
+import { THIRD_COLOUR_DRAFT } from "../v8/phase6Drafts";
 import {
   playbackCues,
   startEpisodePlayback,
@@ -25,6 +26,18 @@ describe("exact episode playback", () => {
     expect(attacks(ONE_NOTE_QUESTION_ANSWER, 1, { ...options, mode: "guided" })).toEqual([]);
     expect(playbackCues(ONE_NOTE_QUESTION_ANSWER, { ...options, mode: "unaided" }, 0)).toEqual([]);
     expect(attacks(ONE_NOTE_QUESTION_ANSWER, 0, { ...options, range: { fromBeat: 0, toBeat: 2 } })).toEqual([0]);
+  });
+
+  it("uses the score's own section IDs and pitches for the third comparison", () => {
+    expect(
+      playbackCues(THIRD_COLOUR_DRAFT, { ...options, section: "major" }, 0)
+        .filter((cue) => cue.kind === "note")
+        .map((cue) => [cue.atBeat, cue.midi]),
+    ).toEqual([
+      [0, 64],
+      [1, 68],
+      [2, 64],
+    ]);
   });
 
   it("anchors count-in and notes to the audio clock, and immediately stops a replaced player", async () => {

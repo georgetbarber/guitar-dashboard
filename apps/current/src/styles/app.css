@@ -399,10 +399,11 @@ textarea { min-height: 92px; resize: vertical; }
 .pilot-guitar strong { font-size: .7rem; }
 .pilot-guitar span, .pilot-guitar small { font-size: .76rem; }
 .pilot-guitar small { color: var(--muted); }
-.pilot-fretboard { display: grid; gap: .16rem; max-width: 340px; }
+.pilot-fretboard { display: grid; gap: .16rem; max-width: 340px; overflow-x: auto; }
 .pilot-string-row { display: grid; grid-template-columns: 24px 36px repeat(3, minmax(0, 1fr)); align-items: center; min-height: 18px; }
 .pilot-string-row > span { font-weight: 700; }
 .pilot-string-row b { display: grid; width: 24px; height: 24px; place-items: center; border: 1px solid transparent; border-radius: 50%; font-size: .75rem; }
+.pilot-string-row b:not(.target) { border-bottom-color: var(--line); border-radius: 0; }
 .pilot-string-row b.target { border-color: var(--moss); }
 .pilot-guitar.is-sounding .pilot-string-row b.target { background: var(--moss); color: white; }
 .pilot-guitar.is-muted .pilot-string-row b.target { border-style: dashed; }

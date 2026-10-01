@@ -1490,3 +1490,15 @@ Phase 7 documentation was reconciled where it overstated general streak/expandin
 Phase 8's four optional ideas have a provisional admission order and concrete experiments in the [entry review](reviews/2026-09-30-phases-6-8-entry.md). No extension was built or silently promoted into core scope. The no-guitar companion is especially relevant while George lacks his instrument, but it cannot be judged by guitar-free clicks alone; its handoff to later physical use is the test.
 
 **Local verification:** 309 unit/interface tests across 46 files and their coverage run passed, as did the production build, lint, formatting, guest-entry bundle and offline-shell checks. The full desktop/phone-sized browser suite passed 88 checks, with two production-only checks skipped in development mode. The build is unchanged at runtime because both lesson drafts are unreferenced. The Firebase rules suite could not start without Java on this machine. No guitar, physical phone, independent learner, emulator, CI, deployment or live-account evidence is claimed. The existing Phase 5 gate remains open.
+
+---
+
+## Phase 6 score and playback groundwork (1 October 2026)
+
+**Status: reusable monophonic groundwork locally verified; new lessons remain unshipped.**
+
+The Unit 10 draft revealed a false abstraction: `PilotStudy` accepted any structured material but hard-coded “Play E,” open-string tablature, an open-E fretboard and an open-E screen-reader description. It now derives note names, string/fret positions, section labels, count grid and active guitar target from the material events. Its concealed check hides section names, note labels, tablature and physical-position text and diagram, including accessible labels, so the answer is not revealed on a different channel. The existing one-note lesson retains its familiar copy. Playback can select authored section IDs such as `minor` and `major` rather than only `question` and `answer`.
+
+The third-comparison draft is still not routed into Learn or marked reviewed; only its score and playback adapters are exercised in tests. The chord-transition draft remains separate because simultaneous chord notes are not representable in this monophonic score. A draft capability name was narrowed from “transfer” to “locate” because the draft has no changed-root transfer yet.
+
+**Verification:** 313 unit/interface tests across 47 files, production build, lint, formatting, guest-bundle and offline-shell checks passed. The full desktop/phone-sized browser suite passed 88 checks, with two production-only checks skipped in development mode. Tests assert the third draft's visible notes/frets and its playback cues separately, and check that the concealed view does not expose the answer. No real guitar, physical phone, independent learner, emulator, CI or deployment verification is claimed. The Phase 5 real-input gate and Phase 6 review/batch gates remain open.
