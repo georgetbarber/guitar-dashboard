@@ -636,6 +636,21 @@
   font: var(--weight-semi) var(--type-small) / var(--lh-tight) var(--serif);
 }
 
+.chord-study-counts small {
+  font-size: var(--type-small);
+  overflow-wrap: anywhere;
+}
+
+.chord-study-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chord-study-controls button {
+  min-height: 44px;
+}
+
 .pilot-tab {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

@@ -74,5 +74,25 @@ describe("two contrasting, unshipped Phase 6 episode drafts", () => {
       ),
     };
     expect(validatePhase6Drafts(gap)).toContain("study: invalid chord event am-answer.");
+    const duplicateVoicing = {
+      ...COMMON_TONE_CHANGE_DRAFT,
+      voicings: [COMMON_TONE_CHANGE_DRAFT.voicings[0], ...COMMON_TONE_CHANGE_DRAFT.voicings],
+    };
+    expect(validatePhase6Drafts(duplicateVoicing)).toContain("C: duplicate voicing ID.");
+    const duplicateEvent = {
+      ...COMMON_TONE_CHANGE_DRAFT,
+      variation: COMMON_TONE_CHANGE_DRAFT.variation.map((event) =>
+        event.id === "am-two" ? { ...event, id: "am-one" } : event,
+      ),
+    };
+    expect(validatePhase6Drafts(duplicateEvent)).toContain("variation: invalid chord event am-one.");
+    const crossingBar = {
+      ...COMMON_TONE_CHANGE_DRAFT,
+      events: [
+        { ...COMMON_TONE_CHANGE_DRAFT.events[0], beats: 5 },
+        { ...COMMON_TONE_CHANGE_DRAFT.events[1], atBeat: 5, beats: 3 },
+      ],
+    };
+    expect(validatePhase6Drafts(crossingBar)).toContain("study: invalid chord event c-first.");
   });
 });
