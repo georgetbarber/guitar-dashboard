@@ -27,6 +27,9 @@ async function startLearning(page: Page) {
 }
 
 test("core learning screens and dialogs meet automated WCAG 2.2 A and AA checks in both themes", async ({ page }) => {
+  // About twenty full-page axe scans in two themes: with parallel workers this can pass 30 seconds
+  // without anything being wrong, so give it the time the work needs rather than a flaky failure.
+  test.setTimeout(90_000);
   const failures: string[] = [];
   const nav = () => page.locator(".primary-nav:visible, .mobile-nav:visible");
   const scan = async (theme: string, screen: string, dialog = false) => {
