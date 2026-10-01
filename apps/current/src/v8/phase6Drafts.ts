@@ -78,7 +78,7 @@ export const THIRD_COLOUR_EPISODE_DRAFT: EpisodeDefinition = {
   objective: "Hear and play the one-fret difference between E–G and E–G# on one string.",
   successCriterion:
     "After the root, locate fret 3 for a minor third and fret 4 for a major third; hear which span is wider without reading the answer.",
-  capabilityIds: ["ear.third.compare", "interval.third.locate", "fretboard.one-string.transfer"],
+  capabilityIds: ["ear.third.compare", "interval.third.locate", "fretboard.one-string.locate"],
   moves: [
     {
       id: "hear-contrast",
