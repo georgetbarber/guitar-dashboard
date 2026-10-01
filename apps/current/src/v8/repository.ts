@@ -128,12 +128,23 @@ async function readStoredWorkspace(workspaceId: WorkspaceId): Promise<unknown> {
   }
 }
 
+function normalizeClosedActivity(value: unknown): unknown {
+  // Earlier clients closed the lesson overlay by storing an empty ID. That
+  // means "no active activity", not corrupt learner work. Repair only this
+  // known sentinel before validating the rest of the untrusted workspace.
+  return typeof value === "object" && !Array.isArray(value) && value !== null
+    && (value as Record<string, unknown>).activeActivityId === ""
+    ? { ...value, activeActivityId: null }
+    : value;
+}
+
 export async function loadWorkspace(workspaceId: WorkspaceId = activeWorkspace): Promise<WorkspaceLoad> {
   const value = await readStoredWorkspace(workspaceId);
   if (value === null || value === undefined) return { status: "empty" };
   try {
-    validateState(value);
-    return { status: "ok", state: value };
+    const normalized = normalizeClosedActivity(value);
+    validateState(normalized);
+    return { status: "ok", state: normalized };
   } catch (error) {
     return { status: "unreadable", reason: error instanceof Error ? error.message : "This workspace could not be read.", raw: value };
   }
@@ -709,7 +720,9 @@ function validateArchiveHeader(header: ArchiveHeader) {
    * malformed music through to savePersistedState, where it became this device's
    * workspace.
    */
-  validateState(header.state);
+  const normalized = normalizeClosedActivity(header.state);
+  validateState(normalized);
+  header.state = normalized;
   const ids = new Set<string>();
   for (const recording of header.recordings) {
     if (!recording.id || !Number.isSafeInteger(recording.size) || recording.size < 0 || ids.has(recording.id)) {
@@ -728,7 +741,9 @@ async function readLegacyArchive(file: File): Promise<ParsedArchive> {
   if (archive?.format !== "guitar-academy" || archive.version !== 8 || archive.state?.version !== 8) {
     throw new Error("This file is not an Interval backup this version can read.");
   }
-  validateState(archive.state);
+  const normalized = normalizeClosedActivity(archive.state);
+  validateState(normalized);
+  archive.state = normalized;
   const recordings = (archive.recordings ?? []).map((recording) => ({ id: recording.id, blob: dataToBlob(recording.data) }));
   const available = new Set(recordings.map((recording) => recording.id));
   for (const id of referencedBlobIds(archive.state)) {

@@ -24,9 +24,10 @@ live here.
    instruction and musical transfer more effective.
 9. [Additional note takeaways](additional-notes/README.md) — useful ideas
    distilled from informal project notes and checked against the current app.
-10. [Draft implementation plan](IMPLEMENTATION_PLAN.md) — phased work covering
-    the September 2026 engineering and design/learning audits, with acceptance
-    gates and a complete findings register. This is proposed work, not shipped behaviour.
+10. [Implementation plan](IMPLEMENTATION_PLAN.md) and [implementation log](IMPLEMENTATION_LOG.md)
+    — phased work covering the September 2026 engineering and design/learning
+    audits, with acceptance gates, completed local packages and open checks.
+    Plan items and draft lessons are not shipped behaviour.
 
 ## Detailed Source Material
 

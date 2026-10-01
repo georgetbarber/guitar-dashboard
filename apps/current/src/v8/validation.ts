@@ -1,5 +1,6 @@
 import type { CloudProfile } from "./sync";
 import { checkedAnswerIsValid, conceptCheckById } from "./conceptChecks";
+import { PILOT_REVIEW_FOCUS_IDS } from "./pilotReview";
 import type { CompetencyEvidence, LearnerSettings, Sketch, V8State } from "./types";
 import { SKETCH_SYNC_FIELDS } from "./types";
 
@@ -178,6 +179,7 @@ function pilotCursor(value: unknown, path: string) {
   if (v.attemptId !== undefined) id(v.attemptId, `${path}.attemptId`);
   number(v.tempo, `${path}.tempo`, 20, 400, true);
   if (v.repairId !== undefined) id(v.repairId, `${path}.repairId`);
+  if (v.reviewId !== undefined) id(v.reviewId, `${path}.reviewId`);
   date(v.updatedAt, `${path}.updatedAt`);
 }
 function pilotAttempt(value: unknown, path: string) {
@@ -190,6 +192,18 @@ function pilotAttempt(value: unknown, path: string) {
   str(v.observation, `${path}.observation`); if ((v.observation as string).length > 1000) fail(`${path}.observation length`);
   date(v.occurredAt, `${path}.occurredAt`);
   if (v.localDate !== undefined) localDate(v.localDate, `${path}.localDate`);
+}
+function pilotReview(value: unknown, path: string) {
+  const v = object(value, path); id(v.id, `${path}.id`); pilotIdentity(v, path);
+  date(v.takeCapturedAt, `${path}.takeCapturedAt`);
+  choice(v.focus, PILOT_REVIEW_FOCUS_IDS, `${path}.focus`);
+  for (const field of ["intended", "noticed", "nextChange"] as const) {
+    str(v[field], `${path}.${field}`);
+    if ((v[field] as string).trim().length < 8 || (v[field] as string).length > 240) fail(`${path}.${field} length`);
+  }
+  choice(v.method, ["self-reported"], `${path}.method`);
+  date(v.createdAt, `${path}.createdAt`);
+  localDate(v.localDate, `${path}.localDate`);
 }
 function pilotVariation(value: unknown, path: string) {
   const v = object(value, path); id(v.id, `${path}.id`);
@@ -242,6 +256,7 @@ export function validateState(value: unknown): asserts value is V8State {
   if (v.pendingRestoreId !== undefined) id(v.pendingRestoreId, "pending restore");
   if (v.pilotCursor != null) pilotCursor(v.pilotCursor, "pilot cursor");
   if (v.pilotAttempts !== undefined) identifiedList(v.pilotAttempts, "pilot attempts", pilotAttempt);
+  if (v.pilotReviews !== undefined) identifiedList(v.pilotReviews, "pilot reviews", pilotReview);
   if (v.pilotVariations !== undefined) identifiedList(v.pilotVariations, "pilot variations", pilotVariation);
   if (v.sessionPlan != null) sessionPlan(v.sessionPlan, "session plan");
   if (v.sessionCursor !== undefined) number(v.sessionCursor, "session cursor", 0, 8, true);
@@ -255,7 +270,6 @@ export function validateState(value: unknown): asserts value is V8State {
   settings(v.settings, "settings"); date(v.updatedAt, "workspace date"); date(v.settingsUpdatedAt, "settings date");
   choice(v.route, ROUTES, "route"); id(v.activeUnitId, "active unit");
   for (const key of ["activeActivityId", "resumeActivityId", "activeSketchId"]) nullable(v[key], id, key);
-  // An older client wrote an empty activeActivityId when closing its overlay.
   if (v.activityOrigin != null) choice(v.activityOrigin, ROUTES, "activity origin");
   identifiedList(v.sketches, "sketches", sketch); identifiedList(v.evidence, "evidence", evidence);
   list(v.completedActivityIds, "completions", id); str(v.lastReflection, "reflection");

@@ -56,15 +56,18 @@ limited microphone analysis. New V8 UI does not duplicate those constants.
 
 ## Learning and Evidence
 
-Curriculum is data, not page markup. Every core unit includes sound, ear-to-hand,
-technique in context, rhythm, relationship explanation, variation, creation,
-transfer, and reflection. Validation rejects broken prerequisites, duplicate IDs,
-missing activity types, invalid budgets, and incomplete assets.
+Curriculum is data, not page markup. The 48 unit outlines each contain sound,
+ear-to-hand, technique, rhythm, relationship, variation, creation, transfer and
+reflection activity templates. Only Unit 1 has a structured two-bar episode;
+the other units have not received Phase 6 musical authoring and human review.
+Validation rejects broken prerequisites, duplicate IDs, missing activity types,
+invalid budgets, and incomplete assets.
 
 Evidence records source, assistance, outcome, activity, time, and musical context.
-Mastery is derived: secure requires independent success on two different days;
-transfer-ready also requires a successful changed context. Creative work is
-tracked as artifacts and revisions, not reduced to a creativity score.
+Self-reported lesson success is practice history and cannot produce secure or
+transfer-ready physical mastery. Narrow exact-answer concept checks have their
+own capability records and delayed changed examples. Creative work is tracked
+as artifacts and revisions, not reduced to a creativity score.
 
 ## Persistence and Privacy
 
@@ -86,9 +89,11 @@ Recordings are temporary by default. A retained take stays private to its device
 unless the learner finishes the project and explicitly selects that one take for
 cross-device use. Only its metadata enters Firestore; the audio object is confined
 to the authenticated learner's Firebase Storage path, with a 50 MB audio-only
-rule. There are no analytics. Microphone feedback claims only clean sustained
-monophonic pitch and suitable onset timing; richer performances use comparison
-and self-review.
+rule. There are no analytics. Microphone feedback offers temporary pitch-only
+estimates for a sustained note and short sequences separated by clear silence;
+it does not grade onset timing, tone, technique or overall performance. The
+estimate is not retained as mastery evidence. Richer performances use learner
+comparison and self-review.
 
 ## Test Strategy
 

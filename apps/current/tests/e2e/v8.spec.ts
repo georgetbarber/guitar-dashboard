@@ -175,6 +175,7 @@ test("waits for real learning evidence before suggesting Strengthen work", async
   await expect(page.getByRole("heading", { name: "Nothing to strengthen from playing yet." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Go to Continue" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Skill focuses" })).toHaveCount(0);
+  await expect(page.locator(".practice-review")).toHaveCount(0);
 });
 
 test("checks a named relationship, then offers changed-example recall on a later day", async ({ page }) => {
@@ -463,6 +464,92 @@ test("a denied microphone leaves the pilot lesson playable and private", async (
   await expect(page.getByRole("heading", { name: "Turn one relationship into music." })).toBeVisible();
 });
 
+test("keeps a focused recording self-review without keeping audio or advancing playing progress", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: async () => new MediaStream() },
+    });
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: class {
+        createAnalyser() { return { fftSize: 4096, smoothingTimeConstant: 0 }; }
+        createMediaStreamSource() { return { connect: () => undefined }; }
+        close() { return Promise.resolve(); }
+      },
+    });
+    Object.defineProperty(window, "MediaRecorder", {
+      configurable: true,
+      value: class extends EventTarget {
+        mimeType = "audio/webm";
+        start() { /* Simulated recorder; no real microphone is used. */ }
+        stop() {
+          this.dispatchEvent(new BlobEvent("dataavailable", { data: new Blob(["test take"], { type: this.mimeType }) }));
+          this.dispatchEvent(new Event("stop"));
+        }
+      },
+    });
+  });
+  await completeDiagnostic(page);
+  await page.getByRole("button", { name: "Start the one-note lesson" }).click();
+  await page.getByRole("button", { name: "Record a temporary take" }).click();
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  const review = page.locator(".pilot-review-form");
+  await expect(review).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  await review.getByLabel("Listening focus").selectOption("muting");
+  await review.getByLabel("What were you trying to make the phrase do?").fill("Leave a clean rest after the question.");
+  await review.getByLabel(/At which rest did sound continue/).fill("The final rest still seemed to ring.");
+  await review.getByLabel("What one change will you test next?").fill("Lift the picking hand at the final rest.");
+  await page.getByRole("button", { name: "Discard take" }).click();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /Save or clear your unfinished listening review/ })).toBeVisible();
+  await review.getByRole("button", { name: "Save written review" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /written self-review was added/ })).toBeVisible();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await expect(page.locator(".save-indicator:visible")).toHaveText("Saved on this device");
+  await page.reload();
+  await page.getByRole("button", { name: "Continue the one-note lesson" }).click();
+  await page.getByText("Earlier self-reviews (1)").click();
+  await expect(page.locator(".pilot-review-history")).toContainText("The final rest still seemed to ring.");
+  await expect(page.locator(".pilot-review-history")).toContainText("Lift the picking hand at the final rest.");
+  await expect(page.getByRole("button", { name: "Record a temporary take" })).toBeEnabled();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await learnViews(page).getByRole("button", { name: /Course map/ }).click();
+  await expect(page.locator(".path-total strong")).toHaveText("0");
+  await learnViews(page).getByRole("button", { name: /Strengthen/ }).click();
+  const nextPractice = page.locator(".practice-review");
+  await expect(nextPractice).toContainText("Lift the picking hand at the final rest.");
+  await expect(nextPractice).toContainText("Rehearse the first sound and rest at 50 BPM");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  await nextPractice.getByRole("button", { name: "Try this change in the lesson" }).click();
+  await expect(page.getByRole("heading", { name: "My note rings through the rest." })).toBeVisible();
+  await expect(page.locator(".pilot-review-cue")).toContainText("Lift the picking hand at the final rest.");
+  await page.getByRole("button", { name: "Return to both bars" }).click();
+  await expect(page.getByRole("heading", { name: "Play beside the count" })).toBeVisible();
+  await expect(page.locator(".pilot-review-cue")).toContainText("Lift the picking hand at the final rest.");
+  await page.getByRole("button", { name: "Record a temporary take" }).click();
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  const secondReview = page.locator(".pilot-review-form");
+  await secondReview.getByLabel("Listening focus").selectOption("tone");
+  await secondReview.getByLabel("What were you trying to make the phrase do?").fill("Give the question a softer touch.");
+  await secondReview.getByLabel(/Which attack had the sound you wanted/).fill("The first attack sounded too sharp.");
+  await secondReview.getByLabel("What one change will you test next?").fill("Pluck the first note more gently.");
+  await page.getByRole("button", { name: "Discard take" }).click();
+  await secondReview.getByRole("button", { name: "Save written review" }).click();
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await expect(page.locator(".practice-review")).toContainText("Pluck the first note more gently.");
+  await page.locator(".practice-review").getByRole("button", { name: "Try this change in the lesson" }).click();
+  await expect(page.getByRole("heading", { name: "Play beside the count" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Play" })).toHaveValue("question");
+  await page.getByRole("button", { name: "Return to both bars" }).click();
+  await expect(page.getByRole("combobox", { name: "Play" })).toHaveValue("whole");
+  await page.getByRole("button", { name: "Close lesson" }).click();
+  await learnViews(page).getByRole("button", { name: /Course map/ }).click();
+  await expect(page.locator(".path-total strong")).toHaveText("0");
+});
+
 test("a denied optional pitch check remains uncertain and does not create playing evidence", async ({ page, context }) => {
   await context.clearPermissions();
   await page.addInitScript(() => Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: () => Promise.reject(new DOMException("Permission denied", "NotAllowedError")) } }));
@@ -517,6 +604,61 @@ test("a clean simulated note yields only a temporary pitch estimate", async ({ p
   await expect(page.getByText("Pitch-only estimate")).toBeVisible();
   await expect(page.locator(".pitch-check-result")).toContainText("near E4");
   await expect(page.getByRole("heading", { name: "Nothing to strengthen from playing yet." })).toBeVisible();
+  expect(await page.evaluate(() => (window as typeof window & { __pitchMicStops: number }).__pitchMicStops)).toBe(1);
+  await page.getByRole("button", { name: "Use microphone for one note" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /Listening… play the shown pattern/ })).toBeVisible();
+  await page.locator(".pitch-check summary").click();
+  await expect(page.locator(".pitch-check-body")).toBeHidden();
+  expect(await page.evaluate(() => (window as typeof window & { __pitchMicStops: number }).__pitchMicStops)).toBe(2);
+  await page.reload();
+  await expect(page.locator(".pitch-check-result")).toHaveCount(0);
+  await learnViews(page).getByRole("button", { name: /Course map/ }).click();
+  await expect(page.locator(".path-total strong")).toHaveText("0");
+});
+
+test("a simulated three-note signal stays a temporary pitch-order estimate", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.addInitScript(() => {
+    let stopped = 0;
+    Object.defineProperty(window, "__pitchMicStops", { get: () => stopped });
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: async () => ({ getTracks: () => [{ stop: () => { stopped += 1; } }] }) },
+    });
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: class {
+        sampleRate = 48_000;
+        state = "running";
+        createAnalyser() {
+          let frame = 0;
+          return {
+            fftSize: 4096,
+            smoothingTimeConstant: 0,
+            getFloatTimeDomainData(samples: Float32Array) {
+              const current = frame++;
+              const midi = current >= 4 && current < 13 ? 64 : current >= 17 && current < 26 ? 67 : current >= 30 && current < 39 ? 64 : null;
+              const frequency = midi === null ? 0 : 440 * 2 ** ((midi - 69) / 12);
+              for (let index = 0; index < samples.length; index += 1) {
+                samples[index] = midi === null ? 0 : 0.2 * Math.sin(2 * Math.PI * frequency * ((current * samples.length + index) / 48_000));
+              }
+            },
+          };
+        }
+        createMediaStreamSource() { return { connect: () => undefined }; }
+        close() { return Promise.resolve(); }
+      },
+    });
+  });
+  await completeDiagnostic(page);
+  await learnViews(page).getByRole("button", { name: /Strengthen/ }).click();
+  await page.locator(".pitch-check summary").click();
+  await page.getByRole("button", { name: "Three-note shape" }).click();
+  await expect(page.locator(".pitch-check-body")).toContainText("G is a minor third above E");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  await page.getByRole("button", { name: "Use microphone for three notes" }).click();
+  await expect(page.locator(".pitch-check-result")).toContainText("E4 → G4 → E4", { timeout: 12_000 });
+  await expect(page.locator(".pitch-check-result")).toContainText("does not judge your rhythm");
   expect(await page.evaluate(() => (window as typeof window & { __pitchMicStops: number }).__pitchMicStops)).toBe(1);
   await page.reload();
   await expect(page.locator(".pitch-check-result")).toHaveCount(0);

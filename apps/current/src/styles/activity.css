@@ -902,6 +902,94 @@ section.pilot-episode > .activity-header {
   flex-basis: 100%;
 }
 
+/* Focused self-review: the learner's own written notes on a temporary take. */
+.pilot-review,
+.pilot-review-form {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.pilot-review > .text-action {
+  justify-self: start;
+}
+
+.pilot-review-form {
+  padding: var(--space-4);
+  border: var(--rule);
+  background: var(--paper);
+}
+
+.pilot-review-form p {
+  margin: 0;
+}
+
+/* The prompts are questions, so they stay sentences in the serif. */
+.pilot-review-form label {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--ink);
+  font-weight: var(--weight-semi);
+}
+
+.pilot-review-form textarea {
+  min-height: 4.5rem;
+}
+
+.pilot-review-form small,
+.pilot-review-history small,
+.pilot-review-cue small {
+  color: var(--ink-soft);
+}
+
+.pilot-review-history {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: var(--rule);
+}
+
+.pilot-review-history summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-min);
+  font-weight: var(--weight-semi);
+}
+
+.pilot-review-history ol {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.pilot-review-history li {
+  display: grid;
+  gap: var(--space-1);
+  overflow-wrap: anywhere;
+}
+
+.pilot-review-history li span {
+  font-size: var(--type-small);
+}
+
+/* The change carried into the lesson: a ruled note with the accent rule, like a reason. */
+.pilot-review-cue {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border: var(--rule);
+  border-left: var(--rule-heavy) solid var(--piece-accent);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.pilot-review-cue p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 900px) {
   .activity-grid,
   .pilot-layout {

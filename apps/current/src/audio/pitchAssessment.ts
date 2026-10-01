@@ -18,7 +18,7 @@ export interface TimedAudioFrame {
 const LOWEST_HZ = 80;
 const HIGHEST_HZ = 850;
 
-function framePitch(samples: Float32Array, sampleRate: number): { frequencyHz: number; confidence: number } | null {
+export function estimateFramePitch(samples: Float32Array, sampleRate: number): { frequencyHz: number; confidence: number } | null {
   if (samples.length < 2048 || sampleRate < 8_000) return null;
   // Half-rate analysis keeps this bounded on phones while retaining more than
   // enough samples for an open high E and its nearby mistakes.
@@ -103,7 +103,7 @@ export function assessSustainedPitch(
       clipped += 1;
       continue;
     }
-    const estimate = framePitch(frame.samples, sampleRate);
+    const estimate = estimateFramePitch(frame.samples, sampleRate);
     if (estimate) {
       frequencies.push(estimate.frequencyHz);
       confidences.push(estimate.confidence);

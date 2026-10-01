@@ -142,6 +142,8 @@ export interface PilotCursor {
   /** Generated when a check begins and reused if the record action is retried. */
   attemptId?: string;
   repairId?: string;
+  /** A learner's saved review whose next change they chose to practise. */
+  reviewId?: string;
   updatedAt: string;
 }
 
@@ -162,6 +164,25 @@ export interface PilotAttempt {
   occurredAt: string;
   /** Learner-local calendar date at capture; older records fall back to UTC date. */
   localDate?: string;
+}
+
+export type PilotReviewFocus = "phrasing" | "muting" | "tension" | "tone" | "intention";
+
+/** A learner's written comparison after a temporary take, never measured evidence. */
+export interface PilotListeningReview {
+  id: string;
+  episodeId: string;
+  episodeVersion: number;
+  materialId: string;
+  materialVersion: number;
+  takeCapturedAt: string;
+  focus: PilotReviewFocus;
+  intended: string;
+  noticed: string;
+  nextChange: string;
+  method: "self-reported";
+  createdAt: string;
+  localDate: string;
 }
 
 export interface PilotVariation {
@@ -298,6 +319,7 @@ export interface V8State {
   /** Pilot state is local to this workspace and included in its backup. */
   pilotCursor?: PilotCursor | null;
   pilotAttempts?: PilotAttempt[];
+  pilotReviews?: PilotListeningReview[];
   pilotVariations?: PilotVariation[];
   /** The current device's guided route; stays fixed across detours and reloads. */
   sessionPlan?: SessionPlan | null;

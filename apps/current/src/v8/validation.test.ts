@@ -16,7 +16,8 @@ import { DEFAULT_STATE } from "./store";
 import { acceptEvidence, acceptProfile, acceptSketches, cloudProfile, describeRejected } from "./sync";
 import { createEvidence } from "./learning";
 import { ONE_NOTE_ANSWER_SHIFT, ONE_NOTE_QUESTION_ANSWER, PILOT_EPISODE } from "./pilotEpisode";
-import type { V8State } from "./types";
+import { newPilotCursor } from "./pilotProgress";
+import type { PilotListeningReview, V8State } from "./types";
 
 async function resetDatabase() {
   await new Promise<void>((resolve, reject) => {
@@ -33,10 +34,11 @@ const validState = (): V8State => ({ ...DEFAULT_STATE, sketches: [newSketch(0)],
 /** Writes a value straight into the state store, bypassing every check, the way a damaged or older client would have left it. */
 async function writeRaw(value: unknown, workspaceId = "anonymous") {
   const database: IDBDatabase = await new Promise((resolve, reject) => {
-    const request = indexedDB.open("guitar-academy-v8", 2);
+    const request = indexedDB.open("guitar-academy-v8", 3);
     request.onupgradeneeded = () => {
       if (!request.result.objectStoreNames.contains("state")) request.result.createObjectStore("state");
       if (!request.result.objectStoreNames.contains("blobs")) request.result.createObjectStore("blobs");
+      if (!request.result.objectStoreNames.contains("staging")) request.result.createObjectStore("staging");
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -84,8 +86,41 @@ describe("the stored workspace is validated before it is trusted (B08)", () => {
       pilotAttempts: state.pilotAttempts, pilotVariations: state.pilotVariations });
   });
 
+  it("recovers the empty activity ID written when an older client closed a lesson", async () => {
+    await writeRaw({ ...validState(), activeActivityId: "" });
+    const loaded = await loadWorkspace("anonymous");
+    expect(loaded.status).toBe("ok");
+    if (loaded.status === "ok") expect(loaded.state.activeActivityId).toBeNull();
+  });
+
   it("quarantines an invalid pilot attempt without erasing the stored bytes", async () => {
     await writeRaw({ ...validState(), pilotAttempts: [{ id: "bad", outcome: "measured" }] });
+    expect((await loadWorkspace("anonymous")).status).toBe("unreadable");
+  });
+
+  it("keeps a versioned written self-review in the backup state, separate from cloud profile and playing evidence", async () => {
+    const review: PilotListeningReview = {
+      id: "review-one", episodeId: PILOT_EPISODE.id, episodeVersion: PILOT_EPISODE.version,
+      materialId: ONE_NOTE_QUESTION_ANSWER.id, materialVersion: ONE_NOTE_QUESTION_ANSWER.version,
+      takeCapturedAt: "2026-09-30T10:00:00.000Z", focus: "muting",
+      intended: "Leave a clean rest after the question.", noticed: "The final rest kept ringing.",
+      nextChange: "Lift my picking hand at that rest.", method: "self-reported",
+      createdAt: "2026-09-30T10:02:00.000Z", localDate: "2026-09-30",
+    };
+    const state = { ...validState(), pilotReviews: [review],
+      pilotCursor: { ...newPilotCursor(), reviewId: review.id } };
+    await savePersistedState(state, "anonymous");
+    const loaded = await loadWorkspace("anonymous");
+    expect(loaded.status).toBe("ok");
+    if (loaded.status === "ok") {
+      expect(loaded.state.pilotReviews).toEqual([review]);
+      expect(loaded.state.pilotCursor?.reviewId).toBe(review.id);
+      expect(loaded.state.evidence).toEqual([]);
+      expect(cloudProfile(loaded.state)).not.toHaveProperty("pilotReviews");
+    }
+    await writeRaw({ ...state, pilotReviews: [{ ...review, method: "measured" }] });
+    expect((await loadWorkspace("anonymous")).status).toBe("unreadable");
+    await writeRaw({ ...state, pilotReviews: [{ ...review, noticed: "x" }] });
     expect((await loadWorkspace("anonymous")).status).toBe("unreadable");
   });
 

@@ -15,12 +15,12 @@ future additions rather than missing fixes:
 - [ ] Add harmonic-minor and melodic-minor modes only when their teaching
       sequence and chord labelling are clear. The current raised-leading-tone
       V/V7 treatment in minor remains the deliberately smaller step.
-- [ ] Build a fuller diagnostic placement system that can recommend units from
-      demonstrated evidence, rather than only choosing the initial starting
-      point.
-- [ ] Author activity content more specifically for all 48 units. The current
-      release only replaces the generic prompts where they were clearly
-      misleading.
+- [ ] Extend the current narrow starting samples into a fuller diagnostic
+      placement system that recommends units from observed playing evidence,
+      without treating guitar-free answers or self-reports as physical mastery.
+- [ ] Author and review specific musical episodes for all 48 units. Unit 1 has
+      the live structured pilot; two contrasting Phase 6 drafts remain unshipped.
+      The other units still rely on outline-level activities.
 
 ## Learning and musical depth
 

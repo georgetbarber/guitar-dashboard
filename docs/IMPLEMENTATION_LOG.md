@@ -1451,6 +1451,60 @@ Phase 5D's pitch-check card was merged in and restyled in the same system.
 
 **Next:** decide whether the wordmark should carry the By George full stop; refresh the app icon, which still uses the previous palette; and consider a fretboard colour key beside the text legend.
 
+---
+
+## Phase 5E — focused self-review after a temporary take (30 September 2026)
+
+**Status: implemented and locally verified as learner-authored reflection; the Phase 5 assessment gate remains open.**
+
+The pilot's existing reference-versus-temporary-take flow now offers a short written review after a take. The learner chooses one focus — phrasing, muting and release, physical ease, tone and touch, or musical intention — then records what they intended, one specific thing they noticed, and one change to test next. The physical-ease prompt explicitly says a recording cannot reveal tension. Saying that a detail could not be heard clearly is allowed; the app does not produce a score or treat the words as measured playing evidence. The review is versioned to the pilot material and marked `self-reported`. It is saved in this device workspace and its backup, separately from the temporary audio, and never changes course completion or readiness. Earlier reviews can be reopened in the pilot. A partly written review blocks ordinary lesson exit or a new take until saved or cleared; downloading or discarding the audio is still a separate choice.
+
+A reload test found an existing recovery defect: closing any activity stored an empty active-activity ID, but the stored-workspace validator rejected that ID on the next launch. Closing now writes `null`. Existing workspaces with exactly that old sentinel are normalized before validation, and both current and legacy backup formats receive the same narrow repair before staging. Other malformed workspace data still remains quarantined. This recovery belongs in this package because the new review's central promise is that its text survives reopening.
+
+**Verification:** 300 unit/interface tests across 43 files passed. The full browser run passed 86 desktop and phone-sized Chromium checks, with two production-only checks skipped in development mode; the review journey was rerun after the archive repair. The review browser check used a simulated temporary take at 320px, verified unfinished-draft protection, discarded the audio, saved the words, reloaded them, and confirmed course progress stayed at zero. A backup round-trip preserved the written review without a recording. Local and archive compatibility checks cover the old empty activity ID. Build, lint, formatting, guest-bundle and offline-shell checks passed. The browser recording and the text are synthetic test input; no real guitar, microphone hardware, physical phone, independent learner trial, CI run or deployment is claimed. No Firestore rule or cloud sync method changed; pilot reviews remain device-workspace data rather than cross-device evidence.
+
+**Next:** use a real take to judge whether the prompts lead to a useful next attempt, and review the sustained-pitch check on actual hardware. Separated attacks and short monophonic sequences need their own signal checks; neither should be inferred from this reflection or from one sustained pitch.
+
+---
+
+## Phase 5F — take one self-chosen change back into the lesson (30 September 2026)
+
+**Status: implemented and locally verified as a practice route; the Phase 5 assessment gate remains open.**
+
+Strengthen now shows the latest written review for the current pilot and material version, including the learner's exact next change. Its suggested starting place follows the focus the learner selected, not analysis of the recording. A muting focus opens the pilot's authored one-sound/one-rest release exercise at 50 BPM, then offers a return to both bars. The card explains that this first-rest movement must be applied to the rest the learner actually noticed. Physical ease and tone start with the short question bar; phrasing and musical intention start with the full two-bar phrase. The existing tempo and section controls remain available. The chosen change stays visible during this practice route and can be revisited after closing the lesson. A new temporary take is optional; no audio is retained by this route.
+
+The link back to practice is stored as an optional review ID on the pilot cursor. Older workspaces remain valid, and reviews for a different episode or material version are not selected. The route neither records a successful attempt nor changes course completion, mastery or readiness. Its text says plainly that the change is the learner's own plan and has not been verified by a microphone.
+
+**Verification:** 302 unit/interface tests across 44 files passed. The full browser run passed 86 desktop and phone-sized Chromium checks, with two production-only checks skipped in development mode. The 320px recording-review journey saved and reloaded the written change, opened the release repair from Strengthen, returned to both bars and confirmed course progress stayed at zero. After adding a direct whole-phrase return for the short question-bar practice, the expanded review journey passed on both browser sizes with a second, tone-focused review. Build, lint, formatting, guest-bundle and offline-shell checks passed after that addition. The takes and reviews in the browser test are simulated. No real guitar, microphone hardware, physical phone, independent learner trial, CI run or deployment is claimed; Firebase rules and cloud sync were unchanged.
+
+**Next:** try the full review-to-retry route with a real take and check whether the learner's chosen change actually improves the next phrase. Review the sustained-pitch check on the installed phone with real input. Separated attacks and short sequences still need their own signal design and validation before any measured evidence or stronger assessment claim.
+
+---
+
+## Phase 5G — bounded separated-note signal checks (30 September 2026)
+
+**Status: Phase 5's planned software paths are locally implemented; its real-input assessment gate remains open.**
+
+The optional microphone card now progresses from one sustained high E to two high-E plucks separated by silence and then to open E–G–E on the high string. The displayed minor-third relationship connects the sound to fret 3, and a synthesised pitch pattern can be heard before a check. The two newer checks estimate pitch order only: they require distinct quiet gaps and return uncertain for missing or extra attacks, unsuitable input, changing pitch or delayed capture. They do not score rhythm, muting quality, tone or technique. All waveform frames and results remain temporary in the tab; no new evidence method, mastery rule, account upload or cloud rule was added. The interface labels the segmented checks experimental until real guitar and phone input can be tried.
+
+The longer card initially exposed hidden controls to the phone layout, leaving Strengthen's final button behind its bottom navigation. A closed microphone disclosure now removes its body from layout; collapsing it during a check also closes the microphone. The regression suite covers narrow phones and 200% zoom as well as stream closure. Synthetic signal checks cover E–E and E–G–E, a wrong middle note, a continuous pitch slide, missing and extra sounds, clipping, noise, silence and delayed capture.
+
+**Verification:** 306 unit/interface tests across 45 files passed; 88 desktop and phone-sized Chromium checks passed, with two production-only checks skipped in development mode. Build, lint, formatting, guest-bundle and offline-shell checks passed. The browser microphone is simulated. No real guitar, microphone hardware, physical phone, independent learner trial, CI run or deployment is claimed. See the [Phase 5 gate review](reviews/2026-09-30-phase-5-gate.md) for the remaining real-input, review-to-retry, delayed-learning and evidence decisions. George confirmed the guitar and Pixel were unavailable during this package, so the assessment gate cannot honestly be closed yet.
+
+---
+
+## Phases 6–8 entry package — two lesson drafts, release-document repair and extension decisions (30 September 2026)
+
+**Status: preparatory work only. Phase 6 curriculum, Phase 7 evaluation/release and Phase 8 feature admission remain open.**
+
+Phase 6 now has two unshipped, versioned teaching drafts in `apps/current/src/v8/phase6Drafts.ts`: an E–G/E–G♯ one-fret third comparison with reversed-order variation, and a C-to-Am common-tone chord change with a two-count phrase. Their exact notes or voicings, timings, tempo ranges, cue fading, obstacle repairs and later recall prompts are written down. The first uses the existing monophonic score schema. The second is deliberately separate because the live pilot player cannot represent polyphonic chords. A validator checks guitar-note mappings, chord tone sets and phrase continuity, and tests catch a wrong chord fret and a timeline gap. Neither draft is wired into Learn, reviewed on a guitar, or presented as completed curriculum. The other 47 units beyond the live Unit 1 pilot remain outlines; no bulk-authoring batch has passed its gate.
+
+Phase 7 documentation was reconciled where it overstated general streak/expanding review, secure playing mastery and timing-aware microphone assessment. The learning model, architecture, current-app README, development guide and future-feature wording now describe the narrower behaviour. An initial static import review found the older UI outside the live entry graph and confirmed the new drafts are unreachable by design. This is a candidate cleanup map, not deletion proof; no application code was moved. Real-input, learner, full-suite, physical-device, CI and release checks remain open.
+
+Phase 8's four optional ideas have a provisional admission order and concrete experiments in the [entry review](reviews/2026-09-30-phases-6-8-entry.md). No extension was built or silently promoted into core scope. The no-guitar companion is especially relevant while George lacks his instrument, but it cannot be judged by guitar-free clicks alone; its handoff to later physical use is the test.
+
+**Local verification:** 309 unit/interface tests across 46 files and their coverage run passed, as did the production build, lint, formatting, guest-entry bundle and offline-shell checks. The full desktop/phone-sized browser suite passed 88 checks, with two production-only checks skipped in development mode. The build is unchanged at runtime because both lesson drafts are unreferenced. The Firebase rules suite could not start without Java on this machine. No guitar, physical phone, independent learner, emulator, CI, deployment or live-account evidence is claimed. The existing Phase 5 gate remains open.
+
 ## Name — Interval (30 September 2026)
 
 **Status: implemented and verified locally; not yet published.** Outside the plan: George chose the name on 26 September.

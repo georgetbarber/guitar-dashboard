@@ -6,6 +6,8 @@ import { COMPETENCY_STRANDS } from "../types";
 import type { ActivityDefinition, CompetencyStrand, MasteryState, V8State } from "../types";
 import { ConceptChecks } from "../components/ConceptChecks";
 import { PitchCheck } from "../components/PitchCheck";
+import { newPilotCursor } from "../pilotProgress";
+import { latestPilotReview, PILOT_REVIEW_FOCUSES, practiceForPilotReview } from "../pilotReview";
 
 interface SkillFocus {
   strand: CompetencyStrand;
@@ -64,15 +66,28 @@ export function Practice() {
   const recommendationUnit = next ? unitById(next.unitId) : null;
   const competencyIds = [...new Set(observations.map((item) => item.competencyId))];
   const mastery = competencyIds.map((id) => masteryFor(id, state.evidence));
+  const lastReview = latestPilotReview(state);
+  const reviewPractice = lastReview ? practiceForPilotReview(lastReview) : null;
 
   return (
     <div className="page-stack">
       <header className="page-header compact"><div><span className="eyebrow">Learn · Strengthen</span><h1>Strengthen what your attempts suggest.</h1><p>Playing suggestions use relationships you have already encountered. They respond to the results you reported, including where help was used; they are not a judgement of your playing.</p></div></header>
       <ConceptChecks />
       <PitchCheck />
+      {lastReview && reviewPractice && <section className="practice-review card">
+        <div><span className="eyebrow">From your written self-review · {lastReview.localDate}</span><h2>Test one change in the music.</h2><p><strong>You chose to try:</strong> {lastReview.nextChange}</p><p><strong>Starting place:</strong> {reviewPractice.startingPlace}</p><small>This route follows the {PILOT_REVIEW_FOCUSES[lastReview.focus].label.toLowerCase()} focus you chose. It is not a judgement of the recording or proof that the change helped.</small></div>
+        <button className="primary-action" onClick={() => {
+          dispatch({ type: "beginPilot", cursor: newPilotCursor() });
+          dispatch({ type: "updatePilot", patch: {
+            step: reviewPractice.step, sectionId: reviewPractice.sectionId, repairId: reviewPractice.repairId,
+            tempo: reviewPractice.tempo, assistance: "guided", attemptId: undefined, reviewId: lastReview.id,
+          } });
+          dispatch({ type: "openActivity", activityId: "unit-01-rhythm" });
+        }}>Try this change in the lesson</button>
+      </section>}
 
       {!observations.length
-        ? <section className="strengthen-empty card"><div><span className="eyebrow">No playing-practice report yet</span><h2>Nothing to strengthen from playing yet.</h2><p>Complete your first musical attempt in Continue. A correct on-screen theory answer remains separate from what happened on the guitar.</p></div><button className="primary-action" onClick={() => navigate("today")}>Go to Continue</button></section>
+        ? <section className="strengthen-empty card"><div><span className="eyebrow">No playing-practice report yet</span><h2>Nothing to strengthen from playing yet.</h2><p>{lastReview ? "The written review above gives you one change to test; it does not report how the next attempt went. You can also begin the guided lesson in Continue." : "Complete your first musical attempt in Continue. A correct on-screen theory answer remains separate from what happened on the guitar."}</p></div><button className="primary-action" onClick={() => navigate("today")}>Go to Continue</button></section>
         : <>
             <div className="practice-section-heading"><div><span className="eyebrow">Choose a skill</span><h2>Review by musical ability, not lesson category.</h2></div><p>The suggested focus is selected automatically; you can choose another skill whenever you have evidence for it.</p></div>
             <section className="practice-modes" aria-label="Skill focuses">

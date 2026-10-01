@@ -634,6 +634,32 @@
   margin-bottom: 0;
 }
 
+/* The change a learner chose in a written self-review, offered back as a route into the lesson. */
+.practice-review {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.practice-review > div {
+  min-width: 0;
+}
+
+.practice-review p {
+  max-width: var(--measure);
+  overflow-wrap: anywhere;
+}
+
+.practice-review small {
+  display: block;
+  max-width: var(--measure);
+  color: var(--ink-soft);
+}
+
+.practice-review .primary-action {
+  justify-self: start;
+}
+
 .recommendation-context {
   display: block;
   margin: 0 0 var(--space-4);
@@ -725,7 +751,8 @@
   font-size: var(--type-small);
 }
 
-.concept-checks:not([open]) .concept-check-body {
+.concept-checks:not([open]) .concept-check-body,
+.pitch-check:not([open]) .pitch-check-body {
   display: none;
 }
 
@@ -745,13 +772,15 @@
 }
 
 .concept-check-kinds,
-.concept-check-options {
+.concept-check-options,
+.pitch-check-modes {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
 }
 
-.concept-check-kinds button {
+.concept-check-kinds button,
+.pitch-check-modes button {
   min-height: var(--touch-min);
   padding: var(--space-2) var(--space-4);
   border: var(--rule-ink);
@@ -761,7 +790,8 @@
   text-transform: uppercase;
 }
 
-.concept-check-kinds button.is-active {
+.concept-check-kinds button.is-active,
+.pitch-check-modes button[aria-pressed="true"] {
   background: var(--piece-field);
   box-shadow: inset 0 calc(-1 * var(--rule-heavy)) 0 var(--ink);
 }
@@ -798,6 +828,11 @@
 .concept-check-options label:has(input:checked) {
   background: var(--piece-field);
   box-shadow: inset 0 calc(-1 * var(--rule-heavy)) 0 var(--ink);
+}
+
+.pitch-check-modes button:disabled {
+  border-color: var(--line-dark);
+  color: var(--muted);
 }
 
 /* A pitch-check result: a ruled note with the accent rule, never a verdict colour. */
