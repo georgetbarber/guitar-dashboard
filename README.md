@@ -33,11 +33,16 @@ npm run dev
 ```
 
 Open [http://localhost:4184](http://localhost:4184), or double-click
-`start.command` at the repository root on macOS after installing dependencies.
+`Preview Local.command` at the repository root on macOS after installing dependencies.
+
+The other everyday Finder controls are `Check Status.command` (read-only local,
+GitHub and live status), `Update from GitHub.command` (safe update of a clean
+local `main`), and `View Live.command` (open the released app). The update
+command stops when local work needs review.
 
 ## Publish GitHub, Web, and Mobile
 
-Double-click `PUBLISH_LIVE.command` at the repository root. It shows the complete
+Double-click `Publish Live.command` at the repository root. It shows the complete
 change list, verifies the current app, keeps Firebase sync configured, pushes
 `main` to GitHub, and waits for the live deployment to finish. The web and
 installed mobile versions then update automatically. See the
@@ -50,8 +55,11 @@ installed mobile versions then update automatically. See the
 ├── README.md                 First-stop project orientation
 ├── CONTRIBUTING.md           Safe contribution workflow
 ├── AGENTS.md                 Project rules for coding agents
-├── start.command             macOS launcher for the current app
-├── PUBLISH_LIVE.command      Verified GitHub and Firebase publisher
+├── Preview Local.command     macOS launcher for the current app
+├── Check Status.command      Read-only local, GitHub and live check
+├── Update from GitHub.command Safe update of a clean local main
+├── View Live.command         Open the released app
+├── Publish Live.command      Verified GitHub and Firebase publisher
 ├── apps/
 │   ├── README.md             Application directory guide
 │   ├── current/              Current product (iteration 08 / V8)
