@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { THIRD_COLOUR_DRAFT } from "../phase6Drafts";
+import { THIRD_COLOUR_DRAFT, THIRD_COLOUR_TRANSFER_DRAFT } from "../phase6Drafts";
 import { ONE_NOTE_QUESTION_ANSWER } from "../pilotEpisode";
 import { PilotStudy } from "./PilotStudy";
 
@@ -48,5 +48,17 @@ describe("structured guitar study display", () => {
     rerender(<PilotStudy material={THIRD_COLOUR_DRAFT} range={{ fromBeat: 0, toBeat: 2 }} />);
     expect(container.querySelectorAll(".pilot-bar")).toHaveLength(1);
     expect(container.querySelectorAll(".pilot-counts strong")).toHaveLength(2);
+  });
+
+  it("shows the changed-root third score, then hides its answer during the check", () => {
+    const { container, rerender } = render(<PilotStudy material={THIRD_COLOUR_TRANSFER_DRAFT} activeBeat={5} />);
+    expect([...container.querySelectorAll(".pilot-counts strong")].map((node) => node.textContent)).toEqual([
+      "Play F", "Play Ab", "Play F", "Rest", "Play F", "Play A", "Play F", "Rest",
+    ]);
+    expect(container.querySelector(".pilot-guitar")?.textContent).toContain("Play string 1 at fret 5 now");
+    rerender(<PilotStudy material={THIRD_COLOUR_TRANSFER_DRAFT} activeBeat={5} conceal />);
+    expect(container.textContent).not.toContain("Play A");
+    expect(container.textContent).not.toContain("fret 5");
+    expect(container.querySelector(".pilot-fretboard")).toBeNull();
   });
 });

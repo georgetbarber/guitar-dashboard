@@ -1514,3 +1514,15 @@ The C–Am draft now names its tuning, metre and bar count as part of the materi
 The draft validator now rejects duplicate voicing/event IDs and a chord event that crosses a bar boundary, in addition to wrong pitches and gaps. No chord material is connected to Learn, no result is written to learning evidence, and no real guitar technique or tempo accuracy is inferred. Normal and slow hand demonstrations, a changed-context transfer, physical playability review and an uncoached learner attempt remain required before Unit 6 is considered authored or reviewed.
 
 **Verification:** 316 unit/interface tests across 48 files, production build, lint and formatting passed. The new tests assert C x32010 → MIDI 48/52/55/60/64 and Am x02210 → 45/52/57/60/64, unchanged D2/B1/high-E-open positions, the two timelines, synthetic-engine arguments and answer concealment. Because the preview is unreferenced by the app entry point, the production bundle has no new chord-study code. No guitar, physical phone, independent learner, emulator, CI or deployment verification is claimed.
+
+---
+
+## Phase 6 changed-context draft checks (2 October 2026)
+
+**Status: transfer prompts authored and locally checked; no observed transfer or new live lesson.**
+
+Unit 10 has a second root for the same minor/major-third question: F–A♭–F at high-E frets 1–4–1, then F–A–F at frets 1–5–1. It keeps the original eight-beat rhythm and asks for the narrower and wider sounds and fret distances before revealing the score. The score displays the new positions and conceals answer-bearing labels during the check.
+
+Unit 6 has a G (320003) → Em (022000) four-count study and two-count variation. This preserves I→vi in a new key, while the guitar changes from C–Am shapes to G–Em shapes. A-string fret 2, open G and open B remain in place. The validator uses each study's tonal centre, and the chord score and synthesized guide derive from its exact frets and timing. The episode script points to this as a changed-context task rather than a completed capability.
+
+**Verification:** 320 unit/interface tests across 48 files, production build, lint, formatting, guest-bundle and offline-shell checks passed. Tests check the F–A♭/A pitches and positions, the retained rhythm, G/Em I→vi chord labels and note sets, both transferred chord voicings and their MIDI projection, and answer concealment. Browser checks were not repeated because the drafts are still unreachable from the live app. Guitar playability, a normal/slow hand demonstration, an uncoached learner transfer attempt, real-device behaviour, emulator, CI and release evidence remain open. Phase 5's real-input gate and Phase 6's batch gate remain open.
