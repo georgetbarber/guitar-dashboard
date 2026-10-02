@@ -1,6 +1,6 @@
 # Publish Interval
 
-On macOS, double-click `PUBLISH_LIVE.command` at the repository root.
+On macOS, double-click `Publish Live.command` at the repository root.
 
 The publisher shows every file it intends to include and waits until `PUBLISH`
 is typed. It then:
