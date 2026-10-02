@@ -15,6 +15,10 @@ Before a substantial change, read:
 
 ## Development Workflow
 
+Use the [project workflow](docs/PROJECT_WORKFLOW.md) to distinguish local
+commits, GitHub `main`, and the live Firebase deployment when changing tools or
+machines. The root Finder commands open the local and live versions separately.
+
 1. Install dependencies in the app you are changing with `npm install`.
 2. Keep music and instrument rules in the domain layers, not in components.
 3. Add or update a focused test when theory, fretboard, learning, or state logic changes.

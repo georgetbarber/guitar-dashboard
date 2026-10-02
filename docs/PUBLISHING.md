@@ -1,16 +1,28 @@
 # Publish Interval
 
-On macOS, double-click `PUBLISH_LIVE.command` at the repository root.
+On macOS, double-click `PUBLISH_LIVE.command` at the repository root. To view
+what is already published, use `OPEN_LIVE.command`. To inspect this folder's
+unpublished edits, use `PREVIEW_LOCAL.command`.
 
 The publisher shows every file it intends to include and waits until `PUBLISH`
 is typed. It then:
 
-1. checks GitHub sign-in, opening the secure browser login only when needed;
-2. checks that the current branch is `main` and that GitHub has no newer commits;
-3. runs the current application's tests and production build;
+1. checks GitHub sign-in, opening the browser login only when needed;
+2. checks that GitHub `main` has no newer commits missing from this checkout;
+3. on `main`, runs local style, application, Firebase-rule and production checks,
+   then commits the entire displayed change list; on another branch, selects its
+   already committed tip and leaves uncommitted edits untouched;
 4. synchronises the Firebase browser settings from `.env.local` to GitHub;
-5. commits all displayed repository changes and pushes them to GitHub;
-6. waits for Firebase Hosting and reports when the live update has succeeded.
+5. pushes the selected commit to GitHub `main` without force;
+6. waits for the GitHub release workflow, which runs desktop and phone browser
+   checks and deploys Firebase security rules and Hosting if all checks pass.
+
+The publisher is deliberately not a way to merge every cloud or local edit
+automatically. If GitHub has newer work, it stops and asks for reconciliation.
+If the current branch contains committed drafts, those commits are in the
+release selection even when uncommitted edits are excluded. Review the shown
+commits and diff before typing `PUBLISH`. The current Phase 6 material is still
+under review and should stay on its branch until release-ready.
 
 If there is no new commit, the publisher starts a fresh deployment explicitly.
 This makes it safe to use after repairing a GitHub or Firebase setting as well as
@@ -63,9 +75,12 @@ The GitHub deploy service account needs **Firebase Hosting Admin** and **Firebas
 Rules Admin**. **Cloud Storage for Firebase Viewer** is needed only once storage
 rules are deployed; the CLI reads the default bucket first.
 
-If deployment fails, the publisher keeps the window open and displays the failed
-step. Correct it and publish again. Pull requests run local Firestore and Storage
-rule tests. The protected `main` workflow deploys those tested rules before
+If deployment fails, GitHub may contain the new commit while the website still
+serves the previous successful deployment. The publisher keeps the window open
+and displays the failed step; `OPEN_LIVE.command` shows the latest attempt and
+last successful workflow. Correct the failing check and publish again. Pull
+requests run local Firestore and Storage
+rule tests. The live `main` workflow deploys those tested rules before
 Hosting, so a frontend that depends on a rule change cannot silently go live while
 old permissions remain active. If Storage is enabled, apply
 `apps/current/storage.cors.json` to the bucket once as described in the Pixel setup
