@@ -609,7 +609,7 @@ test("a clean simulated note yields only a temporary pitch estimate", async ({ p
   await expect(page.getByRole("status").filter({ hasText: /Listening… play the shown pattern/ })).toBeVisible();
   await page.locator(".pitch-check summary").click();
   await expect(page.locator(".pitch-check-body")).toBeHidden();
-  expect(await page.evaluate(() => (window as typeof window & { __pitchMicStops: number }).__pitchMicStops)).toBe(2);
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __pitchMicStops: number }).__pitchMicStops)).toBe(2);
   await page.reload();
   await expect(page.locator(".pitch-check-result")).toHaveCount(0);
   await learnViews(page).getByRole("button", { name: /Course map/ }).click();

@@ -16,15 +16,17 @@ live here.
    prototypes and reviews.
 5. [Development](DEVELOPMENT.md) — setup, commands, testing, and repository
    conventions.
-6. [Roadmap](ROADMAP.md) — evidence-based next directions and non-goals.
-7. [Future features](FUTURE_FEATURES.md) — the planned additions and deferred
+6. [Project workflow](PROJECT_WORKFLOW.md) — Finder launchers, Git branches,
+   commits, GitHub and the published website.
+7. [Roadmap](ROADMAP.md) — evidence-based next directions and non-goals.
+8. [Future features](FUTURE_FEATURES.md) — the planned additions and deferred
    work backlog.
-8. [Learning effectiveness backlog](LEARNING_EFFECTIVENESS_BACKLOG.md) — the
+9. [Learning effectiveness backlog](LEARNING_EFFECTIVENESS_BACKLOG.md) — the
    remaining product changes needed to make attempts, feedback, physical
    instruction and musical transfer more effective.
-9. [Additional note takeaways](additional-notes/README.md) — useful ideas
+10. [Additional note takeaways](additional-notes/README.md) — useful ideas
    distilled from informal project notes and checked against the current app.
-10. [Implementation plan](IMPLEMENTATION_PLAN.md) and [implementation log](IMPLEMENTATION_LOG.md)
+11. [Implementation plan](IMPLEMENTATION_PLAN.md) and [implementation log](IMPLEMENTATION_LOG.md)
     — phased work covering the September 2026 engineering and design/learning
     audits, with acceptance gates, completed local packages and open checks.
     Plan items and draft lessons are not shipped behaviour.

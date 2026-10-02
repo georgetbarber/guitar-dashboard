@@ -22,26 +22,39 @@ understand why the product and architecture changed.
 7. See [additional note takeaways](docs/additional-notes/README.md) for useful
    personal project thoughts that were checked against the current product.
 
-## Run the Current App
+## Open the App from Finder
 
-Requirements: Node.js 20 or newer and npm.
+At the top of this folder, double-click:
+
+| Command | What you see |
+| --- | --- |
+| `OPEN_LIVE.command` | The actual published website, plus this folder's Git branch and the latest GitHub deployment result. |
+| `PREVIEW_LOCAL.command` | A local preview of the files in this Finder folder, including edits that have not been committed or published. |
+| `SAVE_WORK.command` | Review all changed files and save them as a local Git commit with your own message. This does not publish. |
+| `PUBLISH_LIVE.command` | A reviewed release to GitHub `main`, followed by GitHub checks and Firebase deployment. See the branch rules below. |
+
+`start.command` remains an alias for the local preview. The live site and the
+local preview keep separate browser data, including learning progress. Publishing
+code does not copy browser data between them.
+
+The local preview needs Node.js 22.22.2 or newer in the Node 22 release line
+and npm. It installs the current app's dependencies on first use. From Terminal:
 
 ```bash
 cd apps/current
-npm install
+npm ci
 npm run dev
 ```
 
-Open [http://localhost:4184](http://localhost:4184), or double-click
-`start.command` at the repository root on macOS after installing dependencies.
+Open [http://localhost:4184](http://localhost:4184).
 
 ## Publish GitHub, Web, and Mobile
 
-Double-click `PUBLISH_LIVE.command` at the repository root. It shows the complete
-change list, verifies the current app, keeps Firebase sync configured, pushes
-`main` to GitHub, and waits for the live deployment to finish. The web and
-installed mobile versions then update automatically. See the
-[publishing guide](docs/PUBLISHING.md) for first-run authentication and recovery.
+Read the [project workflow](docs/PROJECT_WORKFLOW.md) before the first release.
+`PUBLISH_LIVE.command` checks for newer GitHub work, shows exactly what it will
+include, and requires `PUBLISH` before pushing. GitHub then runs the release
+checks and deploys to Firebase. The installed app offers the update when it
+arrives. See the [publishing guide](docs/PUBLISHING.md) for setup and recovery.
 
 ## Repository Map
 
@@ -51,6 +64,9 @@ installed mobile versions then update automatically. See the
 ├── CONTRIBUTING.md           Safe contribution workflow
 ├── AGENTS.md                 Project rules for coding agents
 ├── start.command             macOS launcher for the current app
+├── OPEN_LIVE.command         Open the published website and show release status
+├── PREVIEW_LOCAL.command     Open this folder's working version
+├── SAVE_WORK.command         Review and commit changes locally
 ├── PUBLISH_LIVE.command      Verified GitHub and Firebase publisher
 ├── apps/
 │   ├── README.md             Application directory guide

@@ -3,7 +3,7 @@ set -e
 cd "$(dirname "$0")"
 
 if ! command -v npm >/dev/null 2>&1; then
-  echo "Node.js and npm are required. Install Node.js 20 or newer, then try again."
+  echo "Node.js 22.22.2 or newer in the Node 22 line and npm are required."
   exit 1
 fi
 
