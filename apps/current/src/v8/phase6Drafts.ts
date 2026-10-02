@@ -4,7 +4,7 @@ import { positionMidi, STANDARD_TUNING_MIDI, validateMaterial } from "./structur
 import type { GuitarPosition, MusicalMaterial } from "./structuredMusic";
 
 const highE = (fret: number): GuitarPosition => ({ string: 1, fret });
-const thirdNote = (id: string, atBeat: number, fret: 0 | 3 | 4, spelling: "E" | "G" | "G#") => ({
+const thirdNote = (id: string, atBeat: number, fret: number, spelling: string) => ({
   id,
   kind: "note" as const,
   atBeat,
@@ -69,7 +69,28 @@ export const THIRD_COLOUR_REVERSED_DRAFT: MusicalMaterial = {
   ],
 };
 
-export const THIRD_COLOUR_EPISODE_DRAFT: EpisodeDefinition = {
+/** Changed root and hand location: the narrower/wider relation must carry from E to F. */
+export const THIRD_COLOUR_TRANSFER_DRAFT: MusicalMaterial = {
+  ...thirdBase,
+  id: "third-colour-f-minor-major",
+  title: "Find the third again from F",
+  tonalCenter: { name: "F", midi: 65 },
+  derivedFrom: { id: THIRD_COLOUR_DRAFT.id, version: 1, changedDimension: "pitch" },
+  events: [
+    thirdNote("minor-root", 0, 1, "F"),
+    thirdNote("minor-third", 1, 4, "Ab"),
+    thirdNote("minor-return", 2, 1, "F"),
+    rest("minor-space", 3),
+    thirdNote("major-root", 4, 1, "F"),
+    thirdNote("major-third", 5, 5, "A"),
+    thirdNote("major-return", 6, 1, "F"),
+    rest("major-space", 7),
+  ],
+};
+
+export const THIRD_COLOUR_EPISODE_DRAFT: EpisodeDefinition & {
+  transfer: { materialId: string; instruction: string };
+} = {
   id: "third-colour-episode",
   version: 1,
   unitId: "unit-10",
@@ -135,6 +156,11 @@ export const THIRD_COLOUR_EPISODE_DRAFT: EpisodeDefinition = {
     },
   ],
   variationMaterialId: THIRD_COLOUR_REVERSED_DRAFT.id,
+  transfer: {
+    materialId: THIRD_COLOUR_TRANSFER_DRAFT.id,
+    instruction:
+      "Start on F at high-E fret 1. Before seeing the answer, sing and find its narrower and wider thirds on this new root; explain the fret distances, then compare with the E example.",
+  },
   delayedCheck: {
     earliestDaysLater: 1,
     tempo: 66,
@@ -144,7 +170,7 @@ export const THIRD_COLOUR_EPISODE_DRAFT: EpisodeDefinition = {
 };
 
 export interface DraftChordVoicing {
-  id: "C" | "Am";
+  id: string;
   positions: readonly GuitarPosition[];
 }
 
@@ -153,7 +179,7 @@ export interface DraftChordStudy {
   version: 1;
   review: { status: "draft" };
   unitId: "unit-06";
-  tonalCenter: "C major";
+  tonalCenter: { name: "C" | "G"; mode: "major" };
   tuningMidi: MusicalMaterial["tuningMidi"];
   metre: MusicalMaterial["metre"];
   bars: number;
@@ -165,6 +191,7 @@ export interface DraftChordStudy {
 
 export interface DraftChordEpisode extends Omit<EpisodeDefinition, "variationMaterialId"> {
   variation: "two-count";
+  transfer: { studyId: string; instruction: string };
 }
 
 /** Draft only: the active one-note score/player cannot yet represent simultaneous chord notes. */
@@ -173,7 +200,7 @@ export const COMMON_TONE_CHANGE_DRAFT: DraftChordStudy = {
   version: 1,
   review: { status: "draft" },
   unitId: "unit-06",
-  tonalCenter: "C major",
+  tonalCenter: { name: "C", mode: "major" },
   tuningMidi: STANDARD_TUNING_MIDI,
   metre: { numerator: 4, denominator: 4 },
   bars: 2,
@@ -209,6 +236,47 @@ export const COMMON_TONE_CHANGE_DRAFT: DraftChordStudy = {
     { id: "am-one", atBeat: 2, beats: 2, chordId: "Am" },
     { id: "c-two", atBeat: 4, beats: 2, chordId: "C" },
     { id: "am-two", atBeat: 6, beats: 2, chordId: "Am" },
+  ],
+};
+
+/** Same I-to-vi relationship in G, with different shapes and shared positions. */
+export const COMMON_TONE_TRANSFER_DRAFT: DraftChordStudy = {
+  ...COMMON_TONE_CHANGE_DRAFT,
+  id: "common-tone-g-em",
+  tonalCenter: { name: "G", mode: "major" },
+  voicings: [
+    {
+      id: "G",
+      positions: [
+        { string: 6, fret: 3 },
+        { string: 5, fret: 2 },
+        { string: 4, fret: 0 },
+        { string: 3, fret: 0 },
+        { string: 2, fret: 0 },
+        { string: 1, fret: 3 },
+      ],
+    },
+    {
+      id: "Em",
+      positions: [
+        { string: 6, fret: 0 },
+        { string: 5, fret: 2 },
+        { string: 4, fret: 2 },
+        { string: 3, fret: 0 },
+        { string: 2, fret: 0 },
+        { string: 1, fret: 0 },
+      ],
+    },
+  ],
+  events: [
+    { id: "g-first", atBeat: 0, beats: 4, chordId: "G" },
+    { id: "em-answer", atBeat: 4, beats: 4, chordId: "Em" },
+  ],
+  variation: [
+    { id: "g-one", atBeat: 0, beats: 2, chordId: "G" },
+    { id: "em-one", atBeat: 2, beats: 2, chordId: "Em" },
+    { id: "g-two", atBeat: 4, beats: 2, chordId: "G" },
+    { id: "em-two", atBeat: 6, beats: 2, chordId: "Em" },
   ],
 };
 
@@ -273,6 +341,11 @@ export const COMMON_TONE_EPISODE_DRAFT: DraftChordEpisode = {
     },
   ],
   variation: "two-count",
+  transfer: {
+    studyId: COMMON_TONE_TRANSFER_DRAFT.id,
+    instruction:
+      "Try the same four-count change from G to Em without the C–Am diagram. Find the notes that stay at the same string and fret, then name what moves and restore the full pulse.",
+  },
   delayedCheck: {
     earliestDaysLater: 1,
     tempo: 60,
@@ -282,12 +355,9 @@ export const COMMON_TONE_EPISODE_DRAFT: DraftChordEpisode = {
   },
 };
 
-export function validatePhase6Drafts(chordDraft: DraftChordStudy = COMMON_TONE_CHANGE_DRAFT): string[] {
-  const errors = [
-    ...validateMaterial(THIRD_COLOUR_DRAFT).map((error) => `Third study: ${error}`),
-    ...validateMaterial(THIRD_COLOUR_REVERSED_DRAFT).map((error) => `Third variation: ${error}`),
-  ];
-  const chordModel = buildChords(createContext("C", "major"));
+function validateChordDraft(chordDraft: DraftChordStudy): string[] {
+  const errors: string[] = [];
+  const chordModel = buildChords(createContext(chordDraft.tonalCenter.name, chordDraft.tonalCenter.mode));
   if (!Number.isInteger(chordDraft.bars) || chordDraft.bars < 1 || chordDraft.bars > 16)
     errors.push("Chord study: invalid bar count.");
   if (chordDraft.tuningMidi.some((midi) => !Number.isInteger(midi) || midi < 0 || midi > 127))
@@ -305,7 +375,7 @@ export function validatePhase6Drafts(chordDraft: DraftChordStudy = COMMON_TONE_C
     )
       errors.push(`${voicing.id}: fret is outside this draft's small playing region.`);
     if (!chord) {
-      errors.push(`${voicing.id}: chord is missing from C major.`);
+      errors.push(`${voicing.id}: chord is missing from ${chordDraft.tonalCenter.name} ${chordDraft.tonalCenter.mode}.`);
       continue;
     }
     const played = new Set(
@@ -340,4 +410,15 @@ export function validatePhase6Drafts(chordDraft: DraftChordStudy = COMMON_TONE_C
       errors.push(`${label}: events do not fill the study.`);
   }
   return errors;
+}
+
+export function validatePhase6Drafts(chordDraft?: DraftChordStudy): string[] {
+  return [
+    ...validateMaterial(THIRD_COLOUR_DRAFT).map((error) => `Third study: ${error}`),
+    ...validateMaterial(THIRD_COLOUR_REVERSED_DRAFT).map((error) => `Third variation: ${error}`),
+    ...validateMaterial(THIRD_COLOUR_TRANSFER_DRAFT).map((error) => `Third transfer: ${error}`),
+    ...(chordDraft
+      ? validateChordDraft(chordDraft)
+      : [COMMON_TONE_CHANGE_DRAFT, COMMON_TONE_TRANSFER_DRAFT].flatMap(validateChordDraft)),
+  ];
 }

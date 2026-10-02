@@ -5,7 +5,7 @@ import { startVoicingProgression } from "../audio/engine";
 import { sharedPositions, timedChords, voicingTab } from "./chordStudy";
 import { startChordStudyPlayback } from "./chordStudyPlayback";
 import { ChordStudy } from "./components/ChordStudy";
-import { COMMON_TONE_CHANGE_DRAFT } from "./phase6Drafts";
+import { COMMON_TONE_CHANGE_DRAFT, COMMON_TONE_TRANSFER_DRAFT } from "./phase6Drafts";
 
 vi.mock("../audio/engine", () => ({ startVoicingProgression: vi.fn(() => vi.fn()) }));
 
@@ -81,5 +81,32 @@ describe("the unshipped C-to-Am chord study", () => {
     expect(container.textContent).not.toContain("x32010");
     expect(container.textContent).not.toContain("D fret 2");
     expect(screen.getByRole("img", { name: "Change 1 fingering hidden" })).toBeTruthy();
+  });
+
+  it("projects the transferred G-to-Em phrase consistently into score and sound", () => {
+    const events = timedChords(COMMON_TONE_TRANSFER_DRAFT, "study");
+    expect(events.map((event) => [event.chordId, event.midis, voicingTab(event.positions)])).toEqual([
+      ["G", [43, 47, 50, 55, 59, 67], "320003"],
+      ["Em", [40, 47, 52, 55, 59, 64], "022000"],
+    ]);
+    expect(sharedPositions(COMMON_TONE_TRANSFER_DRAFT)).toEqual([
+      { string: 5, fret: 2 },
+      { string: 3, fret: 0 },
+      { string: 2, fret: 0 },
+    ]);
+    startChordStudyPlayback(COMMON_TONE_TRANSFER_DRAFT, "study", 60);
+    expect(startVoicingProgression).toHaveBeenCalledWith(
+      [[43, 47, 50, 55, 59, 67], [40, 47, 52, 55, 59, 64]],
+      60,
+      undefined,
+      [4, 4],
+    );
+    const { container, rerender } = render(<ChordStudy study={COMMON_TONE_TRANSFER_DRAFT} />);
+    expect(container.textContent).toContain("G → Em common-tone change");
+    expect(container.textContent).toContain("G major");
+    rerender(<ChordStudy study={COMMON_TONE_TRANSFER_DRAFT} conceal />);
+    expect(container.textContent).not.toContain("G → Em");
+    expect(container.textContent).not.toContain("320003");
+    expect(container.textContent).not.toContain("G major");
   });
 });
