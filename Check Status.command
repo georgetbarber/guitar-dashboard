@@ -50,9 +50,16 @@ if [ -n "$live" ]; then
       fi
     fi
   elif [ "$project" = guitar-dashboard ] && command -v gh >/dev/null 2>&1; then
-    run="$(gh run list -R georgetbarber/guitar-dashboard --branch main --limit 1 --json headSha,status,conclusion --jq '.[0] | [.headSha[0:12], .status, (.conclusion // "pending")] | @tsv' 2>/dev/null)"
+    run="$(gh run list -R georgetbarber/guitar-dashboard --branch main --limit 10 --json headSha,status,conclusion --jq "map(select(.headSha == \"$remote_sha\"))[0] | if . == null then empty else [.headSha[0:12], .status, .conclusion] | @tsv end" 2>/dev/null)"
     if [ -n "$run" ]; then
-      printf 'Latest release check: %s\n' "$run"
+      IFS=$'\t' read -r run_sha run_status run_result <<< "$run"
+      if [ "$run_status" = completed ]; then
+        printf 'GitHub release for this commit: %s (%s)\n' "$run_sha" "$run_result"
+      else
+        printf 'GitHub release for this commit: %s (still running)\n' "$run_sha"
+      fi
+    else
+      printf 'GitHub release for this commit: not available yet.\n'
     fi
   elif [ "$project" = georgebarber-site ]; then
     printf 'Cloudflare deployment revision: check the Cloudflare dashboard.\n'
