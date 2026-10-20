@@ -62,19 +62,19 @@ note if a check fails.
 ### Try the sustained-note pitch check with real input
 
 - **Status:** needs George
-- **Do:** In Strengthen, open the microphone check. Play open high E cleanly; then the B string by mistake; then a very quiet note; then a loud, overloaded one; then stay silent. Do it once in a quiet room and once with ordinary background noise.
-- **Pass:** The clean E is identified, the wrong string is reported as a different pitch, and the quiet, overloaded and silent tries come back uncertain rather than as a match.
+- **Do:** In Strengthen, open the microphone check. Play open high E cleanly; then the B string by mistake; then a very soft pluck; then a loud, overloaded one; then stay silent. Do it once in a quiet room and once with ordinary background noise (a radio or TV on). If a result does not match what you played, use the “Something's wrong here” link under it.
+- **Pass:** The clean and the soft E are identified as near E, the B string is named as a different note (never “near E”), and the overloaded and silent tries come back uncertain.
 - **Where:** Learn › Strengthen
-- **Why:** Phase 5 gate review item 1.
+- **Why:** Phase 5 gate review item 1; thresholds retuned on synthetic input on 20 October (gate addendum, decision A6).
 - **Added:** 2026-10-20 · Package 0 · `guitar-pitch-sustained`
 
 ### Try the two-pluck and E–G–E checks
 
 - **Status:** needs George
 - **Do:** In the same card, play two E plucks with a real silence between them, then without one. Then play E–G–E on the high string (frets 0–3–0), then once with the wrong middle fret (0–2–0), then with an extra pluck.
-- **Pass:** The displayed order matches what you played; the missing silence, wrong fret and extra pluck all come back uncertain or different, never as a match.
+- **Pass:** The displayed order matches what you played; without a silence, with the wrong fret or with an extra pluck the result is uncertain or names the different note, never a match. Note any try where the room or the phone's volume made it say uncertain when you played cleanly.
 - **Where:** Learn › Strengthen
-- **Why:** Phase 5 gate review item 1.
+- **Why:** Phase 5 gate review item 1; thresholds retuned on synthetic input on 20 October (gate addendum, decision A6).
 - **Added:** 2026-10-20 · Package 0 · `guitar-pitch-sequences`
 
 ### One real review-to-retry journey

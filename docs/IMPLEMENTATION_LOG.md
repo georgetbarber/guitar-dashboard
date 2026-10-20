@@ -1599,8 +1599,22 @@ Unit 6 has a G (320003) → Em (022000) four-count study and two-count variation
 
 **Limits.** No person has used the note or checklist on a real phone. The offline shell has under 2 KiB of headroom; Package 3 must decide the shell policy for lesson content and the music engine.
 
+---
+
+## Completion brief Package 2 — close Phase 5 on software terms (20 October 2026)
+
+**Status: implemented and verified locally; PR open for George to merge (decision R3). Phase 5 gate closed on software terms; real input `needs George`.**
+
+| | |
+| --- | --- |
+| **Findings** | D10 (appropriate assessment), D06 (honest evidence); Phase 5 gate item 4 decided (A6) |
+| **Changed** | `src/audio/syntheticInput.ts` (test-support signal and capture model, imported by tests only); `src/audio/realisticInput.test.ts` (94 scenarios); `pitchAssessment.ts` (named thresholds, two-pass period search, one-note spectral check, readable-run requirement); `noteSequenceAssessment.ts` (relative silence gate, re-attack detection, the same one-note check); `PitchCheck.tsx` (version 2 label, "Something's wrong here" under each result); `FeedbackLink.tsx` (extracted from `ContentStatus`); gate addendum; decision A6; two checklist items refined |
+| **Migration impact** | None. No stored data, evidence method or rule changed |
+
+**Verification (local).** 94 realistic-input scenarios plus the original synthetic tests (111 audio tests) pass. Before retuning, 26 of the 94 returned uncertain where an answer was possible; none of the old or new safety cases regressed. Each new mechanism was removed in turn and failed only its own tests (one-note check 5, re-attack 2, relative gate 14, noisy-room pass 3, octave guard 1). The pitch browser journeys pass on desktop and phone width, including reporting a misreading from the result with the check's output attached. Full unit suite, lint, build and budgets: see the PR. No real guitar, microphone or phone was used; the scenarios are a model and the thresholds remain provisional.
+
 ## Next package
 
-**First, George:** merge the open pull requests in order — #6 (Package 0), then #7 (Package 1). Each passed the full CI workflow; merging publishes (decision R3). After #6 merges, delete the three `codex/*` branches (decision A1), or leave that to the next session.
+**First, George:** merge the open pull requests in order — #6 (Package 0), #7 (Package 1), then #8 (Package 2). Each passed the full CI workflow; merging publishes (decision R3). After #6 merges, the three `codex/*` branches can be deleted (decision A1).
 
-**Next agent package: completion brief Package 2 — close Phase 5 on software terms.** Build a synthetic realistic-input test set for the three temporary pitch checks (plucked-string harmonics, inharmonicity, decay, noise at several levels, automatic-gain ramps, reverb, clipping, latency offsets, wrong strings, extra attacks, silence), tune thresholds against it while keeping the uncertain paths, record that no `measured-pitch` evidence is added, put the real-input trial on George's checklist, and add a dated addendum to the Phase 5 gate review. Then Package 3 (music engine), whose first decision is the offline-shell policy for lesson content and synthesis.
+**Next agent package: completion brief Package 3 — Phase 6 music engine and authoring pipeline.** Start by deciding the offline-shell policy: the shell is about 2 KiB under its 1280 KiB threshold, so per-stage lesson content must load as data outside the automatic precache (with per-stage "ready offline"), and engine code must be measured; record any threshold move in the decisions register. Then: versioned, migration-safe polyphonic material (chords, voicings, strum direction/spread, fingerpicking with thumb/finger assignment, articulations, feels including swing and shuffle); a player that schedules all of it on the audio clock with synchronised tab, rhythm, chord diagrams and fretboard; a plucked-string synth; the authoring format and validator (brief §4.3, §4.6); and the Unit 10 and Unit 6 drafts wired into Learn as `draft`.

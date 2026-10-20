@@ -146,3 +146,21 @@ first, so it is not buried.
 - **Where:** `src/v8/notes.ts`, `src/v8/provenance.ts`, `src/v8/cloud.tsx`,
   `firestore.rules`.
 
+### A6 · 2026-10-20 · Package 2 · No measured-pitch evidence yet
+
+- **Decision:** the three microphone checks stay temporary, pitch-only and
+  unsaved. No `measured-pitch` evidence method, record or progression rule is
+  added. Their thresholds were retuned against a synthetic realistic-input set
+  and are labelled provisional (pitch-check version 2).
+- **Why:** the Phase 5 gate review made a measured record conditional on real
+  guitar and phone trials. Synthetic input can show the checks are safe and
+  useful on modelled input; it cannot show how George's microphone and room
+  behave.
+- **Alternatives:** adding the record now with a "synthetic-only" caveat
+  (rejected: it would let a modelled result advance real progress).
+- **Reversible:** yes; a later package can add the versioned record once the
+  `guitar-pitch-*` checklist items have real results.
+- **Where:** `src/audio/pitchAssessment.ts`, `noteSequenceAssessment.ts`,
+  `src/v8/components/PitchCheck.tsx`; gate addendum in
+  `docs/reviews/2026-09-30-phase-5-gate.md`.
+
