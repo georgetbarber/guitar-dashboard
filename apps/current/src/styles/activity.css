@@ -636,6 +636,21 @@
   font: var(--weight-semi) var(--type-small) / var(--lh-tight) var(--serif);
 }
 
+.chord-study-counts small {
+  font-size: var(--type-small);
+  overflow-wrap: anywhere;
+}
+
+.chord-study-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chord-study-controls button {
+  min-height: 44px;
+}
+
 .pilot-tab {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -693,6 +708,7 @@
   display: grid;
   gap: var(--space-1);
   max-width: 22rem;
+  overflow-x: auto;
 }
 
 .pilot-string-row {
@@ -714,6 +730,11 @@
   border: 1px solid transparent;
   border-radius: 50%;
   font: var(--weight-bold) var(--type-meta) / var(--lh-display) var(--mono);
+}
+
+.pilot-string-row b:not(.target) {
+  border-bottom-color: var(--line);
+  border-radius: 0;
 }
 
 .pilot-string-row b.target {
