@@ -111,3 +111,38 @@ first, so it is not buried.
 - **Reversible:** yes; change the two `runs-on` lines back once Playwright
   supports the new image.
 - **Where:** `.github/workflows/firebase-hosting-*.yml`.
+
+### A4 · 2026-10-20 · Package 1 · Storage SDK only in a build that shares recordings
+
+- **Decision:** `firebase/storage` is imported dynamically, behind the
+  build-time `VITE_RECORDING_SHARING === "enabled"` check, instead of
+  statically in `cloud.tsx`.
+- **Why:** recording sharing is off (the project has no Storage bucket), yet
+  the SDK cost about 22 KiB of the offline shell, which was within 2 KiB of its
+  1280 KiB threshold once Package 1's notes and checks were added. The ordinary
+  build now omits it entirely.
+- **Alternatives:** raising the shell threshold now (deferred until the music
+  engine's size is known in Package 3).
+- **Reversible:** yes. A build with sharing enabled loads the SDK on first use.
+- **Where:** `apps/current/src/v8/cloud.tsx`.
+
+### A5 · 2026-10-20 · Package 1 · Notes, ticks and checks are separate synced records
+
+- **Decision:** feedback notes, checklist ticks and "Mark as checked" review
+  marks live in their own Firestore subcollections (`feedback`, `checks`,
+  `reviews`), never in the profile document. A note's words are fixed once
+  written; only its "dealt with" state can change. A review mark applies to one
+  exact content version, so a revised lesson shows the draft tag again until it
+  is checked again. If the server ever refuses one of these collections (a
+  hosting release ahead of its rules), sync carries on for everything else and
+  the records stay on the device.
+- **Why:** older clients rewrite the whole profile document and would drop
+  fields they do not know; separate documents also keep every record within
+  the per-document rules and size limits.
+- **Alternatives:** profile fields (unsafe with older clients); one document
+  holding every note (unbounded growth).
+- **Reversible:** the records are additive; removing the feature leaves them in
+  backups and the account.
+- **Where:** `src/v8/notes.ts`, `src/v8/provenance.ts`, `src/v8/cloud.tsx`,
+  `firestore.rules`.
+
