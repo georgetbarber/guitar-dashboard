@@ -96,7 +96,10 @@ describe("the unshipped C-to-Am chord study", () => {
     ]);
     startChordStudyPlayback(COMMON_TONE_TRANSFER_DRAFT, "study", 60);
     expect(startVoicingProgression).toHaveBeenCalledWith(
-      [[43, 47, 50, 55, 59, 67], [40, 47, 52, 55, 59, 64]],
+      [
+        [43, 47, 50, 55, 59, 67],
+        [40, 47, 52, 55, 59, 64],
+      ],
       60,
       undefined,
       [4, 4],

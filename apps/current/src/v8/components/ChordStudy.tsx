@@ -55,8 +55,8 @@ export function ChordStudy({
             : `${study.voicings.map((voicing) => voicing.id).join(" → ")} common-tone change`}
         </strong>
         <small>
-          {conceal ? "Tonal centre hidden" : `${study.tonalCenter.name} ${study.tonalCenter.mode}`} · {study.tempo.default} BPM · {study.bars} bars of{" "}
-          {study.metre.numerator}/{study.metre.denominator}
+          {conceal ? "Tonal centre hidden" : `${study.tonalCenter.name} ${study.tonalCenter.mode}`} ·{" "}
+          {study.tempo.default} BPM · {study.bars} bars of {study.metre.numerator}/{study.metre.denominator}
         </small>
       </figcaption>
       <p>

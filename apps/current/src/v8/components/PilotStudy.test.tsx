@@ -53,7 +53,14 @@ describe("structured guitar study display", () => {
   it("shows the changed-root third score, then hides its answer during the check", () => {
     const { container, rerender } = render(<PilotStudy material={THIRD_COLOUR_TRANSFER_DRAFT} activeBeat={5} />);
     expect([...container.querySelectorAll(".pilot-counts strong")].map((node) => node.textContent)).toEqual([
-      "Play F", "Play Ab", "Play F", "Rest", "Play F", "Play A", "Play F", "Rest",
+      "Play F",
+      "Play Ab",
+      "Play F",
+      "Rest",
+      "Play F",
+      "Play A",
+      "Play F",
+      "Rest",
     ]);
     expect(container.querySelector(".pilot-guitar")?.textContent).toContain("Play string 1 at fret 5 now");
     rerender(<PilotStudy material={THIRD_COLOUR_TRANSFER_DRAFT} activeBeat={5} conceal />);
