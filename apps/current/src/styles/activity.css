@@ -1053,3 +1053,56 @@ section.pilot-episode > .activity-header {
     padding: var(--space-4);
   }
 }
+
+/*
+ * THE HONESTY STRIP. Whether anyone has played this lesson on a guitar, in quiet ink:
+ * a ruled label, never a warning colour. The actions are ordinary text actions.
+ */
+.content-status {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.content-status .content-status__tag {
+  justify-self: start;
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  border: var(--rule-quiet);
+  background: var(--paper);
+  color: var(--ink-soft);
+  font: var(--font-meta);
+}
+
+.content-status .content-status__tag--reviewed,
+.content-status .content-status__tag--trialled {
+  border-color: var(--line-dark);
+  border-left: var(--rule-heavy) solid var(--rel-tonic);
+}
+
+.content-status__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  margin-left: calc(-1 * var(--space-2));
+}
+
+.content-status__mark {
+  display: grid;
+  gap: var(--space-2);
+  max-width: var(--measure-narrow);
+  padding: var(--space-3);
+  border: var(--rule-ink);
+  background: var(--paper);
+}
+
+.content-status .content-status__mark p,
+.content-status .content-status__message {
+  margin: 0;
+  font: var(--weight-regular) var(--type-small) / var(--lh-ui) var(--serif);
+}
+
+.content-status__mark label {
+  font: var(--font-label);
+  text-transform: uppercase;
+}
