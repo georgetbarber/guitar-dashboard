@@ -1,8 +1,9 @@
 import type { CloudProfile } from "./sync";
 import { checkedAnswerIsValid, conceptCheckById } from "./conceptChecks";
 import { PILOT_REVIEW_FOCUS_IDS } from "./pilotReview";
-import type { CompetencyEvidence, LearnerSettings, Sketch, V8State } from "./types";
-import { SKETCH_SYNC_FIELDS } from "./types";
+import type { ChecklistTick, CompetencyEvidence, FeedbackNote, LearnerSettings, ReviewMark, Sketch, V8State } from "./types";
+import { FEEDBACK_CATEGORIES, SKETCH_SYNC_FIELDS } from "./types";
+import { NOTE_LIMITS } from "./limits";
 
 const MODES = ["major", "minor", "dorian", "mixolydian", "blues"];
 export const TONAL_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
@@ -242,6 +243,53 @@ function exploreFocus(value: unknown, path: string) {
   choice(v.returnRoute, ROUTES, `${path}.returnRoute`);
   date(v.openedAt, `${path}.openedAt`);
 }
+function text(value: unknown, path: string, max: number, min = 0) {
+  str(value, path);
+  const length = (value as string).length;
+  if (length < min || length > max) fail(`${path} length`);
+}
+function onlyKeys(v: ObjectValue, allowed: readonly string[], path: string) {
+  for (const key of Object.keys(v)) if (!allowed.includes(key)) fail(`${path}.${key}`);
+}
+const NOTE_KEYS = ["id", "contentId", "contentVersion", "contentTitle", "location", "showing", "text", "category", "createdAt", "localDate", "resolvedAt", "updatedAt", "appVersion"] as const;
+function feedbackNote(value: unknown, path: string) {
+  const v = object(value, path);
+  onlyKeys(v, NOTE_KEYS, path);
+  id(v.id, `${path}.id`); id(v.contentId, `${path}.contentId`);
+  if (v.contentVersion !== undefined) number(v.contentVersion, `${path}.contentVersion`, 1, 1000, true);
+  text(v.contentTitle, `${path}.contentTitle`, NOTE_LIMITS.contentTitle);
+  if (v.location !== undefined) text(v.location, `${path}.location`, NOTE_LIMITS.location);
+  text(v.showing, `${path}.showing`, NOTE_LIMITS.showing);
+  text(v.text, `${path}.text`, NOTE_LIMITS.text, 1);
+  if (v.category !== undefined) choice(v.category, FEEDBACK_CATEGORIES, `${path}.category`);
+  date(v.createdAt, `${path}.createdAt`); localDate(v.localDate, `${path}.localDate`);
+  if (v.resolvedAt !== undefined) nullable(v.resolvedAt, date, `${path}.resolvedAt`);
+  date(v.updatedAt, `${path}.updatedAt`);
+  if (v.appVersion !== undefined) text(v.appVersion, `${path}.appVersion`, NOTE_LIMITS.appVersion);
+}
+function checklistTick(value: unknown, path: string) {
+  const v = object(value, path);
+  onlyKeys(v, ["id", "done", "updatedAt"], path);
+  str(v.id, `${path}.id`);
+  if (!/^[a-z0-9-]{3,64}$/.test(v.id as string)) fail(`${path}.id`);
+  if (typeof v.done !== "boolean") fail(`${path}.done`);
+  date(v.updatedAt, `${path}.updatedAt`);
+}
+function reviewMark(value: unknown, path: string) {
+  const v = object(value, path);
+  onlyKeys(v, ["id", "contentId", "contentVersion", "reviewer", "reviewedAt", "withdrawn", "updatedAt"], path);
+  id(v.id, `${path}.id`); id(v.contentId, `${path}.contentId`);
+  number(v.contentVersion, `${path}.contentVersion`, 1, 1000, true);
+  if (v.id !== `${v.contentId as string}@${v.contentVersion as number}`) fail(`${path}.id`);
+  text(v.reviewer, `${path}.reviewer`, NOTE_LIMITS.reviewer, 1);
+  if (!(v.reviewer as string).trim()) fail(`${path}.reviewer`);
+  date(v.reviewedAt, `${path}.reviewedAt`);
+  if (typeof v.withdrawn !== "boolean") fail(`${path}.withdrawn`);
+  date(v.updatedAt, `${path}.updatedAt`);
+}
+export function validateFeedbackNote(value: unknown): asserts value is FeedbackNote { feedbackNote(value, "feedback note"); }
+export function validateChecklistTick(value: unknown): asserts value is ChecklistTick { checklistTick(value, "checklist tick"); }
+export function validateReviewMark(value: unknown): asserts value is ReviewMark { reviewMark(value, "review mark"); }
 export function validateSketch(value: unknown): asserts value is Sketch { sketch(value, "sketch"); }
 export function validateEvidence(value: unknown): asserts value is CompetencyEvidence { evidence(value, "observation"); }
 export function validateSettings(value: unknown): asserts value is LearnerSettings { settings(value, "settings"); }
@@ -267,6 +315,19 @@ export function validateState(value: unknown): asserts value is V8State {
     if (new Set(v.favoriteActivityIds).size !== v.favoriteActivityIds.length) fail("familiar favourites duplicate");
   }
   if (v.exploreFocus != null) exploreFocus(v.exploreFocus, "explore focus");
+  if (v.feedbackNotes !== undefined) {
+    if (!Array.isArray(v.feedbackNotes) || v.feedbackNotes.length > NOTE_LIMITS.notes) fail("feedback notes");
+    identifiedList(v.feedbackNotes, "feedback notes", feedbackNote);
+  }
+  if (v.checklistTicks !== undefined) {
+    if (!Array.isArray(v.checklistTicks) || v.checklistTicks.length > NOTE_LIMITS.ticks) fail("checklist ticks");
+    identifiedList(v.checklistTicks, "checklist ticks", checklistTick);
+  }
+  if (v.reviewMarks !== undefined) {
+    if (!Array.isArray(v.reviewMarks) || v.reviewMarks.length > NOTE_LIMITS.marks) fail("review marks");
+    identifiedList(v.reviewMarks, "review marks", reviewMark);
+  }
+  if (v.reviewerName !== undefined) text(v.reviewerName, "reviewer name", NOTE_LIMITS.reviewer);
   settings(v.settings, "settings"); date(v.updatedAt, "workspace date"); date(v.settingsUpdatedAt, "settings date");
   choice(v.route, ROUTES, "route"); id(v.activeUnitId, "active unit");
   for (const key of ["activeActivityId", "resumeActivityId", "activeSketchId"]) nullable(v[key], id, key);

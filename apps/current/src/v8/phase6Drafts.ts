@@ -2,6 +2,7 @@ import { buildChords, createContext, normalize } from "../core/music/theory";
 import type { EpisodeDefinition } from "./pilotEpisode";
 import { positionMidi, STANDARD_TUNING_MIDI, validateMaterial } from "./structuredMusic";
 import type { GuitarPosition, MusicalMaterial } from "./structuredMusic";
+import { DRAFT_BY_AGENT } from "./provenance";
 
 const highE = (fret: number): GuitarPosition => ({ string: 1, fret });
 const thirdNote = (id: string, atBeat: number, fret: number, spelling: string) => ({
@@ -93,6 +94,7 @@ export const THIRD_COLOUR_EPISODE_DRAFT: EpisodeDefinition & {
 } = {
   id: "third-colour-episode",
   version: 1,
+  provenance: DRAFT_BY_AGENT,
   unitId: "unit-10",
   materialId: THIRD_COLOUR_DRAFT.id,
   materialVersion: THIRD_COLOUR_DRAFT.version,
@@ -284,6 +286,7 @@ export const COMMON_TONE_TRANSFER_DRAFT: DraftChordStudy = {
 export const COMMON_TONE_EPISODE_DRAFT: DraftChordEpisode = {
   id: "common-tone-c-am-episode",
   version: 1,
+  provenance: DRAFT_BY_AGENT,
   unitId: COMMON_TONE_CHANGE_DRAFT.unitId,
   materialId: COMMON_TONE_CHANGE_DRAFT.id,
   materialVersion: COMMON_TONE_CHANGE_DRAFT.version,
