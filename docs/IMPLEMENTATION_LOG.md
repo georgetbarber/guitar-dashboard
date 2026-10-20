@@ -1125,7 +1125,7 @@ The pending root `.gitignore` change is what keeps `.local-recovery/` (a JDK
 download, logs, `firebase-config/`, `phase-01-start/`) out of a public commit.
 It must be kept before anything runs `git add -A`, which the publisher does.
 
-## Next package
+## Next package at the end of Phase 2A-3 (historical)
 
 **Phase 2A-4: contrast, legibility and automated accessibility checks (B12,
 B15).** Measure text, control and focus contrast against WCAG AA in both
@@ -1563,3 +1563,25 @@ Unit 10 has a second root for the same minor/major-third question: F–A♭–F 
 Unit 6 has a G (320003) → Em (022000) four-count study and two-count variation. This preserves I→vi in a new key, while the guitar changes from C–Am shapes to G–Em shapes. A-string fret 2, open G and open B remain in place. The validator uses each study's tonal centre, and the chord score and synthesized guide derive from its exact frets and timing. The episode script points to this as a changed-context task rather than a completed capability.
 
 **Verification:** 320 unit/interface tests across 48 files, production build, lint, formatting, guest-bundle and offline-shell checks passed. Tests check the F–A♭/A pitches and positions, the retained rhythm, G/Em I→vi chord labels and note sets, both transferred chord voicings and their MIDI projection, and answer concealment. Browser checks were not repeated because the drafts are still unreachable from the live app. Guitar playability, a normal/slow hand demonstration, an uncoached learner transfer attempt, real-device behaviour, emulator, CI and release evidence remain open. Phase 5's real-input gate and Phase 6's batch gate remain open.
+
+---
+
+## Completion brief Package 0 — start-up, consolidation and governance (20 October 2026)
+
+**Status: released through PR #6.** First package under the [completion brief](COMPLETION_BRIEF.md). No learner-facing behaviour changed.
+
+| | |
+| --- | --- |
+| **Findings** | None closed. Prepares the brief's packages 1–11 |
+| **Changed** | `docs/COMPLETION_BRIEF.md` (George's brief, committed unchanged apart from its Progress table); `docs/AGENT_DECISIONS.md` (new register); `docs/GEORGE_CHECKS.md`, generated from `apps/current/src/v8/georgeChecks.json` by `npm run docs:checks` (`scripts/george-checks.mjs`, checked by `tests/georgeChecks.test.ts`, now in the `test` script); a dated note at the top of the plan; the three Phase 6 commits from `codex/phase-5-evidence-feedback` |
+| **Branches** | `codex/phase-5-evidence-feedback`: Phase 6 commits cherry-picked with original authorship; two small style rules rewritten in the design tokens because `app.css` had been split into area files; the three new files formatted. `codex/project-hygiene-release`: superseded by #4/#5. `codex/repair-guitar-release-check`: patch-equivalent to #3. All three deleted locally and on GitHub after merge. Details in [AGENT_DECISIONS.md](AGENT_DECISIONS.md) A1 |
+| **Not done** | `AGENTS.md` Safety still says "do not push unless explicitly asked". This session's own safety checks refused an agent edit to that section of the agent instruction file. The brief says it wins where they conflict; the plan has a dated note; George can change the bullet himself (R1) |
+| **Migration impact** | None. The checklist JSON is not yet imported by the app (Package 1 renders it) |
+
+**Toolchain (brief §7.1).** This session worked in a cloud clone of GitHub `main`, not through the Mac folder. `npm ci` ran natively. Java 21 is present, but the Firestore emulator jar download from `storage.googleapis.com` is blocked by this environment's network policy, so **rules evidence comes from CI** for every package in this session. Playwright 1.60 expects Chromium build 1223; the environment ships build 1194, which the browser suite runs on through a local symlink in the ignored `.playwright-browsers/` folder.
+
+**Verification.** Local: 323 unit/interface tests across 49 files; lint; format check against `origin/main`; production build; guest entry graph 386.6 KiB (420 KiB threshold); offline shell 1268.2 KiB raw (1280 KiB threshold; about 12 KiB of headroom); 88 desktop/phone Chromium journeys passed with two production-only checks skipped. CI: the PR and merge workflows (lint, format, coverage, browser journeys, emulator rules, Firebase build, offline-shell journey, deploy). No guitar, phone or learner evidence is claimed.
+
+## Next package
+
+**Completion brief Package 1: draft status, feedback notes and George's checklist** (brief §3.1 and §3.3). Make provenance (`contentVersion`, `author`, `reviewer`, `reviewStatus`, `reviewedAt`) real data on authored content; show a calm "Not yet checked on a guitar" tag; add the "Something's wrong here" note (its own synced record type, never evidence), the Feedback view with Markdown export and "dealt with", the learner-owned "Mark as checked" overlay, and the in-app "Things to check" list rendered from `src/v8/georgeChecks.json` with synced ticks. New records live in their own Firestore subcollections so old clients, which rewrite the whole profile document, cannot drop them. Rules, backup round-trip and mixed-version tests are required; rules evidence comes from CI. Then release.

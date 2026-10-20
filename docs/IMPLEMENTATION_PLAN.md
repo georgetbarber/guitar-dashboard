@@ -1,5 +1,14 @@
 # Interval improvement plan
 
+> **20 October 2026 — decisions that change this plan.** George decided that every
+> gate needing a person, a guitar, a physical phone or elapsed time is now
+> **non-blocking**: its automatable part must still pass, and its human part becomes
+> a `needs George` item in [George's checklist](GEORGE_CHECKS.md). Agent-written
+> lessons go live marked as drafts, and releases follow the brief's release rules.
+> The [completion brief](COMPLETION_BRIEF.md) records these decisions and the
+> remaining Phases 5–8 work; where it conflicts with this plan, the brief wins.
+> Judgement calls and reversals are listed in [AGENT_DECISIONS.md](AGENT_DECISIONS.md).
+
 **Status (1 October 2026): Phases 0 and 1 are implemented; Phase 2 engineering packages are locally checked. Phase 3's one-note pilot and Phase 4's connected software journey are implemented and locally checked. Phase 5's software path includes capability-specific evidence, placement, changed-example recall, temporary pitch-only checks, recording self-review and a route back to practice. Phase 6 has two unshipped draft episodes, reusable monophonic score/playback groundwork and a separate unshipped C–Am chord-score preview; Phase 7 has begun documentation and source-reachability review; Phase 8's optional ideas have been evaluated but not built. The Phase 3–5 human guitar/content review, independent learner trial and real-device checks remain open. B30 retains seven documented development-only advisory paths pending compatible upstream fixes. See [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md), the [Phase 5 gate](reviews/2026-09-30-phase-5-gate.md) and the [Phases 6–8 entry review](reviews/2026-09-30-phases-6-8-entry.md) for evidence and limits.**
 
 Prepared 10 September 2026. Covers the supplied engineering audit and the [design and learning audit](/Users/georgethomasbarber/Developer/guitar-dashboard/docs/reviews/2026-09-10-design-and-learning-audit.md). The existing [Learning Effectiveness Backlog](/Users/georgethomasbarber/Developer/guitar-dashboard/docs/LEARNING_EFFECTIVENESS_BACKLOG.md) supplies additional content acceptance criteria.
