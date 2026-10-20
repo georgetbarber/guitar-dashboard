@@ -1568,7 +1568,7 @@ Unit 6 has a G (320003) → Em (022000) four-count study and two-count variation
 
 ## Completion brief Package 0 — start-up, consolidation and governance (20 October 2026)
 
-**Status: released through PR #6.** First package under the [completion brief](COMPLETION_BRIEF.md). No learner-facing behaviour changed.
+**Status: PR #6, CI green (including the emulator rules suite); merging it publishes.** First package under the [completion brief](COMPLETION_BRIEF.md). No learner-facing behaviour changed. This session's own safety checks refused to let an agent merge a pull request without a human review, so George merges (brief §7.3 assumed agents would).
 
 | | |
 | --- | --- |
@@ -1580,7 +1580,7 @@ Unit 6 has a G (320003) → Em (022000) four-count study and two-count variation
 
 **Toolchain (brief §7.1).** This session worked in a cloud clone of GitHub `main`, not through the Mac folder. `npm ci` ran natively. Java 21 is present, but the Firestore emulator jar download from `storage.googleapis.com` is blocked by this environment's network policy, so **rules evidence comes from CI** for every package in this session. Playwright 1.60 expects Chromium build 1223; the environment ships build 1194, which the browser suite runs on through a local symlink in the ignored `.playwright-browsers/` folder.
 
-**Verification.** Local: 323 unit/interface tests across 49 files; lint; format check against `origin/main`; production build; guest entry graph 386.6 KiB (420 KiB threshold); offline shell 1268.2 KiB raw (1280 KiB threshold; about 12 KiB of headroom); 88 desktop/phone Chromium journeys passed with two production-only checks skipped. CI: the PR and merge workflows (lint, format, coverage, browser journeys, emulator rules, Firebase build, offline-shell journey, deploy). No guitar, phone or learner evidence is claimed.
+**Verification.** Local: 323 unit/interface tests across 49 files; lint; format check against `origin/main`; production build; guest entry graph 386.6 KiB (420 KiB threshold); offline shell 1268.2 KiB raw (1280 KiB threshold; about 12 KiB of headroom); 88 desktop/phone Chromium journeys passed with two production-only checks skipped. CI on PR #6: lint, format, coverage, browser journeys, emulator rules, Firebase build, guest-bundle and offline-shell checks and the production offline journey all passed after the Ubuntu 24.04 pin (decision A3); the first two attempts failed installing Chromium on the new Ubuntu 26 image before any app check ran. No guitar, phone or learner evidence is claimed.
 
 ## Next package
 

@@ -46,6 +46,20 @@ first, so it is not buried.
   each human check.
 - **Where:** plan note, `docs/GEORGE_CHECKS.md`, the in-app list (Package 1).
 
+### R3 · 2026-10-20 · Package 0 · George merges pull requests
+
+- **Decision:** agent sessions push branches and open pull requests, and stop
+  there. George merges them, which publishes through the existing workflow.
+- **Reverses:** brief §2.1 and §7.3, which pre-authorised agents to merge once
+  CI is green.
+- **Why:** the Package 0 session's own safety checks refused an agent merge of
+  a pull request that no person had reviewed, even with CI green and the
+  brief's authority. The session did not try to route around that refusal.
+- **What George does:** merge the open pull requests in the order the log's
+  **Next package** section lists, after a glance at each. Every PR has passed
+  the full CI workflow before it is listed as ready.
+- **Reversible:** yes, if a later session's environment permits agent merges.
+
 ## Decisions
 
 ### A1 · 2026-10-20 · Package 0 · Branch dispositions on 20 October

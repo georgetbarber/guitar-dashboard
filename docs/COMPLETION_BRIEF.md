@@ -336,7 +336,7 @@ Update this table as packages finish.
 
 | Package | Status | Released (commit / date) | Notes |
 | --- | --- | --- | --- |
-| 0 Start-up and consolidation | released | PR #6 · 2026-10-20 | Phase 6 branch commits merged; superseded branches closed; `AGENTS.md` Safety left for George (decision R1) |
+| 0 Start-up and consolidation | PR open, CI green | PR #6 · awaiting George's merge | Phase 6 branch commits brought in; CI pinned to Ubuntu 24.04 (A3); superseded branches to delete after merge; `AGENTS.md` Safety left for George (R1) |
 | 1 Draft status, feedback, checklist | pending | | |
 | 2 Close Phase 5 (software) | pending | | |
 | 3 Music engine and authoring pipeline | pending | | |
