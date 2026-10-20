@@ -605,6 +605,14 @@ test("a clean simulated note yields only a temporary pitch estimate", async ({ p
   await expect(page.locator(".pitch-check-result")).toContainText("near E4");
   await expect(page.getByRole("heading", { name: "Nothing to strengthen from playing yet." })).toBeVisible();
   expect(await page.evaluate(() => (window as typeof window & { __pitchMicStops: number }).__pitchMicStops)).toBe(1);
+  // A misreading can be reported with the check's own result attached.
+  await page.locator(".pitch-check-result").getByRole("button", { name: "Something's wrong here" }).click();
+  const note = page.getByRole("dialog", { name: "Leave a note about this" });
+  await expect(note).toContainText("Microphone check · one held note");
+  await expect(note).toContainText("near E4");
+  await note.getByRole("textbox", { name: "What is wrong, or what did you expect?" }).fill("I played the B string and it still said E.");
+  await note.getByRole("button", { name: "Save note" }).click();
+  await expect(note).toBeHidden();
   await page.getByRole("button", { name: "Use microphone for one note" }).click();
   await expect(page.getByRole("status").filter({ hasText: /Listening… play the shown pattern/ })).toBeVisible();
   await page.locator(".pitch-check summary").click();

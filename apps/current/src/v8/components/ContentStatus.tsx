@@ -1,11 +1,9 @@
-import { lazy, Suspense, useId, useState } from "react";
-import { createPortal } from "react-dom";
+import { useId, useState } from "react";
 import type { FeedbackTarget } from "../notes";
 import { effectiveReview, newReviewMark, reviewMarkId, type AuthoredProvenance } from "../provenance";
 import { NOTE_LIMITS } from "../limits";
 import { useV8Store } from "../store";
-
-const FeedbackDialog = lazy(() => import("./FeedbackDialog").then((module) => ({ default: module.FeedbackDialog })));
+import { FeedbackLink } from "./FeedbackLink";
 
 function shortDate(iso: string | null): string {
   if (!iso) return "";
@@ -28,7 +26,6 @@ export function ContentStatus({
 }) {
   const { state, dispatch } = useV8Store();
   const review = effectiveReview(provenance, state.reviewMarks);
-  const [noteTarget, setNoteTarget] = useState<FeedbackTarget | null>(null);
   const [marking, setMarking] = useState(false);
   const [reviewer, setReviewer] = useState(state.reviewerName ?? "");
   const [message, setMessage] = useState("");
@@ -57,9 +54,7 @@ export function ContentStatus({
           : `${review.status === "trialled" ? "Trialled" : "Checked"} by ${review.reviewer} · ${shortDate(review.reviewedAt)}`}
       </p>
       <div className="content-status__actions">
-        <button className="text-action" onClick={() => setNoteTarget(target())}>
-          Something's wrong here
-        </button>
+        <FeedbackLink target={target} onSaved={() => setMessage("Note saved. Find it in Settings › Feedback.")} />
         {review.status === "draft" && !marking && (
           <button
             className="text-action"
@@ -115,20 +110,6 @@ export function ContentStatus({
           {message}
         </p>
       )}
-      {/* Portalled so the dialog does not inherit the lesson header's large type. */}
-      {noteTarget &&
-        createPortal(
-          <Suspense fallback={null}>
-            <FeedbackDialog
-              target={noteTarget}
-              onDone={(saved) => {
-                setNoteTarget(null);
-                if (saved) setMessage("Note saved. Find it in Settings › Feedback.");
-              }}
-            />
-          </Suspense>,
-          document.body,
-        )}
     </div>
   );
 }
