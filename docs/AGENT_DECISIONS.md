@@ -83,3 +83,17 @@ first, so it is not buried.
 - **Alternatives:** the Mac-folder runner copy described in the brief §7.1
   (still valid when only the bridge is available).
 - **Reversible:** yes; nothing in the repository depends on it.
+
+### A3 · 2026-10-20 · Package 0 · Pin CI to Ubuntu 24.04
+
+- **Decision:** both workflows run on `ubuntu-24.04` instead of
+  `ubuntu-latest`.
+- **Why:** GitHub began moving `ubuntu-latest` to Ubuntu 26 on 19 October
+  2026. On the first run after that, `playwright install --with-deps chromium`
+  (Playwright 1.60) failed twice in a row on the new image, before any app
+  check ran. The pinned image is the one every earlier release passed on.
+- **Alternatives:** upgrading Playwright when a release supports Ubuntu 26
+  (a planned dependency upgrade, not a release blocker).
+- **Reversible:** yes; change the two `runs-on` lines back once Playwright
+  supports the new image.
+- **Where:** `.github/workflows/firebase-hosting-*.yml`.
