@@ -1,5 +1,6 @@
 import type { MusicalMaterial, PerformanceReference } from "./structuredMusic";
 import { STANDARD_TUNING_MIDI, validateMaterial } from "./structuredMusic";
+import { DRAFT_BY_AGENT, provenanceProblems, type Provenance } from "./provenance";
 
 export interface TeachingMove {
   id: string;
@@ -22,6 +23,8 @@ export interface ObstacleBranch {
 export interface EpisodeDefinition {
   id: string;
   version: number;
+  /** Author, reviewer and review status of this exact version (completion brief §3.1). */
+  provenance: Provenance;
   unitId: string;
   materialId: string;
   materialVersion: number;
@@ -95,6 +98,8 @@ export const PILOT_PERFORMED_REFERENCES: readonly PerformanceReference[] = [];
 export const PILOT_EPISODE: EpisodeDefinition = {
   id: "one-note-qa-episode",
   version: 1,
+  // Written by an agent in Phase 3; nobody has played it on a guitar yet.
+  provenance: DRAFT_BY_AGENT,
   unitId: "unit-01",
   materialId: ONE_NOTE_QUESTION_ANSWER.id,
   materialVersion: ONE_NOTE_QUESTION_ANSWER.version,
@@ -173,6 +178,7 @@ export function validatePilotEpisode(): string[] {
   const errors = PILOT_MATERIALS.flatMap((material) =>
     validateMaterial(material).map((error) => `${material.id}: ${error}`),
   );
+  errors.push(...provenanceProblems(PILOT_EPISODE.provenance).map((error) => `${PILOT_EPISODE.id}: ${error}`));
   const original = PILOT_MATERIALS.find(
     (material) => material.id === PILOT_EPISODE.materialId && material.version === PILOT_EPISODE.materialVersion,
   );

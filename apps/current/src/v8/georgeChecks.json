@@ -1,0 +1,231 @@
+{
+  "version": 1,
+  "groups": [
+    {
+      "id": "laptop",
+      "label": "On the laptop"
+    },
+    {
+      "id": "guitar",
+      "label": "With guitar"
+    },
+    {
+      "id": "pixel",
+      "label": "On the Pixel"
+    },
+    {
+      "id": "days",
+      "label": "After a few days"
+    }
+  ],
+  "items": [
+    {
+      "id": "laptop-backup-first",
+      "group": "laptop",
+      "title": "Keep a backup of your current data",
+      "do": "Open Settings and choose “Export complete backup”. Keep the file somewhere safe. Do this once now and again before you try anything that restores or replaces data.",
+      "pass": "A .guitar-academy file is saved and its size is not zero.",
+      "link": {
+        "route": "settings",
+        "label": "Open Settings"
+      },
+      "source": "Completion brief §7.2: George has real data on the live site and his phone.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "guitar-unit-1-pilot",
+      "group": "guitar",
+      "title": "Play the Unit 1 question and answer",
+      "do": "Open Continue and start the one-note lesson. Play the two bars with the reference at 60 BPM, then try one repair (start, stop a ringing note, or hold the pulse through silence) and return to both bars.",
+      "pass": "The note (open high E), counts, muting action and hand instruction match what you actually do on the guitar, and the repair you chose made the next attempt easier.",
+      "link": {
+        "route": "today",
+        "label": "Open Continue"
+      },
+      "source": "Phase 3 gate (log, 26 Sep); Phase 5 gate review item 2.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "guitar-pitch-sustained",
+      "group": "guitar",
+      "title": "Try the sustained-note pitch check with real input",
+      "do": "In Strengthen, open the microphone check. Play open high E cleanly; then the B string by mistake; then a very soft pluck; then a loud, overloaded one; then stay silent. Do it once in a quiet room and once with ordinary background noise (a radio or TV on). If a result does not match what you played, use the “Something's wrong here” link under it.",
+      "pass": "The clean and the soft E are identified as near E, the B string is named as a different note (never “near E”), and the overloaded and silent tries come back uncertain.",
+      "link": {
+        "route": "practice",
+        "label": "Open Strengthen"
+      },
+      "source": "Phase 5 gate review item 1; thresholds retuned on synthetic input on 20 October (gate addendum, decision A6).",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "guitar-pitch-sequences",
+      "group": "guitar",
+      "title": "Try the two-pluck and E–G–E checks",
+      "do": "In the same card, play two E plucks with a real silence between them, then without one. Then play E–G–E on the high string (frets 0–3–0), then once with the wrong middle fret (0–2–0), then with an extra pluck.",
+      "pass": "The displayed order matches what you played; without a silence, with the wrong fret or with an extra pluck the result is uncertain or names the different note, never a match. Note any try where the room or the phone's volume made it say uncertain when you played cleanly.",
+      "link": {
+        "route": "practice",
+        "label": "Open Strengthen"
+      },
+      "source": "Phase 5 gate review item 1; thresholds retuned on synthetic input on 20 October (gate addendum, decision A6).",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "guitar-review-retry",
+      "group": "guitar",
+      "title": "One real review-to-retry journey",
+      "do": "Record a temporary take in the Unit 1 lesson, compare it with the reference, and write what you intended, what you noticed and one change. Reopen it from Strengthen, do the suggested smaller exercise and return to both bars.",
+      "pass": "The suggested exercise addresses the thing you noticed, and your next take is better in that one detail by your own judgement.",
+      "link": {
+        "route": "practice",
+        "label": "Open Strengthen"
+      },
+      "source": "Phase 5 gate review item 2.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "laptop-keyboard-pass",
+      "group": "laptop",
+      "title": "Keyboard-only pass",
+      "do": "Without the mouse, use Tab, Shift+Tab, Enter, Space, Escape and the arrow keys to go through Learn, a lesson, Play, Create, Explore and Settings. On a fretboard, move with the arrow keys.",
+      "pass": "You can reach and operate everything, you can always see where focus is, dialogs keep focus inside and Escape closes them, and focus returns to where you were.",
+      "link": {
+        "route": "today",
+        "label": "Open Learn"
+      },
+      "source": "Phase 2A-4 accessibility review: manual keyboard pass not yet performed.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "laptop-screen-reader-pass",
+      "group": "laptop",
+      "title": "VoiceOver pass",
+      "do": "Turn on VoiceOver (Cmd+F5) and go through Continue, one lesson step, the fretboard and Settings.",
+      "pass": "Each control is announced with a sensible name, the fretboard announces string, fret, note and relationship, and nothing important is silent.",
+      "link": {
+        "route": "today",
+        "label": "Open Learn"
+      },
+      "source": "Phase 2A-4 accessibility review: screen-reader pass not yet performed.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "pixel-install-and-name",
+      "group": "pixel",
+      "title": "Installed app shows Interval and opens",
+      "do": "Open the installed app on the Pixel (or install it from Chrome's menu). Accept an update if one is offered.",
+      "pass": "The home-screen name and icon are Interval's, and the app opens to your existing progress.",
+      "link": {
+        "route": "today",
+        "label": "Open Learn"
+      },
+      "source": "Rename and 1 October consolidation: installed app not yet checked.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "pixel-sign-in-sync",
+      "group": "pixel",
+      "title": "Sign in and sync after the Firebase update",
+      "do": "In Settings, sign in with Google on the Pixel. Make a small change on the laptop (for example, favourite an activity), then reopen the app on the Pixel.",
+      "pass": "Sign-in works, the sync status reaches synced, and the change appears on the other device.",
+      "link": {
+        "route": "settings",
+        "label": "Open Settings"
+      },
+      "source": "1 October consolidation: sign-in and sync with the refreshed SDK not verified.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "pixel-audio-background",
+      "group": "pixel",
+      "title": "Playback sounds right and stops when backgrounded",
+      "do": "Play the Unit 1 reference on the phone speaker and on headphones. While it plays, switch to another app, then come back.",
+      "pass": "The count-in and notes sound steady and audible, playback stops when the app goes to the background, and nothing keeps playing or overlaps when you return.",
+      "link": {
+        "route": "today",
+        "label": "Open Continue"
+      },
+      "source": "Plan §10 real-device checks; Phase 3 log.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "pixel-offline-lesson",
+      "group": "pixel",
+      "title": "A selected lesson works offline",
+      "do": "With a unit marked ready offline, turn on aeroplane mode, close the app fully and reopen it. Open that lesson and play it.",
+      "pass": "The app opens, the lesson plays, and anything you save is kept and appears after you reconnect.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map"
+      },
+      "source": "Plan §10; Phase 2B-5 offline shell.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "pixel-microphone-denied",
+      "group": "pixel",
+      "title": "Refusing the microphone leaves the lesson usable",
+      "do": "In the Unit 1 lesson, start a take and deny microphone access when Chrome asks.",
+      "pass": "You see a clear message and can carry on with the lesson without the recording.",
+      "link": {
+        "route": "today",
+        "label": "Open Continue"
+      },
+      "source": "Plan §10; Phase 3 log.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "pixel-update-during-work",
+      "group": "pixel",
+      "title": "An update waits while you are working",
+      "do": "After a new release, open the app while you are partway through writing a review or a sketch edit.",
+      "pass": "The app offers the update rather than reloading by itself, and nothing you were typing is lost.",
+      "link": {
+        "route": "today",
+        "label": "Open Learn"
+      },
+      "source": "Plan §10; Phase 1D update policy.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "laptop-cross-device-delete",
+      "group": "laptop",
+      "title": "A deleted sketch stays deleted on the other device",
+      "do": "Signed in on both devices, make a throwaway sketch, wait until it appears on the Pixel, then delete it on the laptop. Reopen the app on the Pixel.",
+      "pass": "The sketch is gone on both devices and does not come back after either device reloads.",
+      "link": {
+        "route": "create",
+        "label": "Open Create"
+      },
+      "source": "Plan §12 boundary table: two devices editing and deleting.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "days-delayed-recall",
+      "group": "days",
+      "title": "Come back on a later day without help",
+      "do": "On a different day from your first Unit 1 success, open Continue and do the later check it offers, and answer the changed concept example in Strengthen.",
+      "pass": "You can do the phrase and answer the changed example without looking at the earlier answer.",
+      "link": {
+        "route": "today",
+        "label": "Open Continue"
+      },
+      "source": "Phase 5 gate review item 3.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "days-which-lessons-stuck",
+      "group": "days",
+      "title": "Notice what you came back to",
+      "do": "After a week of normal use, look at which lessons or pieces you returned to by choice and which you avoided. Leave a feedback note on one of each.",
+      "pass": "Two feedback notes exist: one on something you enjoyed returning to, one on something you avoided, each saying why.",
+      "link": {
+        "route": "today",
+        "label": "Open Learn"
+      },
+      "source": "Plan §10 personal trial, made non-blocking by the 20 October decisions.",
+      "added": "2026-10-20 · Package 0"
+    }
+  ]
+}

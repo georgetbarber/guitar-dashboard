@@ -194,6 +194,96 @@ describe("Firestore tenant rules", () => {
   });
 });
 
+const note = {
+  id: "note-1",
+  contentId: "one-note-qa-episode",
+  contentVersion: 1,
+  contentTitle: "One-note question and answer",
+  location: "Step: Practise · Bar 2",
+  showing: "Practise step with the count visible",
+  text: "The answer bar sounds a beat late.",
+  category: "wrong-music",
+  createdAt: "2026-10-20T12:00:00.000Z",
+  localDate: "2026-10-20",
+  resolvedAt: null,
+  updatedAt: "2026-10-20T12:00:00.000Z",
+  appVersion: "0.8.0"
+};
+
+const tick = { id: "guitar-unit-1-pilot", done: true, updatedAt: "2026-10-20T12:00:00.000Z" };
+
+const mark = {
+  id: "one-note-qa-episode@1",
+  contentId: "one-note-qa-episode",
+  contentVersion: 1,
+  reviewer: "George",
+  reviewedAt: "2026-10-20T12:00:00.000Z",
+  withdrawn: false,
+  updatedAt: "2026-10-20T12:00:00.000Z"
+};
+
+describe("Feedback notes, checklist ticks and review marks", () => {
+  it("accepts a bounded note and lets only its dealt-with state change", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    const reference = doc(database, "users/learner-a/feedback/note-1");
+    await assertSucceeds(setDoc(reference, note));
+    await assertSucceeds(setDoc(reference, { ...note, resolvedAt: "2026-10-21T09:00:00.000Z", updatedAt: "2026-10-21T09:00:00.000Z" }));
+    await assertSucceeds(setDoc(reference, { ...note, resolvedAt: null, updatedAt: "2026-10-21T10:00:00.000Z" }));
+    await assertFails(setDoc(reference, { ...note, text: "Rewritten after the fact.", updatedAt: "2026-10-21T11:00:00.000Z" }));
+    await assertFails(setDoc(reference, { ...note, contentId: "another-lesson", updatedAt: "2026-10-21T11:00:00.000Z" }));
+  });
+
+  it("accepts a minimal note written without optional fields", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    const minimal: Record<string, unknown> = { ...note, id: "note-2" };
+    for (const key of ["contentVersion", "location", "category", "resolvedAt", "appVersion"]) delete minimal[key];
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/feedback/note-2"), minimal));
+  });
+
+  it("rejects malformed, oversized, mismatched and cross-user notes", async () => {
+    const learnerA = environment.authenticatedContext("learner-a").firestore();
+    const learnerB = environment.authenticatedContext("learner-b").firestore();
+    await assertFails(setDoc(doc(learnerA, "users/learner-a/feedback/note-3"), { ...note, id: "note-3", text: "" }));
+    await assertFails(setDoc(doc(learnerA, "users/learner-a/feedback/note-4"), { ...note, id: "note-4", text: "x".repeat(4001) }));
+    await assertFails(setDoc(doc(learnerA, "users/learner-a/feedback/note-5"), { ...note, id: "note-5", category: "angry" }));
+    await assertFails(setDoc(doc(learnerA, "users/learner-a/feedback/note-6"), { ...note, id: "note-6", localDate: "20 October" }));
+    await assertFails(setDoc(doc(learnerA, "users/learner-a/feedback/note-7"), { ...note, id: "note-7", unexpected: true }));
+    await assertFails(setDoc(doc(learnerA, "users/learner-a/feedback/note-8"), note));
+    const missing: Record<string, unknown> = { ...note, id: "note-9" };
+    delete missing.showing;
+    await assertFails(setDoc(doc(learnerA, "users/learner-a/feedback/note-9"), missing));
+    await assertFails(setDoc(doc(learnerB, "users/learner-a/feedback/note-1"), note));
+    await assertSucceeds(setDoc(doc(learnerA, "users/learner-a/feedback/note-1"), note));
+    await assertFails(getDoc(doc(learnerB, "users/learner-a/feedback/note-1")));
+  });
+
+  it("accepts checklist ticks and rejects malformed ones", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/checks/guitar-unit-1-pilot"), tick));
+    await assertSucceeds(setDoc(doc(database, "users/learner-a/checks/guitar-unit-1-pilot"), { ...tick, done: false, updatedAt: "2026-10-21T09:00:00.000Z" }));
+    await assertFails(setDoc(doc(database, "users/learner-a/checks/Not_Valid"), { ...tick, id: "Not_Valid" }));
+    await assertFails(setDoc(doc(database, "users/learner-a/checks/other-item"), tick));
+    await assertFails(setDoc(doc(database, "users/learner-a/checks/guitar-unit-1-pilot"), { ...tick, done: "yes" }));
+    await assertFails(setDoc(doc(database, "users/learner-a/checks/guitar-unit-1-pilot"), { ...tick, note: "extra" }));
+  });
+
+  it("accepts a review mark only for its own content version", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    const reference = doc(database, "users/learner-a/reviews/one-note-qa-episode@1");
+    await assertSucceeds(setDoc(reference, mark));
+    await assertSucceeds(setDoc(reference, { ...mark, withdrawn: true, updatedAt: "2026-10-21T09:00:00.000Z" }));
+    await assertFails(setDoc(doc(database, "users/learner-a/reviews/one-note-qa-episode@2"), { ...mark, id: "one-note-qa-episode@2" }));
+    await assertFails(setDoc(reference, { ...mark, reviewer: "" }));
+    await assertFails(setDoc(reference, { ...mark, reviewStatus: "trialled" }));
+  });
+
+  it("leaves the profile document's shape unchanged, so older clients and rules still accept it", async () => {
+    const database = environment.authenticatedContext("learner-a").firestore();
+    await assertFails(setDoc(doc(database, "users/learner-a"), { ...profile, feedbackNotes: [note] }));
+    await assertSucceeds(setDoc(doc(database, "users/learner-a"), profile));
+  });
+});
+
 describe("Storage recording rules", () => {
   it("allows only the owner to upload and read an explicitly selected audio take", async () => {
     const ownerStorage = environment.authenticatedContext("learner-a").storage();

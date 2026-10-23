@@ -30,7 +30,7 @@ test("a selected unit reports its offline copy and reopens after a disconnected 
     return bytes;
   });
   expect(cachedBytes).toBeGreaterThan(100 * 1024);
-  expect(cachedBytes).toBeLessThan(1280 * 1024);
+  expect(cachedBytes).toBeLessThan(1284 * 1024); // decision A7
   if (testInfo.project.name === "desktop-chromium") {
     console.log(
       `Local preview first-page transfer: ${foregroundBytes} bytes; installed precache: ${cachedBytes} bytes.`,

@@ -8,6 +8,8 @@ import { useV8Store } from "../store";
 import { TONAL_ROOTS } from "../validation";
 import type { ActivityDefinition, Assistance, CompetencyEvidence, EvidenceContext, EvidenceOutcome } from "../types";
 import { MicroStudy } from "./MicroStudy";
+import { ContentStatus } from "./ContentStatus";
+import { legacyActivityProvenance } from "../provenance";
 import { PilotStudy } from "./PilotStudy";
 import { RhythmNotation } from "./RhythmNotation";
 import { RecordSaveStatus } from "./SaveStatus";
@@ -168,6 +170,20 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
     return laterUnit?.activities.find((item) => !done.has(item.id)) ?? null;
   };
 
+  const feedbackTarget = () => ({
+    contentId: activity.id,
+    contentVersion: 1,
+    contentTitle: `${unit.title} · ${activity.title}`,
+    location: `Unit ${unit.order} · ${activity.kind.replaceAll("-", " ")} activity · ${justCompleted ? "after reporting a result" : attempted ? "after an attempt" : "before an attempt"}`,
+    showing: [
+      `Instruction: ${activity.instruction}`,
+      `Study: ${unit.microStudy.title} at ${unit.microStudy.tempo} BPM`,
+      hint ? "hint shown" : "",
+      reveal ? "reference revealed" : "",
+    ].filter(Boolean).join("; "),
+  });
+  const contentStatus = <ContentStatus provenance={legacyActivityProvenance(activity)} target={feedbackTarget} />;
+
   const responseGuide = activity.kind === "listen-compare"
     ? "Play the micro-study yourself, then choose the result that honestly describes how controllable and explainable it felt."
     : activity.kind === "sing-predict"
@@ -189,7 +205,7 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
           <div><span>{originLabel} · {unit.title}</span><h1 id="activity-title">{successful ? "Completed" : "Attempt logged"}: {activity.title}</h1><p>{successful
             ? `Recorded as “${outcomeLabel}”, on your own report. This activity is complete in your path; it does not verify that the skill is secure.`
             : `Recorded as “${outcomeLabel}”, on your own report. This activity remains in your guided path until its success action is achieved.`}</p>
-            <RecordSaveStatus evidenceIds={justRecorded.map((item) => item.id)} /></div>
+            <RecordSaveStatus evidenceIds={justRecorded.map((item) => item.id)} />{contentStatus}</div>
         </header>
         <div className="done-panel card">
           <span className="done-check" aria-hidden="true">{successful ? "✓" : "↻"}</span>
@@ -227,7 +243,7 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
     <section className="activity-player" aria-labelledby="activity-title">
       <header className="activity-header">
         <button className="icon-button" onClick={onClose} aria-label="Close activity" data-autofocus>←</button>
-        <div><span>{originLabel} · {unit.title} · {activity.minutes} minutes</span><h1 id="activity-title">{activity.title}</h1><p>{activity.why}</p><button className="text-action" aria-pressed={(state.favoriteActivityIds ?? []).includes(activity.id)} onClick={() => dispatch({ type: "toggleFavoriteActivity", activityId: activity.id })}>{(state.favoriteActivityIds ?? []).includes(activity.id) ? "★ Saved as a familiar favourite" : "☆ Save as a familiar favourite"}</button></div>
+        <div><span>{originLabel} · {unit.title} · {activity.minutes} minutes</span><h1 id="activity-title">{activity.title}</h1><p>{activity.why}</p><button className="text-action" aria-pressed={(state.favoriteActivityIds ?? []).includes(activity.id)} onClick={() => dispatch({ type: "toggleFavoriteActivity", activityId: activity.id })}>{(state.favoriteActivityIds ?? []).includes(activity.id) ? "★ Saved as a familiar favourite" : "☆ Save as a familiar favourite"}</button>{contentStatus}</div>
       </header>
       {keepDraftNotice && unsavedReflection && <p className="activity-draft-notice" role="status">Your written reflection has not been saved, so Escape kept this activity open. Save it below, or choose Close activity to leave without it.</p>}
 

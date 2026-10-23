@@ -9,8 +9,11 @@ import type { PitchEstimate, TimedAudioFrame } from "../../audio/pitchAssessment
 import { noteName } from "../../core/music/theory";
 import { STANDARD_TUNING_MIDI } from "../structuredMusic";
 import { useUpdateHold } from "./UpdateNotice";
+import { FeedbackLink } from "./FeedbackLink";
 
 const TARGET_MIDI = STANDARD_TUNING_MIDI[5]; // first, high-E string in standard tuning
+/** Version 2: thresholds retuned against synthetic realistic input on 20 October 2026. */
+const PITCH_CHECK_VERSION = 2;
 type SignalKind = "sustained" | "two-plucks" | "three-note";
 type SignalResult = { kind: "sustained"; estimate: PitchEstimate }
   | { kind: "two-plucks" | "three-note"; estimate: NoteSequenceEstimate };
@@ -204,6 +207,14 @@ export function PitchCheck() {
             {result.estimate.status === "uncertain" && (
               <small>Uncertain is not a failed attempt. You can try again or leave this check aside.</small>
             )}
+            <p className="pitch-check-misread">If this does not match what you played, say so: it is how these checks get tuned to real guitars.</p>
+            <FeedbackLink target={() => ({
+              contentId: `pitch-check:${result.kind}`,
+              contentVersion: PITCH_CHECK_VERSION,
+              contentTitle: `Microphone check · ${result.kind === "sustained" ? "one held note" : result.kind === "two-plucks" ? "two separate plucks" : "three-note shape"}`,
+              location: `Strengthen · expected ${TARGETS[result.kind].map(noteLabel).join(" → ")}`,
+              showing: `${result.estimate.status === "uncertain" ? "No reliable pitch estimate" : "Pitch-only estimate"}: ${result.kind === "sustained" ? sustainedResultText(result.estimate) : sequenceResultText(result.estimate, TARGETS[result.kind])}`,
+            })} />
           </div>
         )}
       </div>
