@@ -12,6 +12,7 @@ import { COMMON_TONE_LESSON } from "./lessons/stage1";
 import { THIRD_COLOUR_LESSON } from "./lessons/stage2";
 import { scoreById } from "./lessons/format";
 import { validateState } from "./validation";
+import { localDateAt } from "./dates";
 import type { V8State } from "./types";
 
 vi.mock("./repository", async (original) => ({
@@ -245,7 +246,7 @@ describe("the lesson player", () => {
           outcome: "successful",
           observation: "Changes landed.",
           occurredAt: new Date().toISOString(),
-          localDate: new Date().toISOString().slice(0, 10),
+          localDate: localDateAt(new Date()),
         },
       ],
     };
