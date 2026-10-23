@@ -247,3 +247,54 @@ first, so it is not buried.
   planned place to move superseded code with proof.
 - **Reversible:** yes.
 - **Where:** `src/v8/lessons/lessons.test.ts`; listed for Package 9.
+
+### A12 · 2026-10-23 · Package 4 · All 48 units revised in place
+
+- **Decision:** every current unit is *revised*: same id, same nine activity
+  ids, same core outcome, new style-specific authored material. None is merged
+  or superseded.
+- **Why:** each existing outcome still has a natural home in the style
+  direction (for example "Syncopation creates lift" becomes sixteenth-note funk
+  strumming), and keeping ids means no evidence, sketch, session plan, note or
+  review mark has to move.
+- **Alternatives:** replacing weak outlines with new units (new ids and a
+  migration for every learner's history); merging overlapping pairs such as
+  Units 2 and 5 (they teach different things: shaping one sound, and placing
+  silence in time).
+- **Reversible:** yes, per unit, with an old-to-new mapping as `CURRICULUM_MAP.md`
+  §4 requires.
+- **Where:** `docs/CURRICULUM_MAP.md` §3–4; checked by
+  `apps/current/tests/curriculumMap.test.ts`.
+
+### A13 · 2026-10-23 · Package 4 · The repertoire and capstones
+
+- **Decision:** eleven original pieces (nine authored, two learner frameworks
+  completed in Create) carry the three styles through the course: *Front Step*
+  and *Low Road* (blues-rock), *Porch Light*, *Harbour Song* and *Tide Table*
+  (folk), *Night Market*, *Sunday Glide*, *Two Rivers* and *Glasshouse* (soul
+  and funk), *Lantern* (melody) and *Your Own Tune*. Each stage ends with a
+  capstone; Stages 7 and 8 are made in Create. The Unit 1 pilot becomes the
+  first layer of *Front Step*.
+- **Why:** brief §4.2 asks for 10–16 recurring pieces with layered parts and a
+  capstone per stage; tying the existing pilot and the two authored lessons to
+  pieces gives them a musical destination.
+- **Alternatives:** one piece per stage (no recurrence); more, shorter pieces
+  (less revisiting with deeper understanding).
+- **Reversible:** yes; pieces are data, and a renamed or replaced piece keeps
+  its id rule (`CURRICULUM_MAP.md` §4).
+- **Where:** `docs/CURRICULUM_MAP.md` §6–7.
+
+### A14 · 2026-10-23 · Package 4 · Units open by prerequisite, not by number
+
+- **Decision:** the linear chain (each unit opens after the one before)
+  becomes a prerequisite graph of what each unit's music assumes. A unit opens
+  once the units it builds on are complete, and "available after" names them.
+- **Why:** the three style threads advance at different rates; a learner keen
+  on funk can reach Unit 26 once Units 4, 5 and 19 (and what they build on)
+  are done, not all 25 before it. Dates still never gate anything.
+- **Alternatives:** keep the strict chain (simple but misleading about what a
+  unit needs); remove access locks altogether (a larger change to the existing
+  course map behaviour, not needed for the style threads).
+- **Reversible:** yes; the graph is data.
+- **Where:** `docs/CURRICULUM_MAP.md` §3 and §5; implemented in Batch 1
+  (`CURRICULUM_MAP.md` §10).
