@@ -46,6 +46,34 @@
       "added": "2026-10-20 · Package 0"
     },
     {
+      "id": "guitar-unit-6-c-am",
+      "group": "guitar",
+      "title": "Play the C-to-Am lesson",
+      "do": "In the Course map, open Unit 6 and choose “Place it in time” (marked “full lesson”). Hear the exact music at 60 BPM, then play the four-count and two-count studies with it. Try the G-to-Em transfer once you have reported the unaided check.",
+      "pass": "The chord shapes, fingers and the one moving finger match what your hand does, the synthesised guitar is in time with the count, and the two-count study is playable at its slowest tempo (40 BPM).",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Unit 6 · Keep what stays: C to Am"
+      },
+      "source": "Phase 6 lesson pipeline (Package 3); lesson drafted by an agent and not yet played on a guitar.",
+      "added": "2026-10-23 · Package 3"
+    },
+    {
+      "id": "guitar-unit-10-thirds",
+      "group": "guitar",
+      "title": "Play the third-colour lesson",
+      "do": "In the Course map, open Unit 10 and choose “Put it under the hands”. Play E–G–E and E–G♯–E on the high E string with the reference, then the reversed order and the F-root transfer.",
+      "pass": "The frets shown (0–3–0, 0–4–0; then 1–4–1, 1–5–1 from F) are what you play, and the one-fret difference between minor and major third is clear by ear.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Unit 10 · One fret changes the third"
+      },
+      "source": "Phase 6 lesson pipeline (Package 3); lesson drafted by an agent and not yet played on a guitar.",
+      "added": "2026-10-23 · Package 3"
+    },
+    {
       "id": "guitar-pitch-sustained",
       "group": "guitar",
       "title": "Try the sustained-note pitch check with real input",
@@ -111,6 +139,19 @@
       "added": "2026-10-20 · Package 0"
     },
     {
+      "id": "laptop-music-stand-view",
+      "group": "laptop",
+      "title": "Read a lesson from where you play",
+      "do": "Open either full lesson, tick “Music-stand view”, put the laptop where a music stand would be and sit with the guitar. Play the study while the reference runs.",
+      "pass": "From your playing position you can read the count, the tab and the highlighted chord or fret without leaning in.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map"
+      },
+      "source": "Completion brief Package 3: the player must work at music-stand distance.",
+      "added": "2026-10-23 · Package 3"
+    },
+    {
       "id": "pixel-install-and-name",
       "group": "pixel",
       "title": "Installed app shows Interval and opens",
@@ -153,13 +194,13 @@
       "id": "pixel-offline-lesson",
       "group": "pixel",
       "title": "A selected lesson works offline",
-      "do": "With a unit marked ready offline, turn on aeroplane mode, close the app fully and reopen it. Open that lesson and play it.",
-      "pass": "The app opens, the lesson plays, and anything you save is kept and appears after you reconnect.",
+      "do": "In the Course map, open a unit in the stage you are working in and wait for “Ready offline on this device”. For a stage you are not in yet, tap “Save this stage for offline” first. Turn on aeroplane mode, close the app fully and reopen it. Open that unit's full lesson (Unit 6 or Unit 10) and play it.",
+      "pass": "The app opens, the full lesson opens and plays, and anything you save is kept and appears after you reconnect.",
       "link": {
         "route": "path",
         "label": "Open Course map"
       },
-      "source": "Plan §10; Phase 2B-5 offline shell.",
+      "source": "Plan §10; Phase 2B-5 offline shell; Package 3 per-stage lesson packs.",
       "added": "2026-10-20 · Package 0"
     },
     {

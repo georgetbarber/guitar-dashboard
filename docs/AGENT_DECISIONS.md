@@ -180,3 +180,70 @@ first, so it is not buried.
 - **Reversible:** yes, and reversed by design in Package 3.
 - **Where:** `scripts/check-offline-shell.mjs`, `tests/e2e/offline-shell.spec.ts`.
 
+- **Restored:** Package 3 (23 October) returns the threshold to 1280 KiB; the
+  Firebase-enabled shell is 1269.3 KiB with the lesson packs outside it (A9).
+
+### A8 · 2026-10-23 · Package 3 · Standard tuning only, for now
+
+- **Decision:** score format 2 can only express standard tuning
+  (`tuning: "standard"`). No capo or drop D.
+- **Why:** brief §4.5 allows them only if the fretboard, tab, transposition and
+  audio maths all handle them and are tested. None of that is built, so the
+  format cannot claim it.
+- **Alternatives:** a `capo` field rendered as shifted fret numbers (would make
+  tab, fretboard and sounding pitch disagree until every projection handles it).
+- **Reversible:** yes. A later format version can add a tuning and capo, with an
+  upgrade from format 2 like the one from format 1.
+- **Where:** `src/core/score/types.ts`.
+
+### A9 · 2026-10-23 · Package 3 · Lessons are saved per stage, outside the app shell
+
+- **Decision:** the lesson players, the music engine (score format, synth,
+  score player, score views) and each stage's lessons are built as
+  `assets/lesson-*` files and are **not** in the automatic offline shell.
+  `lesson-packs.json` (in the shell) lists each stage's files. The stage the
+  learner is working in, and the stage of the selected unit, are saved
+  automatically while online; any other stage is saved with "Save this stage
+  for offline". When an update is waiting, its packs are saved for every stage
+  saved before, so applying it offline keeps those lessons. "Ready offline"
+  includes full lessons only when every file of the stage's pack is saved.
+- **Why:** the shell had under 2 KiB of headroom and the course will grow to
+  48 units. This keeps the shell at about 1269 KiB however many lessons are
+  added; each stage pack is currently 57–77 KiB, mostly shared engine code.
+- **Alternatives:** raising the shell threshold for every batch (unbounded);
+  loading lessons only on demand online (no offline lessons at all).
+- **Reversible:** yes; dropping the `globIgnores` entry puts everything back in
+  the shell.
+- **Where:** `vite.config.ts`, `src/v8/lessonPacks.ts`,
+  `src/v8/components/OfflineLessonStatus.tsx`, `scripts/check-offline-shell.mjs`.
+
+### A10 · 2026-10-23 · Package 3 · An authored lesson stands in for its activity
+
+- **Decision:** where an activity has an authored lesson (Unit 6 "Place it in
+  time", Unit 10 "Put it under the hands"), opening the activity opens the
+  lesson, and Continue sessions reach it first. The unaided check records a
+  self-reported observation against that activity; the transfer check against
+  the unit's transfer activity. Lesson positions and attempts are device
+  workspace records, included in backups but not synced (as the Unit 1 pilot's
+  are).
+- **Why:** evidence keeps using existing activity and capability ids, so sync,
+  older clients and the rules accept it unchanged and no migration is needed.
+  Syncing lesson positions would need new collections and rules for little
+  benefit before George has used them.
+- **Alternatives:** a new evidence source for lessons (would need a rules and
+  mixed-version rollout); syncing cursors in the profile (older clients would
+  drop them).
+- **Reversible:** yes; a later package can add a synced collection, as A5 did.
+- **Where:** `src/v8/components/ActivityPlayer.tsx`, `LessonPlayer.tsx`,
+  `src/v8/learning.ts`, `src/v8/lessonProgress.ts`.
+
+### A11 · 2026-10-23 · Package 3 · Old Phase 6 draft modules kept as test fixtures
+
+- **Decision:** `phase6Drafts.ts`, `scoreUpgrade.ts`, `chordStudy.ts`,
+  `chordStudyPlayback.ts` and `components/ChordStudy.tsx` are imported only by
+  tests. They prove the format 2 lessons kept the September drafts' music note
+  for note. They are not part of the app.
+- **Why:** removing them now would delete that evidence; Package 9 (B27) is the
+  planned place to move superseded code with proof.
+- **Reversible:** yes.
+- **Where:** `src/v8/lessons/lessons.test.ts`; listed for Package 9.

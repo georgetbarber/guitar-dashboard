@@ -8,7 +8,7 @@ Tick them in the app under **Settings › Things to check**, where the same list
 keeps your ticks on this device and in sync. Leave a “Something's wrong here”
 note if a check fails.
 
-16 items, most valuable first within each group.
+19 items, most valuable first within each group.
 
 ## On the laptop
 
@@ -39,6 +39,15 @@ note if a check fails.
 - **Why:** Phase 2A-4 accessibility review: screen-reader pass not yet performed.
 - **Added:** 2026-10-20 · Package 0 · `laptop-screen-reader-pass`
 
+### Read a lesson from where you play
+
+- **Status:** needs George
+- **Do:** Open either full lesson, tick “Music-stand view”, put the laptop where a music stand would be and sit with the guitar. Play the study while the reference runs.
+- **Pass:** From your playing position you can read the count, the tab and the highlighted chord or fret without leaning in.
+- **Where:** Learn › Course map
+- **Why:** Completion brief Package 3: the player must work at music-stand distance.
+- **Added:** 2026-10-23 · Package 3 · `laptop-music-stand-view`
+
 ### A deleted sketch stays deleted on the other device
 
 - **Status:** needs George
@@ -58,6 +67,24 @@ note if a check fails.
 - **Where:** Learn › Continue
 - **Why:** Phase 3 gate (log, 26 Sep); Phase 5 gate review item 2.
 - **Added:** 2026-10-20 · Package 0 · `guitar-unit-1-pilot`
+
+### Play the C-to-Am lesson
+
+- **Status:** needs George
+- **Do:** In the Course map, open Unit 6 and choose “Place it in time” (marked “full lesson”). Hear the exact music at 60 BPM, then play the four-count and two-count studies with it. Try the G-to-Em transfer once you have reported the unaided check.
+- **Pass:** The chord shapes, fingers and the one moving finger match what your hand does, the synthesised guitar is in time with the count, and the two-count study is playable at its slowest tempo (40 BPM).
+- **Where:** Learn › Course map · Unit 6 · Keep what stays: C to Am
+- **Why:** Phase 6 lesson pipeline (Package 3); lesson drafted by an agent and not yet played on a guitar.
+- **Added:** 2026-10-23 · Package 3 · `guitar-unit-6-c-am`
+
+### Play the third-colour lesson
+
+- **Status:** needs George
+- **Do:** In the Course map, open Unit 10 and choose “Put it under the hands”. Play E–G–E and E–G♯–E on the high E string with the reference, then the reversed order and the F-root transfer.
+- **Pass:** The frets shown (0–3–0, 0–4–0; then 1–4–1, 1–5–1 from F) are what you play, and the one-fret difference between minor and major third is clear by ear.
+- **Where:** Learn › Course map · Unit 10 · One fret changes the third
+- **Why:** Phase 6 lesson pipeline (Package 3); lesson drafted by an agent and not yet played on a guitar.
+- **Added:** 2026-10-23 · Package 3 · `guitar-unit-10-thirds`
 
 ### Try the sustained-note pitch check with real input
 
@@ -118,10 +145,10 @@ note if a check fails.
 ### A selected lesson works offline
 
 - **Status:** needs George
-- **Do:** With a unit marked ready offline, turn on aeroplane mode, close the app fully and reopen it. Open that lesson and play it.
-- **Pass:** The app opens, the lesson plays, and anything you save is kept and appears after you reconnect.
+- **Do:** In the Course map, open a unit in the stage you are working in and wait for “Ready offline on this device”. For a stage you are not in yet, tap “Save this stage for offline” first. Turn on aeroplane mode, close the app fully and reopen it. Open that unit's full lesson (Unit 6 or Unit 10) and play it.
+- **Pass:** The app opens, the full lesson opens and plays, and anything you save is kept and appears after you reconnect.
 - **Where:** Learn › Course map
-- **Why:** Plan §10; Phase 2B-5 offline shell.
+- **Why:** Plan §10; Phase 2B-5 offline shell; Package 3 per-stage lesson packs.
 - **Added:** 2026-10-20 · Package 0 · `pixel-offline-lesson`
 
 ### Refusing the microphone leaves the lesson usable

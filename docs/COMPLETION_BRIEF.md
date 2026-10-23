@@ -337,9 +337,9 @@ Update this table as packages finish.
 | Package | Status | Released (commit / date) | Notes |
 | --- | --- | --- | --- |
 | 0 Start-up and consolidation | PR open, CI green | PR #6 · awaiting George's merge | Phase 6 branch commits brought in; CI pinned to Ubuntu 24.04 (A3); superseded branches to delete after merge; `AGENTS.md` Safety left for George (R1) |
-| 1 Draft status, feedback, checklist | PR open | PR #7 · awaiting George's merge | Draft tag, notes, Feedback export, Things to check, Mark as checked; three new synced collections (A5); Storage SDK out of the ordinary build (A4) |
-| 2 Close Phase 5 (software) | PR open | PR #8 · awaiting George's merge | Pitch checks retuned on 94 synthetic realistic scenarios; no measured-pitch record (A6); gate closed on software terms, real input `needs George` |
-| 3 Music engine and authoring pipeline | pending | | |
+| 1 Draft status, feedback, checklist | PR open, CI green | PR #7 · awaiting George's merge | Draft tag, notes, Feedback export, Things to check, Mark as checked; three new synced collections (A5); Storage SDK out of the ordinary build (A4) |
+| 2 Close Phase 5 (software) | PR open, CI green | PR #8 · awaiting George's merge | Pitch checks retuned on 94 synthetic realistic scenarios; no measured-pitch record (A6); gate closed on software terms, real input `needs George`; CI re-run green on 23 Oct after a temporary 1284 KiB shell threshold (A7) |
+| 3 Music engine and authoring pipeline | PR open | PR #9 · awaiting George's merge | Score format 2, plucked-string synth, audio-clock player, synchronised score views, lesson format and validator; Unit 6 and Unit 10 lessons live in Learn as drafts; per-stage offline lesson packs (A9), 1280 KiB shell restored; two offline defects fixed, one pre-existing (log) |
 | 4 Curriculum map and repertoire plan | pending | | |
 | 5 Batch 1 · Units 1–12 | pending | | |
 | 6 Batch 2 · Units 13–24 | pending | | |
