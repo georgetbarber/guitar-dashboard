@@ -166,6 +166,47 @@ export interface PilotAttempt {
   localDate?: string;
 }
 
+export type LessonStep = "learn" | "practise" | "try" | "transfer" | "create" | "return";
+
+/**
+ * Device-durable position in one authored lesson (src/v8/lessons). One per
+ * lesson; a revised lesson version starts a fresh cursor. Older workspaces
+ * omit the list, and older clients ignore it.
+ */
+export interface LessonCursor {
+  id: string;
+  lessonId: string;
+  lessonVersion: number;
+  step: LessonStep;
+  /** The score in view: a study, the transfer or the recall score. */
+  scoreId: string;
+  tempo: number;
+  assistance: Assistance;
+  /** Generated when a check begins and reused if the record action is retried. */
+  attemptId?: string;
+  /** The likely error being repaired, when the learner chose one. */
+  errorId?: string;
+  updatedAt: string;
+}
+
+/** A self-report about one lesson check; never a measured performance. */
+export interface LessonAttempt {
+  id: string;
+  cursorId: string;
+  lessonId: string;
+  lessonVersion: number;
+  scoreId: string;
+  scoreVersion: number;
+  kind: "first-check" | "transfer-check" | "later-check";
+  assistance: Assistance;
+  method: "self-reported";
+  tempo: number;
+  outcome: EvidenceOutcome;
+  observation: string;
+  occurredAt: string;
+  localDate: string;
+}
+
 export type PilotReviewFocus = "phrasing" | "muting" | "tension" | "tone" | "intention";
 
 /** A learner's written comparison after a temporary take, never measured evidence. */
@@ -313,9 +354,77 @@ export interface Sketch {
   fieldUpdatedAt?: Partial<Record<SketchSyncField, string>>;
 }
 
+/** Review status of authored content. Separate from whether a learner may open it. */
+export type ReviewStatus = "draft" | "reviewed" | "trialled";
+
+export const FEEDBACK_CATEGORIES = [
+  "wrong-music", "unplayable", "confusing", "too-hard", "too-easy", "sounds-bad", "other"
+] as const;
+export type FeedbackCategory = typeof FEEDBACK_CATEGORIES[number];
+
+/**
+ * "Something's wrong here": the learner's note about a piece of content.
+ *
+ * Its own record type. It is never learning evidence, never counts towards
+ * progress, and only its "dealt with" state can change after it is written.
+ */
+export interface FeedbackNote {
+  id: string;
+  /** Stable id of what the note is about: an episode, activity, piece or screen. */
+  contentId: string;
+  contentVersion?: number;
+  /** Human-readable name at the time, so an export reads on its own. */
+  contentTitle: string;
+  /** Step, section, bar or beat, when the screen has one. */
+  location?: string;
+  /** What was on screen when the note was started. */
+  showing: string;
+  text: string;
+  category?: FeedbackCategory;
+  createdAt: string;
+  localDate: string;
+  /** When George marked it as dealt with; null after reopening. */
+  resolvedAt?: string | null;
+  updatedAt: string;
+  appVersion?: string;
+}
+
+/** A tick on one item of George's checklist (src/v8/georgeChecks.json). */
+export interface ChecklistTick {
+  id: string;
+  done: boolean;
+  updatedAt: string;
+}
+
+/**
+ * "Mark as checked": a learner-owned overlay recording that George played a
+ * lesson and is content with it. It applies to one exact content version, so
+ * a revised lesson returns to draft until it is checked again.
+ */
+export interface ReviewMark {
+  /** `${contentId}@${contentVersion}` */
+  id: string;
+  contentId: string;
+  contentVersion: number;
+  reviewer: string;
+  reviewedAt: string;
+  /** Undoing a check keeps the record so other devices learn of the undo. */
+  withdrawn: boolean;
+  updatedAt: string;
+}
+
 export interface V8State {
   /** Device-only decision, committed atomically with a restored workspace. */
   pendingRestoreId?: string;
+  /** Feedback notes, checklist ticks and review marks sync in their own collections, never in the profile. */
+  feedbackNotes?: FeedbackNote[];
+  checklistTicks?: ChecklistTick[];
+  reviewMarks?: ReviewMark[];
+  /** The name last used when marking a lesson as checked. Device workspace and backup only. */
+  reviewerName?: string;
+  /** Authored-lesson state is local to this workspace and included in its backup, like the pilot's. */
+  lessonCursors?: LessonCursor[];
+  lessonAttempts?: LessonAttempt[];
   /** Pilot state is local to this workspace and included in its backup. */
   pilotCursor?: PilotCursor | null;
   pilotAttempts?: PilotAttempt[];

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { V8StoreProvider, useV8Store } from "../v8/store";
 import { playMidi } from "../audio/engine";
 import { CloudSyncProvider, useCloudSync } from "../v8/cloudFacade";
@@ -12,6 +12,9 @@ import { PlacementSampler } from "../v8/components/PlacementSampler";
 import { Today } from "../v8/features/Today";
 import { Path } from "../v8/features/Path";
 import { Practice } from "../v8/features/Practice";
+import { warmLessonPacks } from "../v8/lessonPacks";
+import { nextUnit } from "../v8/learning";
+import { unitById } from "../v8/curriculum";
 const Play = lazy(() => import("../v8/features/Play").then((module) => ({ default: module.Play })));
 const Create = lazy(() => import("../v8/features/Create").then((module) => ({ default: module.Create })));
 const Explore = lazy(() => import("../v8/features/Explore").then((module) => ({ default: module.Explore })));
@@ -46,6 +49,13 @@ function V8Application() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const activityCloseRef = useRef<(() => void) | null>(null);
   const closeActivity = () => dispatch({ type: "openActivity", activityId: null });
+  // Keep the stage the learner is working in ready offline, lessons included (src/v8/lessonPacks.ts).
+  const workingStage = hydrated ? nextUnit(state).stage : 0;
+  const selectedStage = hydrated ? unitById(state.activeUnitId).stage : 0;
+  useEffect(() => {
+    if (!import.meta.env.PROD || !workingStage) return;
+    void warmLessonPacks([workingStage, selectedStage]);
+  }, [workingStage, selectedStage]);
   if (cloud.accountChoice) return <AccountWorkspaceChoice />;
   if (!hydrated) return <div className="loading-screen"><span>Interval</span><p>Loading your learning path…</p></div>;
   if (!state.settings.diagnosticComplete) return <Diagnostic />;

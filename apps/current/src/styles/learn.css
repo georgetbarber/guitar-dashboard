@@ -846,6 +846,17 @@
   color: var(--ink);
 }
 
+.pitch-check-result .pitch-check-misread {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.pitch-check-result > .text-action {
+  justify-self: start;
+  margin-left: calc(-1 * var(--space-2));
+}
+
 .concept-result {
   display: grid;
   gap: var(--space-2);
@@ -1042,4 +1053,13 @@
   .mastery-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.offline-unit-status p {
+  margin: 0;
+}
+
+.offline-unit-status button {
+  margin-top: var(--space-2);
+  text-transform: none;
 }

@@ -57,6 +57,25 @@ export const PROFILE_LIMITS = {
 } as const;
 
 /**
+ * Bounds for feedback notes, checklist ticks and review marks. Each is its own
+ * Firestore document, so these mirror firestore.rules field by field. The
+ * counts bound the device workspace: a new note beyond `notes` is refused
+ * visibly, never by discarding an older one.
+ */
+export const NOTE_LIMITS = {
+  notes: 2000,
+  text: 4000,
+  contentTitle: 200,
+  location: 300,
+  showing: 600,
+  appVersion: 40,
+  ticks: 200,
+  tickId: 64,
+  marks: 2000,
+  reviewer: 80
+} as const;
+
+/**
  * Firestore refuses a document over 1 MiB outright, before any rule runs, and
  * the per-field caps above do not add up to a guarantee: 500 revisions each
  * carrying a snapshot of the music will pass every individual check and still

@@ -139,6 +139,62 @@ service cloud.firestore {
         && data.updatedAt.size() <= 40;
     }
 
+    function validDate(value) {
+      return value is string && value.size() <= 40;
+    }
+
+    /*
+     * Feedback notes, checklist ticks and review marks (completion brief §3.1).
+     * Each is its own document in its own collection, never a profile field:
+     * older clients rewrite the whole profile document and would drop fields
+     * they do not know. None is learning evidence. The bounds mirror NOTE_LIMITS
+     * in src/v8/limits.ts.
+     */
+    function validFeedback(data, noteId) {
+      return data.keys().hasOnly([
+          'id', 'contentId', 'contentVersion', 'contentTitle', 'location', 'showing',
+          'text', 'category', 'createdAt', 'localDate', 'resolvedAt', 'updatedAt', 'appVersion'
+        ])
+        && data.keys().hasAll(['id', 'contentId', 'contentTitle', 'showing', 'text', 'createdAt', 'localDate', 'updatedAt'])
+        && data.id == noteId
+        && data.id is string && data.id.size() <= 160
+        && data.contentId is string && data.contentId.size() >= 1 && data.contentId.size() <= 160
+        && (!('contentVersion' in data) || (data.contentVersion is int && data.contentVersion >= 1 && data.contentVersion <= 1000))
+        && data.contentTitle is string && data.contentTitle.size() <= 200
+        && (!('location' in data) || (data.location is string && data.location.size() <= 300))
+        && data.showing is string && data.showing.size() <= 600
+        && data.text is string && data.text.size() >= 1 && data.text.size() <= 4000
+        && (!('category' in data) || data.category in ['wrong-music', 'unplayable', 'confusing', 'too-hard', 'too-easy', 'sounds-bad', 'other'])
+        && validDate(data.createdAt)
+        && data.localDate is string && data.localDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && (!('resolvedAt' in data) || data.resolvedAt == null || validDate(data.resolvedAt))
+        && validDate(data.updatedAt)
+        && (!('appVersion' in data) || (data.appVersion is string && data.appVersion.size() <= 40));
+    }
+
+    function validTick(data, itemId) {
+      return data.keys().hasOnly(['id', 'done', 'updatedAt'])
+        && data.keys().hasAll(['id', 'done', 'updatedAt'])
+        && data.id == itemId
+        && data.id is string && data.id.matches('^[a-z0-9-]{3,64}$')
+        && data.done is bool
+        && validDate(data.updatedAt);
+    }
+
+    function validReviewMark(data, markId) {
+      return data.keys().hasOnly(['id', 'contentId', 'contentVersion', 'reviewer', 'reviewedAt', 'withdrawn', 'updatedAt'])
+        && data.keys().hasAll(['id', 'contentId', 'contentVersion', 'reviewer', 'reviewedAt', 'withdrawn', 'updatedAt'])
+        && data.id == markId
+        && data.id is string && data.id.size() <= 200
+        && data.contentId is string && data.contentId.size() >= 1 && data.contentId.size() <= 160
+        && data.contentVersion is int && data.contentVersion >= 1 && data.contentVersion <= 1000
+        && data.id == data.contentId + '@' + string(data.contentVersion)
+        && data.reviewer is string && data.reviewer.size() >= 1 && data.reviewer.size() <= 80
+        && validDate(data.reviewedAt)
+        && data.withdrawn is bool
+        && validDate(data.updatedAt);
+    }
+
     match /users/{userId} {
       allow read: if owns(userId);
       allow create, update: if owns(userId) && validProfile(request.resource.data);
@@ -169,6 +225,28 @@ service cloud.firestore {
       match /sketches/{sketchId} {
         allow read: if owns(userId);
         allow create, update: if owns(userId) && validSketch(request.resource.data, sketchId);
+        allow delete: if owns(userId);
+      }
+
+      // A note's words are fixed once written; only its "dealt with" state changes.
+      match /feedback/{noteId} {
+        allow read: if owns(userId);
+        allow create: if owns(userId) && validFeedback(request.resource.data, noteId);
+        allow update: if owns(userId) && validFeedback(request.resource.data, noteId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['resolvedAt', 'updatedAt']);
+        allow delete: if owns(userId);
+      }
+
+      match /checks/{itemId} {
+        allow read: if owns(userId);
+        allow create, update: if owns(userId) && validTick(request.resource.data, itemId);
+        allow delete: if owns(userId);
+      }
+
+      // Undoing a check flips `withdrawn`; checking again writes a new reviewer and date.
+      match /reviews/{markId} {
+        allow read: if owns(userId);
+        allow create, update: if owns(userId) && validReviewMark(request.resource.data, markId);
         allow delete: if owns(userId);
       }
     }

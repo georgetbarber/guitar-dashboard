@@ -43,6 +43,21 @@ describe("selected lesson offline readiness", () => {
     expect(await shellCachedForPage(cache, page, origin)).toBe(false);
   });
 
+  it("stays ready after the page loads a lazy chunk and the bundler adds preload and stylesheet links", async () => {
+    const cache = storage({
+      "workbox-precache": {
+        "/index.html": page,
+        "/assets/index-new.js": "app",
+        "/assets/index-new.css": "styles",
+      },
+    });
+    const pageAfterAccountCodeLoaded =
+      page +
+      '<link rel="modulepreload" href="/assets/cloud-1.js"><link rel="modulepreload" href="/assets/firebase-1.js">' +
+      '<link rel="stylesheet" href="/assets/Explore-1.css">';
+    expect(await shellCachedForPage(cache, pageAfterAccountCodeLoaded, origin)).toBe(true);
+  });
+
   it("does not report readiness when a required asset is missing or only runtime-cached", async () => {
     const cache = storage({
       "workbox-precache": { "/index.html": page, "/assets/index-new.js": "app" },

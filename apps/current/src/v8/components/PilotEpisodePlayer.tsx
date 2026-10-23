@@ -10,6 +10,7 @@ import { PILOT_REVIEW_FOCUSES, PILOT_REVIEW_FOCUS_IDS, pilotReviews } from "../p
 import { useV8Store } from "../store";
 import type { EvidenceOutcome, PilotAttempt, PilotCursor, PilotListeningReview, PilotReviewFocus } from "../types";
 import { PilotStudy } from "./PilotStudy";
+import { ContentStatus } from "./ContentStatus";
 import { RecordSaveStatus } from "./SaveStatus";
 import { useUpdateHold } from "./UpdateNotice";
 
@@ -172,6 +173,26 @@ export function PilotEpisodePlayer({
   );
   const repair = PILOT_EPISODE.obstacles.find((item) => item.id === cursor.repairId);
   const check = cursor.step === "try" || cursor.step === "return";
+  const STEP_NAMES: Record<PilotCursor["step"], string> = {
+    learn: "1 · Learn it", practise: "2 · Practise it", repair: "2 · Practise it (repair)", try: "3 · Try unaided",
+    vary: "4 · Make it yours", return: "5 · Return later",
+  };
+  const feedbackTarget = () => {
+    const beat = progress?.beat;
+    const place = beat === null || beat === undefined ? "" : ` · bar ${Math.floor(beat / MATERIAL.metre.numerator) + 1}, count ${(beat % MATERIAL.metre.numerator) + 1}`;
+    return {
+      contentId: PILOT_EPISODE.id,
+      contentVersion: PILOT_EPISODE.version,
+      contentTitle: `Unit 1 · ${MATERIAL.title}`,
+      location: `Step ${STEP_NAMES[cursor.step]} · section ${cursor.sectionId} · ${cursor.tempo} BPM${place}`,
+      showing: [
+        `Material ${cursor.step === "vary" ? ONE_NOTE_ANSWER_SHIFT.id : MATERIAL.id} v${MATERIAL.version}`,
+        repair ? `repair "${repair.learnerSignal}"` : "",
+        check ? "notes concealed for the unaided check" : "notes and count visible",
+        playing ? `playing (${progress?.phase ?? "starting"})` : "not playing",
+      ].filter(Boolean).join("; "),
+    };
+  };
 
   const changeStep = (step: PilotCursor["step"], repairId?: string) => {
     stop();
@@ -376,6 +397,10 @@ export function PilotEpisodePlayer({
           <h1 id="activity-title">One-note question and answer</h1>
           <p>{PILOT_EPISODE.objective}</p>
           <button className="text-action" aria-pressed={(state.favoriteActivityIds ?? []).includes(RHYTHM_ACTIVITY_ID)} onClick={() => dispatch({ type: "toggleFavoriteActivity", activityId: RHYTHM_ACTIVITY_ID })}>{(state.favoriteActivityIds ?? []).includes(RHYTHM_ACTIVITY_ID) ? "★ Saved as a familiar favourite" : "☆ Save as a familiar favourite"}</button>
+          <ContentStatus
+            provenance={{ contentId: PILOT_EPISODE.id, contentVersion: PILOT_EPISODE.version, ...PILOT_EPISODE.provenance }}
+            target={feedbackTarget}
+          />
         </div>
       </header>
       {notice && (

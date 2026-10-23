@@ -3,7 +3,7 @@ import { stopAudio } from "./engine";
 import { releaseTransport, replaceTransport } from "./transport";
 
 export type PlaybackMode = "reference" | "guided" | "unaided";
-export type PlaybackSection = "whole" | "question" | "answer";
+export type PlaybackSection = string;
 export interface EpisodePlaybackOptions {
   tempo: number;
   section: PlaybackSection;
