@@ -62,7 +62,8 @@ const INTERVAL_NAMES = [
   "tritone", "perfect fifth", "minor sixth", "major sixth", "minor seventh", "major seventh"
 ];
 
-const CHORDS: Record<ChordQuality, { intervals: readonly number[]; labels: readonly string[]; suffix: string }> = {
+/** The seven qualities the key-based chord model builds; chordSymbols.ts extends this table for written symbols. */
+export const CHORD_FORMULAS: Record<ChordQuality, { intervals: readonly number[]; labels: readonly string[]; suffix: string }> = {
   major: { intervals: [0, 4, 7], labels: ["1", "3", "5"], suffix: "" },
   minor: { intervals: [0, 3, 7], labels: ["1", "b3", "5"], suffix: "m" },
   diminished: { intervals: [0, 3, 6], labels: ["1", "b3", "b5"], suffix: "dim" },
@@ -91,6 +92,17 @@ function spellName(letter: (typeof LETTERS)[number], pitchClass: PitchClass): st
   const upward = normalize(pitchClass - NATURAL[letter]);
   const accidental = upward > 6 ? upward - 12 : upward;
   return `${letter}${accidental > 0 ? "#".repeat(accidental) : "b".repeat(-accidental)}`;
+}
+
+/**
+ * Spell a pitch class on the letter that lies `degreeNumber` letters above a
+ * spelled root (1 = the root's own letter, 3 = a third above, 9 = a ninth).
+ * The letter carries the meaning: a minor third above A is C, never B#.
+ */
+export function spellAboveRoot(rootName: string, degreeNumber: number, pitchClass: number): string {
+  const rootLetter = LETTERS.indexOf(rootName[0] as (typeof LETTERS)[number]);
+  if (rootLetter < 0 || !Number.isInteger(degreeNumber) || degreeNumber < 1) throw new Error(`Cannot spell from ${rootName}.`);
+  return spellName(LETTERS[(rootLetter + degreeNumber - 1) % LETTERS.length], normalize(pitchClass));
 }
 
 /**
@@ -164,7 +176,7 @@ export function buildScale(context: TonalContext): ScaleTone[] {
 }
 
 function chordQuality(intervals: readonly number[]): ChordQuality {
-  const found = Object.entries(CHORDS).find(([, formula]) =>
+  const found = Object.entries(CHORD_FORMULAS).find(([, formula]) =>
     formula.intervals.length === intervals.length &&
     formula.intervals.every((interval, index) => interval === intervals[index])
   );
@@ -248,7 +260,7 @@ export function buildChords(context: TonalContext, sevenths = false): Chord[] {
     );
     const intervals = chordTones.map((tone) => normalize(tone.pitchClass - root.pitchClass));
     const quality = chordQuality(intervals);
-    const formula = CHORDS[quality];
+    const formula = CHORD_FORMULAS[quality];
     const fn = functionFor(context.mode, rootIndex + 1);
     return {
       id: `${context.tonicName}-${context.mode}-${sevenths ? "7" : "3"}-${rootIndex + 1}`,
@@ -281,7 +293,7 @@ export function buildChord(
 ): Chord {
   const scale = buildScale(context);
   const root = scale[(degree - 1) % scale.length];
-  const formula = CHORDS[quality];
+  const formula = CHORD_FORMULAS[quality];
   const fn = functionFor(context.mode, degree);
   const rootLetter = LETTERS.indexOf(root.name[0] as (typeof LETTERS)[number]);
   return {
@@ -319,7 +331,7 @@ export function buildChordFromRoot(
   const scaleTone = buildScale(context).find((tone) => tone.pitchClass === root);
   const degreeLabel = scaleTone?.degreeLabel ?? intervalLabel(root - context.tonic);
   const degree = scaleTone?.degree ?? Number(degreeLabel.match(/\d/)?.[0] ?? 1);
-  const formula = CHORDS[quality];
+  const formula = CHORD_FORMULAS[quality];
   const preferFlats = context.tonicName.includes("b") || degreeLabel.includes("b");
   const rootName = scaleTone?.name ?? noteName(root, preferFlats);
   const rootLetter = LETTERS.indexOf(rootName[0] as (typeof LETTERS)[number]);

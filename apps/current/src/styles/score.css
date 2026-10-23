@@ -1,0 +1,349 @@
+/*
+ * SCORE VIEWS — tab, count, rhythm lanes, chord shapes and the fretboard for authored lessons.
+ *
+ * Loaded with the lesson player, not the app shell. Every value comes from tokens.css.
+ * The sounding event is marked by an ink frame and weight as well as colour, so the
+ * playhead reads without colour.
+ */
+.score-view {
+  display: grid;
+  gap: var(--space-4);
+  margin: var(--space-5) 0;
+  padding: var(--space-5);
+  border: var(--rule-ink);
+  background: var(--paper-bright);
+  min-width: 0;
+}
+
+.score-view__caption {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.score-view__caption strong {
+  font: var(--font-subhead);
+}
+
+.score-view__caption small,
+.score-view__hidden {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.score-view__diagrams {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.chord-diagram {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  width: calc(var(--space-9) + var(--space-7));
+}
+
+.chord-diagram svg {
+  width: 100%;
+  overflow: visible;
+}
+
+.chord-diagram line {
+  stroke: var(--ink-soft);
+  stroke-width: 1;
+}
+
+.chord-diagram__nut {
+  fill: var(--ink);
+}
+
+.chord-diagram__dot,
+.chord-diagram__barre {
+  fill: var(--rel-chord);
+}
+
+.chord-diagram.is-sounding .chord-diagram__dot,
+.chord-diagram.is-sounding .chord-diagram__barre {
+  fill: var(--rel-tonic);
+}
+
+.chord-diagram__open-ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.chord-diagram text {
+  fill: var(--ink);
+  font: var(--font-label);
+  text-anchor: middle;
+}
+
+.chord-diagram__finger {
+  fill: var(--rel-chord-text) !important;
+}
+
+.chord-diagram__fret-label {
+  text-anchor: start !important;
+}
+
+.chord-diagram figcaption {
+  font: var(--font-name);
+}
+
+.chord-diagram.is-sounding figcaption {
+  text-decoration: underline;
+  text-decoration-thickness: var(--rule-heavy);
+  text-underline-offset: 0.2em;
+}
+
+.score-view__bars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: var(--space-4);
+}
+
+.score-view.is-large .score-view__bars {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.score-bar {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.score-bar header {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.score-bar header span {
+  color: var(--ink-soft);
+}
+
+/* Each bar scrolls inside itself on a narrow phone; the page never does. */
+.score-bar__grid {
+  display: grid;
+  gap: 0;
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+}
+
+.score-row {
+  display: grid;
+  grid-template-columns: var(--space-7) repeat(var(--columns), minmax(var(--space-5), 1fr));
+  align-items: center;
+  min-height: var(--space-5);
+}
+
+.score-row > span {
+  grid-row: 1;
+  min-width: 0;
+  text-align: center;
+  font: var(--weight-bold) var(--type-small) / var(--lh-tight) var(--mono);
+}
+
+.score-row__label {
+  grid-column: 1;
+  color: var(--muted);
+  font: var(--font-meta) !important;
+  text-align: left !important;
+  text-transform: uppercase;
+}
+
+.score-row--count > span:not(.score-row__label) {
+  color: var(--muted);
+  font-weight: var(--weight-regular);
+}
+
+.score-row--count > span.is-beat {
+  color: var(--ink);
+  font-weight: var(--weight-bold);
+}
+
+.score-row--count > span.is-now {
+  box-shadow: inset 0 calc(-1 * var(--rule-heavy)) 0 var(--ink);
+  color: var(--ink);
+}
+
+.score-row--lane .lane {
+  position: relative;
+  height: 100%;
+  min-height: var(--space-5);
+  display: grid;
+  align-items: center;
+  justify-items: start;
+  padding-left: var(--space-1);
+  border-left: 1px solid var(--line);
+}
+
+.score-row--lane .lane--attack,
+.score-row--lane .lane--held {
+  background: linear-gradient(var(--piece-field), var(--piece-field)) left center / 100% 40% no-repeat;
+}
+
+.score-row--lane .lane--rest {
+  color: var(--muted);
+  font-weight: var(--weight-regular);
+  font-size: var(--type-meta);
+}
+
+.score-row--lane .lane.is-ghost {
+  color: var(--muted);
+  font-weight: var(--weight-regular);
+}
+
+.score-row--lane .lane.is-sounding {
+  box-shadow: inset 0 0 0 var(--rule-heavy) var(--ink);
+}
+
+.score-row--marks > span {
+  color: var(--rel-select);
+  font-size: var(--type-meta);
+  white-space: nowrap;
+}
+
+.score-row--string {
+  background: linear-gradient(var(--ink-soft), var(--ink-soft)) center / 100% 1px no-repeat;
+}
+
+.score-row--string > span:not(.score-row__label) {
+  justify-self: center;
+  padding: 0 var(--space-1);
+  background: var(--paper-bright);
+}
+
+.score-row--string > span.is-sounding {
+  background: var(--ink);
+  color: var(--paper-bright);
+}
+
+.score-board {
+  display: grid;
+  gap: var(--space-1);
+  overflow-x: auto;
+}
+
+.score-board__frets,
+.score-board__string {
+  display: grid;
+  grid-template-columns: var(--space-5) repeat(var(--frets), minmax(var(--space-6), 1fr));
+  align-items: center;
+}
+
+.score-board__frets small {
+  color: var(--muted);
+  font: var(--font-meta);
+  text-align: center;
+}
+
+.score-board__string > span {
+  font: var(--font-label);
+}
+
+.score-board__string b {
+  display: grid;
+  place-items: center;
+  height: var(--space-6);
+  background: linear-gradient(var(--ink-soft), var(--ink-soft)) center / 100% 1px no-repeat;
+  border-right: 2px solid var(--line-dark);
+  font: var(--weight-bold) var(--type-meta) / var(--lh-display) var(--mono);
+}
+
+.score-board__string b.is-open {
+  border-right: 4px solid var(--ink);
+}
+
+.score-board__string b.is-used {
+  background:
+    radial-gradient(circle, var(--paper-bright) 0 0.7rem, transparent 0.72rem),
+    linear-gradient(var(--ink-soft), var(--ink-soft)) center / 100% 1px no-repeat;
+  outline: 0;
+  box-shadow: inset 0 0 0 1px transparent;
+}
+
+.score-board__string b.is-sounding {
+  background:
+    radial-gradient(circle, var(--rel-tonic) 0 0.75rem, transparent 0.77rem),
+    linear-gradient(var(--ink-soft), var(--ink-soft)) center / 100% 1px no-repeat;
+  color: var(--rel-tonic-text);
+}
+
+.score-view__legend {
+  font-size: var(--type-small);
+}
+
+.score-view__legend ul {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-5);
+  color: var(--ink-soft);
+}
+
+/* Music-stand distance: everything a reader needs at arm's length gets larger. */
+.score-view.is-large .score-row {
+  min-height: var(--space-7);
+  grid-template-columns: var(--space-8) repeat(var(--columns), minmax(var(--space-6), 1fr));
+}
+
+.score-view.is-large .score-row > span {
+  font-size: var(--type-lead);
+}
+
+.score-view.is-large .score-view__caption strong {
+  font-size: var(--type-heading);
+}
+
+.score-view.is-large .chord-diagram {
+  width: calc(var(--space-10) + var(--space-8));
+}
+
+/* The lesson around the score. */
+.lesson-video-needed {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: var(--rule);
+  border-left: var(--rule-heavy) solid var(--caution-rule);
+  background: var(--paper);
+  font-size: var(--type-small);
+}
+
+.lesson-guidance {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.lesson-study-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.lesson-study-picker button[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 var(--rule-heavy) var(--ink);
+}
+
+.lesson-tempo {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.lesson-tempo input {
+  width: min(100%, 18rem);
+  accent-color: var(--piece-accent);
+}
+
+@media (max-width: 680px) {
+  .score-view {
+    padding: var(--space-4) var(--space-3);
+  }
+}

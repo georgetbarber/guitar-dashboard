@@ -1,4 +1,5 @@
 import { ACTIVITIES, CURRICULUM, activityById, unitById } from "./curriculum";
+import { lessonForActivity } from "./lessons/catalog";
 import { calendarDaysBetween, localDateAt } from "./dates";
 import { newId } from "./identity";
 import { COMPETENCY_STRANDS } from "./types";
@@ -225,7 +226,10 @@ export function buildSession(state: V8State, now = new Date()): SessionPlan {
   const select = (kinds: readonly string[], fallback: number) => {
     const pilotRhythm = unit.episodeId && kinds.includes("rhythm")
       ? unfinished.find((activity) => activity.kind === "rhythm" && !taken.has(activity.id)) : undefined;
+    // An authored lesson is the fullest version of its activity, so a session reaches it first.
+    const authored = unfinished.find((activity) => kinds.includes(activity.kind) && !taken.has(activity.id) && lessonForActivity(activity.id));
     const preferred = pilotRhythm
+      ?? authored
       ?? unfinished.find((activity) => kinds.includes(activity.kind) && !taken.has(activity.id))
       ?? unit.activities.find((activity) => kinds.includes(activity.kind) && !taken.has(activity.id))
       ?? unfinished.find((activity) => !taken.has(activity.id))
