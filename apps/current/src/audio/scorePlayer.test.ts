@@ -16,6 +16,18 @@ const study = score({
   voices: { line: { label: "Line", text: "q 3:2 q 3:4[h] h r" } },
 });
 
+const second = score({
+  id: "player-test-rhythm",
+  version: 1,
+  title: "Player test, rhythm part",
+  provenance: DRAFT,
+  key: "A minor",
+  metre: "4/4",
+  bars: 1,
+  tempo: [40, 60, 120],
+  voices: { roots: { label: "Roots", text: "h 5:0 h 5:0" } },
+});
+
 interface Started {
   kind: "buffer" | "oscillator";
   at: number;
@@ -162,6 +174,28 @@ describe("score playback on the audio clock", () => {
     expect(
       unaided.started.filter((entry) => entry.kind === "oscillator").map((entry) => Number(entry.at.toFixed(2))),
     ).toEqual([5.1, 6.1, 7.1, 8.1]);
+  });
+
+  it("plays the accompaniment in every pass, under the model and on the learner's turn", async () => {
+    const { started, advance } = fakeAudio();
+    await startScorePlayback(study, { ...options, mode: "guided", accompaniment: [second] }, vi.fn(), vi.fn());
+    advance(8.9);
+    advance(12.9);
+    const strings = started.filter((entry) => entry.kind === "buffer").map((entry) => Number(entry.at.toFixed(2)));
+    // Pass 1 (model): the line at 9.1 and the roots at 9.1 and 11.1. Pass 2 (your turn): roots only.
+    expect(strings.sort((a, b) => a - b)).toEqual([9.1, 9.1, 11.1, 13.1, 15.1]);
+  });
+
+  it("refuses parts that cannot line up with the learner's part", async () => {
+    fakeAudio();
+    const longer = { ...second, id: "longer", bars: 2 };
+    await expect(startScorePlayback(study, { ...options, accompaniment: [longer] }, vi.fn(), vi.fn())).rejects.toThrow(
+      /has 2 bars, not 1/,
+    );
+    const narrow = { ...second, id: "narrow", tempo: { minimum: 50, default: 60, maximum: 120 } };
+    await expect(startScorePlayback(study, { ...options, accompaniment: [narrow] }, vi.fn(), vi.fn())).rejects.toThrow(
+      /cannot play across 40–90 BPM/,
+    );
   });
 
   it("stops every scheduled sound, refuses a tempo outside the practice range, and lets a new player replace the old", async () => {

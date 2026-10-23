@@ -9,7 +9,7 @@
  */
 import { correspondenceProblems } from "../../core/score/correspond";
 import { playabilityProblems } from "../../core/score/playability";
-import type { ChangedDimension, Score } from "../../core/score/types";
+import type { ChangedDimension, Provenance, Score } from "../../core/score/types";
 import { positionMidi, scoreErrors, strumPositions, totalTicks } from "../../core/score/validate";
 import { metreInfo } from "../../core/score/time";
 import { CURRICULUM } from "../curriculum";
@@ -20,7 +20,26 @@ const SUPPORT: Record<CueLevel, number> = { full: 2, "count-only": 1, none: 0 };
 const CAPABILITY = /^[a-z0-9-]+(?:\.[a-z0-9-]+){1,3}$/;
 const LESSON_ID = /^lesson-[a-z0-9-]{3,80}$/;
 
-const enough = (text: string | undefined, minimum = 12) => typeof text === "string" && text.trim().length >= minimum;
+export const enough = (text: string | undefined, minimum = 12) =>
+  typeof text === "string" && text.trim().length >= minimum;
+
+/** Provenance is honest: a draft names no reviewer; reviewed content names one and a date. */
+export function provenanceProblems(p: Provenance | undefined): string[] {
+  if (!p?.author?.trim()) return ["provenance needs an author."];
+  if (p.reviewStatus === "draft" && (p.reviewer || p.reviewedAt)) return ["a draft cannot name a reviewer or review date."];
+  if (p.reviewStatus !== "draft" && (!p.reviewer.trim() || !Number.isFinite(Date.parse(p.reviewedAt ?? ""))))
+    return ["reviewed content needs a named reviewer and a review date."];
+  return [];
+}
+
+/** Every check a single score must pass before anyone hears or reads it. */
+export function shippableScoreProblems(score: Score): string[] {
+  return [
+    ...scoreErrors(score),
+    ...playabilityProblems(score).map((problem) => problem.message),
+    ...correspondenceProblems(score).map((problem) => problem.message),
+  ];
+}
 
 /** Techniques a score uses that a learner would need to see a hand do. */
 export function visibleTechniques(score: Score): VisibleTechnique[] {
@@ -100,18 +119,13 @@ function musicOf(score: Score): string {
   return `${score.key.tonic} ${score.key.mode}|${score.metre}|${score.feel}|${pitches(score)}|${onsets(score)}|${articulations(score)}`;
 }
 
-export function validateLesson(lesson: Lesson): string[] {
+export function validateLesson(lesson: Lesson, pieceIds: ReadonlySet<string> = new Set()): string[] {
   const errors: string[] = [];
   const add = (message: string) => errors.push(`${lesson.id}: ${message}`);
 
   if (!LESSON_ID.test(lesson.id)) add("lesson ids start with lesson- and use lower-case letters, digits and hyphens.");
   if (!Number.isInteger(lesson.version) || lesson.version < 1) add("needs a positive whole version.");
-  const p = lesson.provenance;
-  if (!p?.author?.trim()) add("provenance needs an author.");
-  else if (p.reviewStatus === "draft" && (p.reviewer || p.reviewedAt))
-    add("a draft cannot name a reviewer or review date.");
-  else if (p.reviewStatus !== "draft" && (!p.reviewer.trim() || !Number.isFinite(Date.parse(p.reviewedAt ?? ""))))
-    add("reviewed content needs a named reviewer and a review date.");
+  provenanceProblems(lesson.provenance).forEach(add);
 
   const unit = CURRICULUM.find((item) => item.id === lesson.unitId);
   if (!unit) add(`unknown unit ${lesson.unitId}.`);
@@ -144,9 +158,7 @@ export function validateLesson(lesson: Lesson): string[] {
   for (const score of lesson.scores) {
     if (scores.has(score.id)) add(`score ${score.id} appears twice.`);
     scores.set(score.id, score);
-    errors.push(...scoreErrors(score).map((message) => `${lesson.id}: ${message}`));
-    errors.push(...playabilityProblems(score).map((problem) => `${lesson.id}: ${problem.message}`));
-    errors.push(...correspondenceProblems(score).map((problem) => `${lesson.id}: ${problem.message}`));
+    errors.push(...shippableScoreProblems(score).map((message) => `${lesson.id}: ${message}`));
     if (
       score.provenance.author !== lesson.provenance.author ||
       score.provenance.reviewStatus !== lesson.provenance.reviewStatus
@@ -231,16 +243,16 @@ export function validateLesson(lesson: Lesson): string[] {
   }
 
   if (!enough(lesson.performance.instruction)) add("needs a route into a performance or personal artefact.");
-  if (lesson.performance.kind === "piece")
-    add("repertoire pieces do not exist yet; route the performance through Create.");
+  if (lesson.performance.kind === "piece" && !pieceIds.has(lesson.performance.pieceId))
+    add(`performs piece ${lesson.performance.pieceId}, which does not exist.`);
 
   for (const score of lesson.scores) if (!used.has(score.id)) add(`score ${score.id} is never used.`);
   return errors;
 }
 
 /** Across lessons: ids and capability ids must be unique, and one activity has at most one lesson. */
-export function validateLessonSet(lessons: readonly Lesson[]): string[] {
-  const errors = lessons.flatMap(validateLesson);
+export function validateLessonSet(lessons: readonly Lesson[], pieceIds: ReadonlySet<string> = new Set()): string[] {
+  const errors = lessons.flatMap((lesson) => validateLesson(lesson, pieceIds));
   const ids = new Set<string>();
   const activities = new Set<string>();
   const capabilities = new Map<string, string>();

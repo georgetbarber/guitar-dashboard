@@ -125,7 +125,7 @@ describe("the lesson validator", () => {
     );
     expect(
       broken((l) => ({ ...l, performance: { kind: "piece", pieceId: "x", instruction: l.performance.instruction } })),
-    ).toContainEqual(expect.stringContaining("Create"));
+    ).toContainEqual(expect.stringContaining("performs piece x, which does not exist"));
   });
 
   it("refuses duplicate studies, unused scores, wrong units and techniques shown without a video marker", () => {

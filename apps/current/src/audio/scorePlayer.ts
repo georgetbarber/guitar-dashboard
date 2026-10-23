@@ -11,8 +11,12 @@
  *   guided      model, then a "your turn" pass with only the click, alternating
  *   count-only  the click alone, for playing beside the count
  *   unaided     one count-in, then silence while the learner plays
+ *
+ * Accompaniment parts (other guitars in a piece) sound in every pass, model
+ * or your turn, a little quieter than the model: the learner plays along.
  */
 import { performScore, pulses, secondsAt, tickAt, type Sound } from "../core/score/perform";
+import { ensembleProblems } from "../core/score/ensemble";
 import { metreInfo } from "../core/score/time";
 import type { Score } from "../core/score/types";
 import { stopAudio } from "./engine";
@@ -31,6 +35,8 @@ export interface ScorePlaybackOptions {
   countIn: boolean;
   /** Clicks under the model in reference mode. */
   click: boolean;
+  /** Other parts of the piece, played in every pass so the learner plays along. */
+  accompaniment?: readonly Score[];
 }
 
 export interface ScorePlaybackProgress {
@@ -45,6 +51,8 @@ export interface ScorePlaybackProgress {
 const LOOKAHEAD = 0.35;
 const INTERVAL_MS = 50;
 const RELEASE = 0.04;
+/** Accompaniment sits a little under the learner's part. */
+const ACCOMPANIMENT_LEVEL = 0.75;
 
 let shared: AudioContext | null = null;
 let bus: AudioNode | null = null;
@@ -206,6 +214,9 @@ export async function startScorePlayback(
     throw new Error("Return to this tab before starting playback.");
   if (!Number.isFinite(options.tempo) || options.tempo < score.tempo.minimum || options.tempo > score.tempo.maximum)
     throw new Error("Tempo is outside this study's practice range.");
+  const accompaniment = options.accompaniment ?? [];
+  const mismatched = ensembleProblems(score, accompaniment);
+  if (mismatched.length) throw new Error(`These parts cannot play together: ${mismatched.join(" ")}`);
 
   const info = metreInfo(score.metre);
   const beatSeconds = 60 / options.tempo;
@@ -213,6 +224,12 @@ export async function startScorePlayback(
   const passSeconds =
     secondsAt(score, options.toTick, options.tempo) - secondsAt(score, options.fromTick, options.tempo);
   const sounds = performScore(score, { tempo: options.tempo, fromTick: options.fromTick, toTick: options.toTick });
+  const backing = accompaniment.flatMap((part) =>
+    performScore(part, { tempo: options.tempo, fromTick: options.fromTick, toTick: options.toTick }).map((sound) => ({
+      ...sound,
+      velocity: sound.velocity * ACCOMPANIMENT_LEVEL,
+    })),
+  );
   const clicks = pulses(score, { tempo: options.tempo, fromTick: options.fromTick, toTick: options.toTick });
   const passes = options.loop ? Infinity : options.mode === "guided" ? 2 : 1;
   const start = audio.currentTime + 0.1;
@@ -239,6 +256,7 @@ export async function startScorePlayback(
       if (plan.click && (options.click || options.mode !== "reference"))
         for (const pulse of clicks) scheduleClick(audio, passStart + pulse.time, pulse.accented, plan.model, nodes);
       if (plan.model) for (const sound of sounds) scheduleSound(audio, sound, passStart, nodes);
+      for (const sound of backing) scheduleSound(audio, sound, passStart, nodes);
       nextPass++;
     }
   };
