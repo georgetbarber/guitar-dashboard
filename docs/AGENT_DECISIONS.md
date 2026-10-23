@@ -164,3 +164,19 @@ first, so it is not buried.
   `src/v8/components/PitchCheck.tsx`; gate addendum in
   `docs/reviews/2026-09-30-phase-5-gate.md`.
 
+### A7 · 2026-10-23 · Package 2 · Offline shell allowed 1284 KiB until Package 3
+
+- **Decision:** the offline-shell review threshold is 1284 KiB on the
+  Package 2 branch instead of 1280 KiB. Package 3 restores 1280 KiB.
+- **Why:** PR #8 failed CI at `check:offline-shell`. The Firebase-enabled
+  build CI makes is about 0.2 KiB larger than a local build (the project's
+  configuration values are compiled in), and the retuned pitch checks left the
+  shell at 1280.1 KiB there. Package 3 moves the lesson players and the music
+  engine out of the automatic shell into per-stage lesson packs, which brings
+  it back to about 1269 KiB.
+- **Alternatives:** trimming a few hundred bytes from Package 2 (fragile, and
+  any change would break it again); moving the lesson packs into Package 2
+  (mixes two packages' scope).
+- **Reversible:** yes, and reversed by design in Package 3.
+- **Where:** `scripts/check-offline-shell.mjs`, `tests/e2e/offline-shell.spec.ts`.
+
