@@ -9,6 +9,7 @@
  * George moves a lesson to reviewed with "Mark as checked", which writes a
  * learner-owned ReviewMark rather than editing the authored content.
  */
+import type { Provenance } from "../core/score/types";
 import type { ActivityDefinition, ReviewMark, ReviewStatus } from "./types";
 
 export const AGENT_DRAFTED = "agent-drafted";
@@ -16,12 +17,7 @@ export const AGENT_DRAFTED = "agent-drafted";
 export const LEGACY_TEMPLATE = "legacy-template";
 
 /** Provenance as carried on authored content. contentId and version come from the content itself. */
-export interface Provenance {
-  author: string;
-  reviewer: string;
-  reviewStatus: ReviewStatus;
-  reviewedAt: string | null;
-}
+export type { Provenance };
 
 export interface AuthoredProvenance extends Provenance {
   contentId: string;
