@@ -37,11 +37,11 @@ function fakeAudio() {
     };
   };
   const node = () => ({ connect: vi.fn() });
-  let instance: { currentTime: number } | null = null;
+  const instances: { currentTime: number }[] = [];
   class FakeAudioContext {
     currentTime = 5;
     constructor() {
-      instance = this;
+      instances.push(this);
     }
     sampleRate = 8000;
     destination = {};
@@ -101,7 +101,7 @@ function fakeAudio() {
   });
   /** Move the audio clock on and let the scheduler look ahead again. */
   const advance = (to: number) => {
-    if (instance) instance.currentTime = to;
+    for (const instance of instances) instance.currentTime = to;
     intervals.forEach((fn) => fn());
   };
   return { started, advance };
