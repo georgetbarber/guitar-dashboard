@@ -440,8 +440,23 @@ Phase 2B and Phase 7.
 
 ---
 
+## Completion brief Package 4 — curriculum map and repertoire plan (23–24 October 2026)
+
+**Status: written, independently reviewed and revised; PR open for George to merge after #9 (decision R3).** Brief §6 Package 4. Documentation and one repository test; no app behaviour changed.
+
+| | |
+| --- | --- |
+| **Findings** | D03 (authored episodes), D08 (earlier application, growing repertoire, layered parts and style), D11 (several kinds of episode before extending) planned for the whole course; none closed until the batches ship |
+| **Changed** | `docs/CURRICULUM_MAP.md` (new): all 48 units revised in place with ids kept (A12), the episode each becomes, the activity each lesson stands in for, a prerequisite graph with rules that never lock started work (A14), eleven original pieces with layered parts (A13), eight capstones (Stages 7 and 8 through Create), the physical coverage matrix, the style plan, the engine work the batches need, and a capability catalogue for every unit; `docs/reviews/2026-10-24-curriculum-map-review.md`; `apps/current/tests/curriculumMap.test.ts` (in the `test` script); decisions A12–A15 |
+| **Review** | A separate reviewer agent with fresh context checked theory note by note, prerequisites, playability, pacing, style fit, originality, brief compliance and data safety. Three blocking findings (a wrong rotation, a wrong common-tone claim, a lock rule that could hide started work) and fourteen should-fix findings were all fixed; the record lists each |
+| **Migration impact** | None now. The map commits later batches to keeping every unit and activity id, never renaming a released capability id, and never locking a unit with recorded work |
+
+**Verification.** By code: the new test checks all 48 units appear once with their current titles, prerequisites exist and come earlier, every stand-in activity exists and matches the authored lessons and the pilot, and the catalogue covers every unit, reuses no id and contains every capability already in use. Each rule was broken in a scratch copy and failed only its own test. By review: the reviewer worked out every voicing, interval, degree and Roman numeral in the map (listed in the review record). Not checked: anything on a guitar, and whether George enjoys the pieces (`needs George`, added per batch).
+
+---
+
 ## Next package
 
-**First, George:** merge the open pull requests in order, each only once its CI is green — #6 (Package 0), #7 (Package 1), #8 (Package 2, re-run green on 23 October after decision A7), then #9 (Package 3). Merging publishes (decision R3). After #6 merges, the three `codex/*` branches can be deleted (decision A1).
+**First, George:** merge the open pull requests in order, each only once its CI is green — #6 (Package 0), #7 (Package 1), #8 (Package 2), #9 (Package 3), then #10 (Package 4). Merging publishes (decision R3). After #6 merges, the three `codex/*` branches can be deleted (decision A1).
 
-**Next agent package: completion brief Package 4 — curriculum map and repertoire plan.** Write `docs/CURRICULUM_MAP.md` (brief §6 Package 4): the disposition of all 48 current units with old unit and activity id mappings, the capability catalogue for the whole course, prerequisites, the repertoire plan (10–16 original pieces with layered parts and where each recurs), the 8 capstones (at least one routed through Create), the physical-coverage matrix (§4.4) and the style plan (§4.1). Then an independent review with a fresh-context reviewer agent, fixes, and a review record in `docs/reviews/`. After that, Batch 1 (Units 1–12) authors lessons in the Package 3 format (`src/v8/lessons/stage1.ts`, `stage2.ts`; the validator and correspondence tests in `lessons.test.ts` must pass).
+**Next agent package: completion brief Package 5 — Batch 1, Units 1–12 (Stages 1–2).** Start with the engine and data work in `docs/CURRICULUM_MAP.md` §10 that Batch 1 needs, each with tests: pieces as data (`src/v8/pieces/`, accepted by the lesson validator as `performance.kind: "piece"`), play-along (the score player's `accompaniment` option), capstone records (`stage-N-capstone` with mixed-version and backup tests), the capability catalogue in code, the prerequisite graph with the §5 rules tested on a George-shaped fixture, favourites for pieces, the "fretting hand" video marker, the check-kind rule and "new lesson available". Then author Units 2, 3, 4, 5, 7, 8, 9, 11 and 12 as draft lessons (`src/v8/lessons/stage1.ts`, `stage2.ts`), *Front Step* (L1) and *Low Road* (L1–L2, octave fill, double-stop tag) as pieces, and the Stage 1 and Stage 2 capstones; browser journeys for one episode per stage and both capstones; accessibility scans; budgets; an independent review; the batch's "with guitar" checks; release.

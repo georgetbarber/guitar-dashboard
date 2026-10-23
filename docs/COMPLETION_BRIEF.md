@@ -340,7 +340,7 @@ Update this table as packages finish.
 | 1 Draft status, feedback, checklist | PR open, CI green | PR #7 · awaiting George's merge | Draft tag, notes, Feedback export, Things to check, Mark as checked; three new synced collections (A5); Storage SDK out of the ordinary build (A4) |
 | 2 Close Phase 5 (software) | PR open, CI green | PR #8 · awaiting George's merge | Pitch checks retuned on 94 synthetic realistic scenarios; no measured-pitch record (A6); gate closed on software terms, real input `needs George`; CI re-run green on 23 Oct after a temporary 1284 KiB shell threshold (A7) |
 | 3 Music engine and authoring pipeline | PR open, CI green | PR #9 · awaiting George's merge | Score format 2, plucked-string synth, audio-clock player, synchronised score views, lesson format and validator; Unit 6 and Unit 10 lessons live in Learn as drafts; per-stage offline lesson packs (A9), 1280 KiB shell restored; two offline defects fixed, one pre-existing (log) |
-| 4 Curriculum map and repertoire plan | pending | | |
+| 4 Curriculum map and repertoire plan | PR open | PR #10 · awaiting George's merge | `CURRICULUM_MAP.md`: 48 units revised in place (A12), 11 pieces and 8 capstones (A13), prerequisite graph that never locks started work (A14), coverage matrix, style plan, catalogue; independent review fixed 3 blocking and 14 should-fix findings; a test keeps the map consistent with the code |
 | 5 Batch 1 · Units 1–12 | pending | | |
 | 6 Batch 2 · Units 13–24 | pending | | |
 | 7 Batch 3 · Units 25–36 | pending | | |

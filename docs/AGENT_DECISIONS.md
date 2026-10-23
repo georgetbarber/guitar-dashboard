@@ -282,13 +282,20 @@ first, so it is not buried.
   (less revisiting with deeper understanding).
 - **Reversible:** yes; pieces are data, and a renamed or replaced piece keeps
   its id rule (`CURRICULUM_MAP.md` §4).
+- **Originality:** the *Low Road* riff uses roots 1, ♭3 and 4, like a very
+  famous riff, so its fingerprint is deliberately different (palm-muted root
+  chugs with off-beat accents, no ♭5 passing chord, no block chords with
+  rests). Authoring batches keep that fingerprint.
 - **Where:** `docs/CURRICULUM_MAP.md` §6–7.
 
 ### A14 · 2026-10-23 · Package 4 · Units open by prerequisite, not by number
 
 - **Decision:** the linear chain (each unit opens after the one before)
   becomes a prerequisite graph of what each unit's music assumes. A unit opens
-  once the units it builds on are complete, and "available after" names them.
+  once the units it builds on are met: complete, before the learner's placement
+  start, or marked not needed. The current allowance (every unit up to one past
+  the current unit is open) stays, and a unit with any completion or evidence is
+  never locked. "Available after" names the unmet units.
 - **Why:** the three style threads advance at different rates; a learner keen
   on funk can reach Unit 26 once Units 4, 5 and 19 (and what they build on)
   are done, not all 25 before it. Dates still never gate anything.
@@ -298,3 +305,15 @@ first, so it is not buried.
 - **Reversible:** yes; the graph is data.
 - **Where:** `docs/CURRICULUM_MAP.md` §3 and §5; implemented in Batch 1
   (`CURRICULUM_MAP.md` §10).
+
+### A15 · 2026-10-24 · Package 4 · The Unit 1 pilot keeps its own player
+
+- **Decision:** the Phase 3 one-note pilot is not ported to the Package 3
+  lesson format. Its player, cursor, attempts, reviews and variations stay as
+  they are; Batch 1 links its performance step to *Front Step*.
+- **Why:** porting would mean migrating George's pilot records into lesson
+  records for no learner-visible gain.
+- **Alternatives:** port it for uniformity (a data migration with rollback
+  risk).
+- **Reversible:** yes, with a migration if a later package needs it.
+- **Where:** `docs/CURRICULUM_MAP.md` §4.
