@@ -166,6 +166,47 @@ export interface PilotAttempt {
   localDate?: string;
 }
 
+export type LessonStep = "learn" | "practise" | "try" | "transfer" | "create" | "return";
+
+/**
+ * Device-durable position in one authored lesson (src/v8/lessons). One per
+ * lesson; a revised lesson version starts a fresh cursor. Older workspaces
+ * omit the list, and older clients ignore it.
+ */
+export interface LessonCursor {
+  id: string;
+  lessonId: string;
+  lessonVersion: number;
+  step: LessonStep;
+  /** The score in view: a study, the transfer or the recall score. */
+  scoreId: string;
+  tempo: number;
+  assistance: Assistance;
+  /** Generated when a check begins and reused if the record action is retried. */
+  attemptId?: string;
+  /** The likely error being repaired, when the learner chose one. */
+  errorId?: string;
+  updatedAt: string;
+}
+
+/** A self-report about one lesson check; never a measured performance. */
+export interface LessonAttempt {
+  id: string;
+  cursorId: string;
+  lessonId: string;
+  lessonVersion: number;
+  scoreId: string;
+  scoreVersion: number;
+  kind: "first-check" | "transfer-check" | "later-check";
+  assistance: Assistance;
+  method: "self-reported";
+  tempo: number;
+  outcome: EvidenceOutcome;
+  observation: string;
+  occurredAt: string;
+  localDate: string;
+}
+
 export type PilotReviewFocus = "phrasing" | "muting" | "tension" | "tone" | "intention";
 
 /** A learner's written comparison after a temporary take, never measured evidence. */
@@ -381,6 +422,9 @@ export interface V8State {
   reviewMarks?: ReviewMark[];
   /** The name last used when marking a lesson as checked. Device workspace and backup only. */
   reviewerName?: string;
+  /** Authored-lesson state is local to this workspace and included in its backup, like the pilot's. */
+  lessonCursors?: LessonCursor[];
+  lessonAttempts?: LessonAttempt[];
   /** Pilot state is local to this workspace and included in its backup. */
   pilotCursor?: PilotCursor | null;
   pilotAttempts?: PilotAttempt[];

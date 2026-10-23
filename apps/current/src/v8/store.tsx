@@ -12,7 +12,7 @@ import { ONE_NOTE_QUESTION_ANSWER } from "./pilotEpisode";
 import { mergeCloudSnapshot } from "./sync";
 import type { CloudSnapshot } from "./sync";
 import { SKETCH_SYNC_FIELDS } from "./types";
-import type { CompetencyEvidence, ExploreFocus, FeedbackNote, LearnerSettings, PilotAttempt, PilotCursor, PilotListeningReview, PilotVariation, RecordedTake, ReviewMark, RouteId, SessionPlan, Sketch, V8State } from "./types";
+import type { CompetencyEvidence, ExploreFocus, FeedbackNote, LearnerSettings, LessonAttempt, LessonCursor, PilotAttempt, PilotCursor, PilotListeningReview, PilotVariation, RecordedTake, ReviewMark, RouteId, SessionPlan, Sketch, V8State } from "./types";
 
 const ROUTES: RouteId[] = ["today", "path", "practice", "play", "create", "explore"];
 const ROUTE_PATHS: Record<RouteId, string> = {
@@ -86,6 +86,11 @@ export type Action =
   | { type: "restartPilot"; cursor: PilotCursor }
   | { type: "updatePilot"; patch: Partial<Pick<PilotCursor, "step" | "sectionId" | "tempo" | "repairId" | "assistance" | "attemptId" | "reviewId">> }
   | { type: "recordPilotAttempt"; attempt: PilotAttempt }
+  | { type: "beginLesson"; cursor: LessonCursor }
+  | { type: "restartLesson"; cursor: LessonCursor }
+  | { type: "updateLesson"; lessonId: string; patch: Partial<Pick<LessonCursor, "step" | "scoreId" | "tempo" | "assistance" | "attemptId" | "errorId">> }
+  | { type: "recordLessonAttempt"; attempt: LessonAttempt }
+  | { type: "createFromLesson"; sketch: Sketch; returnActivityId: string }
   | { type: "recordPilotReview"; review: PilotListeningReview }
   | { type: "savePilotVariation"; variation: PilotVariation }
   | { type: "beginSession"; plan: SessionPlan }
@@ -203,6 +208,42 @@ export function reducer(state: V8State, action: Action): V8State {
           updatedAt: changedAt } : state.pilotCursor,
         updatedAt: changedAt
       };
+    case "beginLesson": {
+      const current = (state.lessonCursors ?? []).find((cursor) => cursor.lessonId === action.cursor.lessonId);
+      if (current?.lessonVersion === action.cursor.lessonVersion) return state;
+      return {
+        ...state,
+        lessonCursors: [...(state.lessonCursors ?? []).filter((cursor) => cursor.lessonId !== action.cursor.lessonId), action.cursor],
+        updatedAt: changedAt
+      };
+    }
+    case "restartLesson":
+      return {
+        ...state,
+        lessonCursors: [...(state.lessonCursors ?? []).filter((cursor) => cursor.lessonId !== action.cursor.lessonId), action.cursor],
+        updatedAt: changedAt
+      };
+    case "updateLesson":
+      if (!(state.lessonCursors ?? []).some((cursor) => cursor.lessonId === action.lessonId)) return state;
+      return {
+        ...state,
+        lessonCursors: (state.lessonCursors ?? []).map((cursor) => cursor.lessonId === action.lessonId
+          ? { ...cursor, ...action.patch, updatedAt: changedAt } : cursor),
+        updatedAt: changedAt
+      };
+    case "recordLessonAttempt":
+      if ((state.lessonAttempts ?? []).some((attempt) => attempt.id === action.attempt.id)) return state;
+      return {
+        ...state,
+        lessonAttempts: [...(state.lessonAttempts ?? []), action.attempt],
+        lessonCursors: (state.lessonCursors ?? []).map((cursor) => cursor.lessonId === action.attempt.lessonId
+          ? { ...cursor, attemptId: undefined, updatedAt: changedAt } : cursor),
+        updatedAt: changedAt
+      };
+    case "createFromLesson":
+      if (state.sketches.some((item) => item.id === action.sketch.id)) return state;
+      return { ...state, sketches: [...state.sketches, action.sketch], activeSketchId: action.sketch.id, route: "create",
+        activeActivityId: null, resumeActivityId: action.returnActivityId, updatedAt: changedAt };
     case "recordPilotReview":
       if ((state.pilotReviews ?? []).some((review) => review.id === action.review.id)) return state;
       return { ...state, pilotReviews: [...(state.pilotReviews ?? []), action.review], updatedAt: changedAt };

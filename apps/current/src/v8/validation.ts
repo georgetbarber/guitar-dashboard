@@ -1,7 +1,7 @@
 import type { CloudProfile } from "./sync";
 import { checkedAnswerIsValid, conceptCheckById } from "./conceptChecks";
 import { PILOT_REVIEW_FOCUS_IDS } from "./pilotReview";
-import type { ChecklistTick, CompetencyEvidence, FeedbackNote, LearnerSettings, ReviewMark, Sketch, V8State } from "./types";
+import type { ChecklistTick, CompetencyEvidence, FeedbackNote, LearnerSettings, LessonAttempt, LessonCursor, ReviewMark, Sketch, V8State } from "./types";
 import { FEEDBACK_CATEGORIES, SKETCH_SYNC_FIELDS } from "./types";
 import { NOTE_LIMITS } from "./limits";
 
@@ -214,6 +214,35 @@ function pilotVariation(value: unknown, path: string) {
   if (v.answerMiddleCount !== 3) fail(`${path}.answerMiddleCount`);
   date(v.createdAt, `${path}.createdAt`);
 }
+const LESSON_STEPS = ["learn", "practise", "try", "transfer", "create", "return"];
+function lessonIdentity(v: ObjectValue, path: string) {
+  id(v.lessonId, `${path}.lessonId`);
+  number(v.lessonVersion, `${path}.lessonVersion`, 1, 1000, true);
+}
+/* Known fields are checked; unknown ones are tolerated so a later version can add to these records. */
+function lessonCursor(value: unknown, path: string) {
+  const v = object(value, path); id(v.id, `${path}.id`); lessonIdentity(v, path);
+  choice(v.step, LESSON_STEPS, `${path}.step`);
+  id(v.scoreId, `${path}.scoreId`);
+  number(v.tempo, `${path}.tempo`, 20, 400, true);
+  choice(v.assistance, ["none", "hint", "reveal", "guided"], `${path}.assistance`);
+  if (v.attemptId !== undefined) id(v.attemptId, `${path}.attemptId`);
+  if (v.errorId !== undefined) id(v.errorId, `${path}.errorId`);
+  date(v.updatedAt, `${path}.updatedAt`);
+}
+function lessonAttempt(value: unknown, path: string) {
+  const v = object(value, path); id(v.id, `${path}.id`); id(v.cursorId, `${path}.cursorId`); lessonIdentity(v, path);
+  id(v.scoreId, `${path}.scoreId`);
+  number(v.scoreVersion, `${path}.scoreVersion`, 1, 1000, true);
+  choice(v.kind, ["first-check", "transfer-check", "later-check"], `${path}.kind`);
+  choice(v.assistance, ["none", "hint", "reveal", "guided"], `${path}.assistance`);
+  choice(v.method, ["self-reported"], `${path}.method`);
+  choice(v.outcome, ["successful", "partial", "retry"], `${path}.outcome`);
+  number(v.tempo, `${path}.tempo`, 20, 400, true);
+  str(v.observation, `${path}.observation`); if ((v.observation as string).length > 1000) fail(`${path}.observation length`);
+  date(v.occurredAt, `${path}.occurredAt`);
+  localDate(v.localDate, `${path}.localDate`);
+}
 function sessionPlan(value: unknown, path: string) {
   const v = object(value, path);
   id(v.id, `${path}.id`); id(v.unitId, `${path}.unitId`);
@@ -291,6 +320,8 @@ export function validateFeedbackNote(value: unknown): asserts value is FeedbackN
 export function validateChecklistTick(value: unknown): asserts value is ChecklistTick { checklistTick(value, "checklist tick"); }
 export function validateReviewMark(value: unknown): asserts value is ReviewMark { reviewMark(value, "review mark"); }
 export function validateSketch(value: unknown): asserts value is Sketch { sketch(value, "sketch"); }
+export function validateLessonAttempt(value: unknown): asserts value is LessonAttempt { lessonAttempt(value, "lesson attempt"); }
+export function validateLessonCursor(value: unknown): asserts value is LessonCursor { lessonCursor(value, "lesson cursor"); }
 export function validateEvidence(value: unknown): asserts value is CompetencyEvidence { evidence(value, "observation"); }
 export function validateSettings(value: unknown): asserts value is LearnerSettings { settings(value, "settings"); }
 export function validateProfile(value: unknown): asserts value is CloudProfile {
@@ -302,6 +333,12 @@ export function validateProfile(value: unknown): asserts value is CloudProfile {
 export function validateState(value: unknown): asserts value is V8State {
   const v = object(value, "workspace"); if (v.version !== 8 || v.syncVersion !== 1) fail("workspace version");
   if (v.pendingRestoreId !== undefined) id(v.pendingRestoreId, "pending restore");
+  if (v.lessonCursors !== undefined) {
+    if (!Array.isArray(v.lessonCursors) || v.lessonCursors.length > 200) fail("lesson cursors");
+    identifiedList(v.lessonCursors, "lesson cursors", lessonCursor);
+    if (new Set(v.lessonCursors.map((cursor) => (cursor as ObjectValue).lessonId)).size !== v.lessonCursors.length) fail("lesson cursors duplicate lesson");
+  }
+  if (v.lessonAttempts !== undefined) identifiedList(v.lessonAttempts, "lesson attempts", lessonAttempt);
   if (v.pilotCursor != null) pilotCursor(v.pilotCursor, "pilot cursor");
   if (v.pilotAttempts !== undefined) identifiedList(v.pilotAttempts, "pilot attempts", pilotAttempt);
   if (v.pilotReviews !== undefined) identifiedList(v.pilotReviews, "pilot reviews", pilotReview);

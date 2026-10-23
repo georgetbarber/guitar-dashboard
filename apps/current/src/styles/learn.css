@@ -1054,3 +1054,12 @@
     grid-template-columns: 1fr;
   }
 }
+
+.offline-unit-status p {
+  margin: 0;
+}
+
+.offline-unit-status button {
+  margin-top: var(--space-2);
+  text-transform: none;
+}

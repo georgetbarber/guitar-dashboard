@@ -9,7 +9,8 @@ import {
   THIRD_COLOUR_TRANSFER_DRAFT,
 } from "../phase6Drafts";
 import { upgradeChordDraft, upgradeMaterial } from "../scoreUpgrade";
-import { LESSON_CATALOG, lessonForActivity, loadLesson, STAGE_LOADERS } from "./catalog";
+import { LESSON_CATALOG, lessonForActivity } from "./catalog";
+import { loadLesson, STAGE_LOADERS } from "./load";
 import { entryOf, scoreById, type Lesson } from "./format";
 import { COMMON_TONE_LESSON } from "./stage1";
 import { THIRD_COLOUR_LESSON } from "./stage2";

@@ -10,6 +10,7 @@ import type { ActivityDefinition, Assistance, CompetencyEvidence, EvidenceContex
 import { MicroStudy } from "./MicroStudy";
 import { ContentStatus } from "./ContentStatus";
 import { legacyActivityProvenance } from "../provenance";
+import { lessonForActivity } from "../lessons/catalog";
 import { PilotStudy } from "./PilotStudy";
 import { RhythmNotation } from "./RhythmNotation";
 import { RecordSaveStatus } from "./SaveStatus";
@@ -20,7 +21,27 @@ const OUTCOMES: Array<{ value: EvidenceOutcome; label: string; description: stri
   { value: "partial", label: "Partly there", description: "Some of it worked, but not the whole thing or not reliably." },
   { value: "successful", label: "Successful today", description: "Yes — I did the success action above, deliberately." }
 ];
-const PilotEpisodePlayer = lazy(() => import("./PilotEpisodePlayer").then((module) => ({ default: module.PilotEpisodePlayer })));
+/*
+ * Lesson players and the music engine are lesson-pack files, saved per stage
+ * rather than with the app shell (src/v8/lessonPacks.ts). If one is not saved
+ * and the device is offline, say so instead of failing.
+ */
+function LessonPackMissing({ onClose }: { onClose?: () => void }) {
+  return (
+    <section className="pilot-episode" aria-labelledby="activity-title">
+      <header className="activity-header">
+        <button className="icon-button" onClick={onClose} aria-label="Close lesson" data-autofocus>←</button>
+        <div>
+          <h1 id="activity-title">This lesson isn’t saved on this device yet</h1>
+          <p className="pilot-notice" role="alert">Reconnect to the internet, then reload Interval to open it. To use it offline next time, choose “Save this stage for offline” in the Course map while you are connected.</p>
+          <button className="secondary-action" onClick={() => location.reload()}>Reload Interval</button>
+        </div>
+      </header>
+    </section>
+  );
+}
+const PilotEpisodePlayer = lazy(() => import("./PilotEpisodePlayer").then((module) => ({ default: module.PilotEpisodePlayer })).catch(() => ({ default: LessonPackMissing })));
+const LessonPlayer = lazy(() => import("./LessonPlayer").then((module) => ({ default: module.LessonPlayer })).catch(() => ({ default: LessonPackMissing })));
 
 const INTERVAL_NAMES = [
   "the home note (tonic) on its own", "a minor 2nd above home", "a major 2nd above home",
@@ -71,6 +92,8 @@ export function ActivityPlayer({ activityId, onClose, requestCloseRef }: {
     return () => { requestCloseRef.current = null; };
   }, [requestCloseRef, unsavedReflection, onClose]);
   if (!activity) return null;
+  const authored = lessonForActivity(activity.id);
+  if (authored) return <Suspense fallback={<section className="activity-player" aria-labelledby="activity-title"><header className="activity-header"><span /><h1 id="activity-title">Opening “{authored.title}”…</h1></header></section>}><LessonPlayer entry={authored} onClose={onClose} requestCloseRef={requestCloseRef} /></Suspense>;
   if (activity.id === "unit-01-rhythm" && unit.episodeId) return <Suspense fallback={<section className="activity-player" aria-labelledby="activity-title"><header className="activity-header"><span /><h1 id="activity-title">Opening the one-note lesson…</h1></header></section>}><PilotEpisodePlayer onClose={onClose} requestCloseRef={requestCloseRef} /></Suspense>;
   const originLabel = state.activityOrigin === "practice" ? "Strengthen"
     : state.activityOrigin === "path" ? "Course map"
