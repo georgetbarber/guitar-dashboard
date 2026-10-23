@@ -102,8 +102,8 @@ const startupBytes = [...seen].reduce((sum, url) => sum + size(url), 0);
 const cacheBytes = urls.reduce((sum, url) => sum + size(url), 0);
 const cacheGzipBytes = urls.reduce((sum, url) => sum + compressed(url), 0);
 if (startupBytes > 420 * 1024) throw new Error(`Guest entry graph grew to ${(startupBytes / 1024).toFixed(1)} KiB.`);
-// 1284 KiB until Package 3 moves the lesson players into per-stage packs (decision A7).
-if (cacheBytes > 1284 * 1024) throw new Error(`Offline shell grew to ${(cacheBytes / 1024).toFixed(1)} KiB.`);
+// Review threshold. Lesson players, the music engine and lessons are outside the shell (decision A7).
+if (cacheBytes > 1280 * 1024) throw new Error(`Offline shell grew to ${(cacheBytes / 1024).toFixed(1)} KiB.`);
 
 console.log(`Guest entry graph: ${(startupBytes / 1024).toFixed(1)} KiB uncompressed JavaScript.`);
 console.log(
