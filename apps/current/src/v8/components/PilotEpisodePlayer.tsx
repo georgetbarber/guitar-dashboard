@@ -7,6 +7,7 @@ import { createEvidence } from "../learning";
 import { ONE_NOTE_ANSWER_SHIFT, ONE_NOTE_QUESTION_ANSWER, PILOT_EPISODE } from "../pilotEpisode";
 import { firstPilotSuccess, isLaterCheckDue, newPilotCursor, pilotAttempts, pilotLaterSuccess } from "../pilotProgress";
 import { PILOT_REVIEW_FOCUSES, PILOT_REVIEW_FOCUS_IDS, pilotReviews } from "../pilotReview";
+import { useOpenPiece } from "../pieceOverlay";
 import { useV8Store } from "../store";
 import type { EvidenceOutcome, PilotAttempt, PilotCursor, PilotListeningReview, PilotReviewFocus } from "../types";
 import { PilotStudy } from "./PilotStudy";
@@ -90,6 +91,17 @@ export function PilotEpisodePlayer({
     stopRef.current = null;
     setPlaying(false);
     setProgress(null);
+  };
+  const openPiece = useOpenPiece();
+  /** The question and answer is the first layer of Front Step: close the lesson and open the piece. */
+  const playFrontStep = () => {
+    if (recording || (takeUrl && !takeDownloaded) || reviewDirty) {
+      requestClose();
+      return;
+    }
+    stop();
+    onClose?.();
+    openPiece({ pieceId: "piece-front-step", partId: "front-step-question-answer" });
   };
   const requestClose = () => {
     if (recording) {
@@ -681,6 +693,13 @@ export function PilotEpisodePlayer({
                   Return on a later day for the original phrase.
                 </p>
               )}
+              <p>
+                This question and answer is the first layer of <strong>Front Step</strong>, a blues in E that grows
+                through the course. At the end of Stage 1 it becomes the break in a 12-bar you play with a band.
+              </p>
+              <button className="secondary-action" onClick={playFrontStep}>
+                Open Front Step →
+              </button>
             </div>
           )}
         </article>
