@@ -15,6 +15,7 @@ import { entryOf, scoreById, type Lesson } from "./format";
 import { COMMON_TONE_LESSON } from "./stage1";
 import { THIRD_COLOUR_LESSON } from "./stage2";
 import { differsIn, validateLesson, validateLessonSet } from "./validate";
+import { PIECES } from "../pieces/library";
 
 async function allLessons(): Promise<Lesson[]> {
   const modules = await Promise.all(Object.values(STAGE_LOADERS).map((load) => load()));
@@ -46,7 +47,8 @@ function music(score: Score) {
 
 describe("authored lessons", () => {
   it("are complete, correct, playable and match what they display and sound", async () => {
-    expect(validateLessonSet(await allLessons())).toEqual([]);
+    const pieces = new Map(PIECES.map((piece) => [piece.id, new Set(piece.parts.map((part) => part.id))]));
+    expect(validateLessonSet(await allLessons(), pieces)).toEqual([]);
   });
 
   it("are listed in the shell catalogue exactly as their content describes them", async () => {

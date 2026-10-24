@@ -25,6 +25,8 @@ import {
 import { loadLesson } from "../lessons/load";
 import { discardBrokenPackFiles } from "../lessonPacks";
 import { scoreById, type Lesson, type LessonEntry } from "../lessons/format";
+import { PIECE_CATALOG } from "../pieces/catalog";
+import { useOpenPiece } from "../pieceOverlay";
 import { useV8Store } from "../store";
 import type { EvidenceOutcome, LessonAttempt, LessonCursor, LessonStep } from "../types";
 import { ContentStatus } from "./ContentStatus";
@@ -33,6 +35,7 @@ import { ScoreView } from "./score/ScoreView";
 import { useUpdateHold } from "./UpdateNotice";
 
 const LARGE_KEY = "interval.score.large";
+const PIECE_TITLES: Record<string, string> = Object.fromEntries(PIECE_CATALOG.map((entry) => [entry.id, entry.title]));
 const STEP_NAMES: Record<LessonStep, string> = {
   learn: "1 · Learn it",
   practise: "2 · Practise it",
@@ -331,6 +334,19 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
         ? "Your self-report was added to this workspace. Nothing measured your playing. Check the save status before leaving."
         : "Your self-report was added. Pick the problem you met under “When something gets stuck”, then try again.",
     );
+  };
+
+  const openPiece = useOpenPiece();
+  const playThePiece = () => {
+    if (lesson.performance.kind !== "piece") return;
+    if (observation.trim()) {
+      setNotice("Record or clear your observation before opening the piece.");
+      return;
+    }
+    stop();
+    const { pieceId, partId } = lesson.performance;
+    onClose?.();
+    openPiece({ pieceId, partId });
   };
 
   const makeYourOwn = () => {
@@ -692,9 +708,21 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
               {evidenceIds.length > 0 && <RecordSaveStatus evidenceIds={evidenceIds} />}
             </div>
           )}
+          {step === "create" && lesson.performance.kind === "piece" && (
+            <div className="pilot-variation">
+              <button className="primary-action" onClick={playThePiece}>
+                Play it in {PIECE_TITLES[lesson.performance.pieceId] ?? "the piece"} →
+              </button>
+              <small>The piece opens with its band. Come back to this lesson any time from the course map.</small>
+            </div>
+          )}
           {step === "create" && (
             <div className="pilot-variation">
-              <button className="primary-action" onClick={makeYourOwn}>
+              {lesson.performance.kind === "piece" && <h3>Or make your own version</h3>}
+              <button
+                className={lesson.performance.kind === "piece" ? "secondary-action" : "primary-action"}
+                onClick={makeYourOwn}
+              >
                 Make an editable copy in Create →
               </button>
               <small>The lesson stays as it is here. Your copy is yours to change, and Create brings you back.</small>

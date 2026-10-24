@@ -130,7 +130,10 @@ const CHECK_SOURCES: Readonly<Record<CheckKind, readonly string[]>> = {
   reflecting: ["reflection"],
 };
 
-export function validateLesson(lesson: Lesson, pieceIds: ReadonlySet<string> = new Set()): string[] {
+/** Piece id → its part ids, so a lesson's performance route can be checked. */
+export type PieceParts = ReadonlyMap<string, ReadonlySet<string>>;
+
+export function validateLesson(lesson: Lesson, pieces: PieceParts = new Map()): string[] {
   const errors: string[] = [];
   const add = (message: string) => errors.push(`${lesson.id}: ${message}`);
 
@@ -265,16 +268,20 @@ export function validateLesson(lesson: Lesson, pieceIds: ReadonlySet<string> = n
   }
 
   if (!enough(lesson.performance.instruction)) add("needs a route into a performance or personal artefact.");
-  if (lesson.performance.kind === "piece" && !pieceIds.has(lesson.performance.pieceId))
-    add(`performs piece ${lesson.performance.pieceId}, which does not exist.`);
+  if (lesson.performance.kind === "piece") {
+    const parts = pieces.get(lesson.performance.pieceId);
+    if (!parts) add(`performs piece ${lesson.performance.pieceId}, which does not exist.`);
+    else if (lesson.performance.partId && !parts.has(lesson.performance.partId))
+      add(`performs part ${lesson.performance.partId}, which ${lesson.performance.pieceId} does not have.`);
+  }
 
   for (const score of lesson.scores) if (!used.has(score.id)) add(`score ${score.id} is never used.`);
   return errors;
 }
 
 /** Across lessons: ids and capability ids must be unique, and one activity has at most one lesson. */
-export function validateLessonSet(lessons: readonly Lesson[], pieceIds: ReadonlySet<string> = new Set()): string[] {
-  const errors = lessons.flatMap((lesson) => validateLesson(lesson, pieceIds));
+export function validateLessonSet(lessons: readonly Lesson[], pieces: PieceParts = new Map()): string[] {
+  const errors = lessons.flatMap((lesson) => validateLesson(lesson, pieces));
   const ids = new Set<string>();
   const activities = new Set<string>();
   const capabilities = new Map<string, string>();

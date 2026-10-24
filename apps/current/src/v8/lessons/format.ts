@@ -104,7 +104,9 @@ export interface Lesson {
   cueFading: readonly CueStep[];
   retrieval: { afterDays: number; scoreId: string; tempo: number; instruction: string };
   transfer: { scoreId: string; instruction: string; changed: readonly ChangedDimension[] };
-  performance: { kind: "create"; instruction: string } | { kind: "piece"; pieceId: string; instruction: string };
+  performance:
+    | { kind: "create"; instruction: string }
+    | { kind: "piece"; pieceId: string; partId?: string; instruction: string };
 }
 
 /** The part of a lesson the app needs before its stage's content has loaded. */
