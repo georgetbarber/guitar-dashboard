@@ -191,6 +191,7 @@ function pilotAttempt(value: unknown, path: string) {
   choice(v.outcome, ["successful", "partial", "retry"], `${path}.outcome`);
   number(v.tempo, `${path}.tempo`, 20, 400, true);
   str(v.observation, `${path}.observation`); if ((v.observation as string).length > 1000) fail(`${path}.observation length`);
+  if (v.artifactId !== undefined) id(v.artifactId, `${path}.artifactId`);
   date(v.occurredAt, `${path}.occurredAt`);
   if (v.localDate !== undefined) localDate(v.localDate, `${path}.localDate`);
 }
@@ -228,6 +229,7 @@ function lessonCursor(value: unknown, path: string) {
   choice(v.assistance, ["none", "hint", "reveal", "guided"], `${path}.assistance`);
   if (v.attemptId !== undefined) id(v.attemptId, `${path}.attemptId`);
   if (v.errorId !== undefined) id(v.errorId, `${path}.errorId`);
+  if (v.sketchId !== undefined) id(v.sketchId, `${path}.sketchId`);
   date(v.updatedAt, `${path}.updatedAt`);
 }
 function lessonAttempt(value: unknown, path: string) {

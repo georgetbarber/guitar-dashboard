@@ -8,6 +8,7 @@
  * allows, and the transfer really changes what it says it changes.
  */
 import { correspondenceProblems } from "../../core/score/correspond";
+import { ensembleProblems } from "../../core/score/ensemble";
 import { playabilityProblems } from "../../core/score/playability";
 import type { ChangedDimension, Provenance, Score } from "../../core/score/types";
 import { positionMidi, scoreErrors, strumPositions, totalTicks } from "../../core/score/validate";
@@ -274,6 +275,22 @@ export function validateLesson(lesson: Lesson, pieces: PieceParts = new Map()): 
     if (!parts) add(`performs piece ${lesson.performance.pieceId}, which does not exist.`);
     else if (lesson.performance.partId && !parts.has(lesson.performance.partId))
       add(`performs part ${lesson.performance.partId}, which ${lesson.performance.pieceId} does not have.`);
+  }
+
+  for (const [leadId, partIds] of Object.entries(lesson.accompaniment ?? {})) {
+    const lead = need(leadId, "an accompaniment");
+    const parts = partIds.flatMap((id) => {
+      const part = need(id, `the accompaniment for ${leadId}`);
+      return part ? [part] : [];
+    });
+    if (!partIds.length) add(`the accompaniment for ${leadId} lists no parts.`);
+    if (lead) {
+      ensembleProblems(lead, parts).forEach((problem) => add(`accompaniment for ${leadId}: ${problem}`));
+      // In a check the accompaniment keeps sounding, so it must never be the learner's own part.
+      for (const part of parts)
+        if (pitches(part) === pitches(lead) && onsets(part) === onsets(lead))
+          add(`accompaniment ${part.id} plays the same music as ${leadId}, which would give the answer away.`);
+    }
   }
 
   for (const score of lesson.scores) if (!used.has(score.id)) add(`score ${score.id} is never used.`);

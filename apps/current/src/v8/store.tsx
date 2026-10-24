@@ -88,7 +88,7 @@ export type Action =
   | { type: "recordPilotAttempt"; attempt: PilotAttempt }
   | { type: "beginLesson"; cursor: LessonCursor }
   | { type: "restartLesson"; cursor: LessonCursor }
-  | { type: "updateLesson"; lessonId: string; patch: Partial<Pick<LessonCursor, "step" | "scoreId" | "tempo" | "assistance" | "attemptId" | "errorId">> }
+  | { type: "updateLesson"; lessonId: string; patch: Partial<Pick<LessonCursor, "step" | "scoreId" | "tempo" | "assistance" | "attemptId" | "errorId" | "sketchId">> }
   | { type: "recordLessonAttempt"; attempt: LessonAttempt }
   | { type: "createFromLesson"; sketch: Sketch; returnActivityId: string }
   | { type: "recordPilotReview"; review: PilotListeningReview }

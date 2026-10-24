@@ -100,6 +100,13 @@ export interface Lesson {
   transfer: { scoreId: string; instruction: string; changed: readonly ChangedDimension[] };
   performance:
     { kind: "create"; instruction: string } | { kind: "piece"; pieceId: string; partId?: string; instruction: string };
+  /**
+   * Parts the app plays while the learner plays a score: learner score id →
+   * the score ids sounding with it (a drone, a melody over strummed chords).
+   * They must line up with the learner's score (core/score/ensemble.ts) and
+   * never duplicate it, since in a check they keep sounding.
+   */
+  accompaniment?: Readonly<Record<string, readonly string[]>>;
 }
 
 /** The part of a lesson the app needs before its stage's content has loaded. */

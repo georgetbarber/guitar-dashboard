@@ -186,6 +186,8 @@ export interface LessonCursor {
   attemptId?: string;
   /** The likely error being repaired, when the learner chose one. */
   errorId?: string;
+  /** For a lesson whose check is making something: the learner's own version, saved in Create. */
+  sketchId?: string;
   updatedAt: string;
 }
 
@@ -203,6 +205,8 @@ export interface LessonAttempt {
   tempo: number;
   outcome: EvidenceOutcome;
   observation: string;
+  /** For a making check: the sketch the learner made and reported on. */
+  artifactId?: string;
   occurredAt: string;
   localDate: string;
 }
