@@ -21,13 +21,12 @@ import {
   type Firestore,
   type Unsubscribe
 } from "firebase/firestore";
-import { deleteObject, getBlob, getStorage, ref, uploadBytes } from "firebase/storage";
 import { accountWorkspaceId, eraseAllDeviceData, loadBlob, workspaceExists, workspaceHasLearningData } from "./repository";
-import { acceptEvidence, acceptProfile, acceptSketches, cloudProfile, commitIsolating, describeRejected, describeWithheld, screenEvidence, screenProfile, screenSketch } from "./sync";
+import { acceptChecks, acceptEvidence, acceptFeedback, acceptProfile, acceptReviews, acceptSketches, cloudProfile, commitIsolating, describeRejected, describeWithheld, screenEvidence, screenProfile, screenRecord, screenSketch } from "./sync";
 import type { CloudProfile, PendingWrite, Withheld } from "./sync";
-import type { RecordedTake, Sketch, V8State } from "./types";
+import type { ChecklistTick, FeedbackNote, RecordedTake, ReviewMark, Sketch, V8State } from "./types";
 import { useV8Store } from "./store";
-import { firebaseConfig, CLOUD_CONFIGURED, RECORDING_SHARING } from "./cloudConfig";
+import { firebaseConfig, CLOUD_CONFIGURED } from "./cloudConfig";
 import { writeCloudSessionHint } from "./cloudSessionHint";
 
 export { CLOUD_CONFIGURED, APP_CHECK_CONFIGURED, RECORDING_SHARING } from "./cloudConfig";
@@ -48,7 +47,18 @@ const database = app ? getFirestore(app) : null;
  * an explicit opt-in: set VITE_RECORDING_SHARING=enabled once Storage is set up
  * and its rules are deployed. Until then no sharing control is offered.
  */
-const recordingStorage = app && firebaseConfig.storageBucket && RECORDING_SHARING ? getStorage(app) : null;
+/*
+ * The Storage SDK loads only in a build that enables sharing. RECORDING_SHARING
+ * is a build-time constant, so in the ordinary build this import is removed and
+ * the SDK stays out of the download and the offline shell (decision A4).
+ */
+const storageModule =
+  import.meta.env.VITE_RECORDING_SHARING === "enabled" && app && firebaseConfig.storageBucket ? import("firebase/storage") : null;
+async function recordingStorage() {
+  if (!storageModule || !app) return null;
+  const sdk = await storageModule;
+  return { sdk, storage: sdk.getStorage(app) };
+}
 
 /** Called from a second user gesture after the account SDK has finished loading. */
 export async function beginPreparedSignIn(): Promise<void> {
@@ -87,10 +97,28 @@ interface SyncCache {
   evidenceIds: Set<string>;
   sketchVersions: Map<string, string>;
   deletionVersions: Map<string, string>;
+  /** updatedAt of each note, tick and review mark the cloud already holds. */
+  recordVersions: Record<RecordCollection, Map<string, string>>;
+  /**
+   * Collections the server refused to let this client read. That happens only
+   * if the hosting release ever runs ahead of its rules; the notes stay on the
+   * device and the rest of sync carries on rather than stopping with them.
+   */
+  unavailable: Set<RecordCollection>;
 }
 
+/** Collections added after the profile, evidence and sketches. Each record is its own document. */
+type RecordCollection = "feedback" | "checks" | "reviews";
+const RECORD_KIND = { feedback: "feedback", checks: "check", reviews: "review" } as const;
+/** Every collection the snapshot must hear from before this device uploads. */
+const SYNCED_PARTS = 6;
+
 function emptyCache(): SyncCache {
-  return { profileUpdatedAt: "", profileSignature: "", evidenceIds: new Set(), sketchVersions: new Map(), deletionVersions: new Map() };
+  return {
+    profileUpdatedAt: "", profileSignature: "", evidenceIds: new Set(), sketchVersions: new Map(), deletionVersions: new Map(),
+    recordVersions: { feedback: new Map(), checks: new Map(), reviews: new Map() },
+    unavailable: new Set()
+  };
 }
 
 function profileSignature(profile: CloudProfile): string {
@@ -161,6 +189,31 @@ async function uploadChanges(database: Firestore, uid: string, state: V8State, c
     sent.sketches.set(sketch.id, sketch.updatedAt);
   }
 
+  /*
+   * Notes, ticks and marks: upload any whose updatedAt is newer than the cloud
+   * copy. They live in their own collections, so an older client that rewrites
+   * the whole profile document cannot drop them.
+   */
+  const sentRecords: Array<[RecordCollection, string, string]> = [];
+  const local: Record<RecordCollection, Array<FeedbackNote | ChecklistTick | ReviewMark>> = {
+    feedback: state.feedbackNotes ?? [], checks: state.checklistTicks ?? [], reviews: state.reviewMarks ?? []
+  };
+  for (const collectionName of ["feedback", "checks", "reviews"] as const) {
+    if (cache.unavailable.has(collectionName)) continue;
+    for (const record of local[collectionName]) {
+      if ((cache.recordVersions[collectionName].get(record.id) ?? "") >= record.updatedAt) continue;
+      const refused = screenRecord(RECORD_KIND[collectionName], record);
+      if (refused) { withheld.push(refused); continue; }
+      const reference = doc(database, "users", uid, collectionName, record.id);
+      writes.push({
+        kind: RECORD_KIND[collectionName], id: record.id,
+        apply: (batch) => batch.set(reference, record),
+        alone: () => setDoc(reference, record)
+      });
+      sentRecords.push([collectionName, record.id, record.updatedAt]);
+    }
+  }
+
   await commitIsolating(writes, () => writeBatch(database), withheld);
 
   /*
@@ -171,6 +224,7 @@ async function uploadChanges(database: Firestore, uid: string, state: V8State, c
   const refusedIds = new Set(withheld.map((item) => item.id));
   for (const id of sent.evidence) if (!refusedIds.has(id)) cache.evidenceIds.add(id);
   for (const [id, updatedAt] of sent.sketches) if (!refusedIds.has(id)) cache.sketchVersions.set(id, updatedAt);
+  for (const [collectionName, id, updatedAt] of sentRecords) if (!refusedIds.has(id)) cache.recordVersions[collectionName].set(id, updatedAt);
   return withheld;
 }
 
@@ -266,7 +320,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     };
     const markLoaded = (part: string) => {
       loaded.add(part);
-      if (loaded.size < 3) return;
+      if (loaded.size < SYNCED_PARTS) return;
       setRemoteReady(true);
       if (reportIntake()) return;
       setStatus(navigator.onLine ? "synced" : "offline");
@@ -286,7 +340,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       for (const [id, deletedAt] of Object.entries(profile?.deletedSketchIds ?? {})) cacheRef.current.deletionVersions.set(id, deletedAt);
       dispatch({ type: "mergeCloud", snapshot: { profile } });
       markLoaded("profile");
-      if (loaded.size === 3) reportIntake();
+      if (loaded.size === SYNCED_PARTS) reportIntake();
     }, handleError));
     subscriptions.push(onSnapshot(collection(database, "users", user.uid, "evidence"), (snapshot) => {
       if (!active) return;
@@ -297,7 +351,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       cacheRef.current.evidenceIds = new Set(intake.accepted.map((item) => item.id));
       dispatch({ type: "mergeCloud", snapshot: { evidence: intake.accepted } });
       markLoaded("evidence");
-      if (loaded.size === 3) reportIntake();
+      if (loaded.size === SYNCED_PARTS) reportIntake();
     }, handleError));
     subscriptions.push(onSnapshot(collection(database, "users", user.uid, "sketches"), (snapshot) => {
       if (!active) return;
@@ -306,8 +360,25 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       cacheRef.current.sketchVersions = new Map(intake.accepted.map((sketch) => [sketch.id, sketch.updatedAt]));
       dispatch({ type: "mergeCloud", snapshot: { sketches: intake.accepted } });
       markLoaded("sketches");
-      if (loaded.size === 3) reportIntake();
+      if (loaded.size === SYNCED_PARTS) reportIntake();
     }, handleError));
+    const intakes = { feedback: acceptFeedback, checks: acceptChecks, reviews: acceptReviews } as const;
+    for (const collectionName of ["feedback", "checks", "reviews"] as const) {
+      subscriptions.push(onSnapshot(collection(database, "users", user.uid, collectionName), (snapshot) => {
+        if (!active) return;
+        const intake = intakes[collectionName](snapshot.docs.map((item) => ({ id: item.id, data: item.data() })));
+        rejectedCounts.set(collectionName, intake.rejected.length);
+        cacheRef.current.recordVersions[collectionName] = new Map(intake.accepted.map((record) => [record.id, record.updatedAt]));
+        dispatch({ type: "mergeCloud", snapshot: { [collectionName]: intake.accepted } });
+        markLoaded(collectionName);
+        if (loaded.size === SYNCED_PARTS) reportIntake();
+      }, (error) => {
+        if (!active) return;
+        if ((error as Error & { code?: string }).code !== "permission-denied") { handleError(error); return; }
+        cacheRef.current.unavailable.add(collectionName);
+        markLoaded(collectionName);
+      }));
+    }
     function handleError(error: Error) {
       if (!active) return;
       setStatus("error");
@@ -374,7 +445,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<CloudValue>(() => ({
     configured: CLOUD_CONFIGURED,
     signInReady: true,
-    sharingAvailable: Boolean(recordingStorage),
+    sharingAvailable: Boolean(storageModule),
     user,
     status,
     message,
@@ -406,7 +477,8 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     },
     uploadFinishedTake: async (sketchId, takeId) => {
       if (!user) throw new Error("Sign in before sharing a take.");
-      if (!recordingStorage) throw new Error("Sharing recordings is not set up in this copy of Interval. The take remains on this device.");
+      const sharing = await recordingStorage();
+      if (!sharing) throw new Error("Sharing recordings is not set up in this copy of Interval. The take remains on this device.");
       if (!navigator.onLine) throw new Error("Reconnect before sharing a take. The private device copy remains safe.");
       const sketch = state.sketches.find((item) => item.id === sketchId);
       if (!sketch || sketch.status !== "finished") throw new Error("Only a take from a finished project can be shared across devices.");
@@ -417,7 +489,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       if (blob.size > 50 * 1024 * 1024) throw new Error("This take is larger than the 50 MB sharing limit. It remains on this device.");
       if (blob.type && !blob.type.startsWith("audio/")) throw new Error("Only audio recordings can be shared.");
       const storagePath = `users/${user.uid}/finished-takes/${sketch.id}/${take.id}`;
-      await uploadBytes(ref(recordingStorage, storagePath), blob, {
+      await sharing.sdk.uploadBytes(sharing.sdk.ref(sharing.storage, storagePath), blob, {
         contentType: blob.type || "audio/webm",
         customMetadata: { sketchId: sketch.id, takeId: take.id, explicitlySelected: "true" }
       });
@@ -428,25 +500,28 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
       });
     },
     removeUploadedTake: async (sketchId, takeId) => {
-      if (!user || !recordingStorage) throw new Error("Sign in before removing a shared take.");
+      const sharing = await recordingStorage();
+      if (!user || !sharing) throw new Error("Sign in before removing a shared take.");
       const sketch = state.sketches.find((item) => item.id === sketchId);
       const take = sketch?.takes.find((item) => item.id === takeId);
       if (!sketch || !take?.cloud) return;
-      try { await deleteObject(ref(recordingStorage, take.cloud.storagePath)); }
+      try { await sharing.sdk.deleteObject(sharing.sdk.ref(sharing.storage, take.cloud.storagePath)); }
       catch (error) {
         if (!(error instanceof Error) || !("code" in error) || (error as Error & { code: string }).code !== "storage/object-not-found") throw error;
       }
       dispatch({ type: "setTakeCloud", sketchId: sketch.id, takeId: take.id, cloud: null, note: "Cross-device copy removed; any retained device copy remains private." });
     },
     uploadedTakeBlob: async (take) => {
-      if (!user || !recordingStorage || !take.cloud) return null;
+      const sharing = await recordingStorage();
+      if (!user || !sharing || !take.cloud) return null;
       if (!take.cloud.storagePath.startsWith(`users/${user.uid}/finished-takes/`)) return null;
-      return getBlob(ref(recordingStorage, take.cloud.storagePath), 50 * 1024 * 1024);
+      return sharing.sdk.getBlob(sharing.sdk.ref(sharing.storage, take.cloud.storagePath), 50 * 1024 * 1024);
     },
     deleteUploadedTakes: async (sketch) => {
       if (!sketch.takes.some((take) => take.cloud)) return;
-      if (!user || !recordingStorage) throw new Error("Sign in and reconnect before deleting a sketch with shared takes.");
-      await Promise.all(sketch.takes.flatMap((take) => take.cloud ? [deleteObject(ref(recordingStorage, take.cloud.storagePath)).catch((error: unknown) => {
+      const sharing = await recordingStorage();
+      if (!user || !sharing) throw new Error("Sign in and reconnect before deleting a sketch with shared takes.");
+      await Promise.all(sketch.takes.flatMap((take) => take.cloud ? [sharing.sdk.deleteObject(sharing.sdk.ref(sharing.storage, take.cloud.storagePath)).catch((error: unknown) => {
         if (!(error instanceof Error) || !("code" in error) || (error as Error & { code: string }).code !== "storage/object-not-found") throw error;
       })] : []));
     }

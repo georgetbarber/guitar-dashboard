@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { PIECE_CATALOG } from "../pieces/catalog";
+import { STYLE_NAMES } from "../pieces/format";
+import { useOpenPiece } from "../pieceOverlay";
 import { stopAudio } from "../../audio/engine";
 import {
   FREE_PLAY_MODE_INFO,
@@ -25,6 +28,7 @@ function PromptRelationship({ prompt }: { prompt: FreePlayPrompt }) {
 }
 
 export function Play() {
+  const openPiece = useOpenPiece();
   const { state, dispatch, navigate } = useV8Store();
   const availableModes = useMemo(() => availableFreePlayModes(state), [state]);
   const level = freePlayAbilityLevel(state);
@@ -133,6 +137,10 @@ export function Play() {
         </div>
       </section>
 
+      <section className="play-pieces">
+        <header><div><span className="eyebrow">Repertoire · original pieces the course returns to</span><h2>Play a piece</h2></div></header>
+        <div className="play-piece-grid">{PIECE_CATALOG.map((piece) => <article className="card" key={piece.id}><span className="eyebrow">{piece.styles.map((style) => STYLE_NAMES[style]).join(", ")}{(state.favoriteActivityIds ?? []).includes(`piece:${piece.id}`) ? " · ★ favourite" : ""}</span><h3>{piece.title}</h3><p>{piece.description}</p><button className="secondary-action" onClick={() => openPiece({ pieceId: piece.id })}>Open {piece.title}</button></article>)}</div>
+      </section>
       <section className="play-promise card">
         <div><span>01</span><strong>One action appears</strong><p>The key, tempo and difficulty come from your learning history.</p></div>
         <div><span>02</span><strong>Hear, play or reveal</strong><p>Use an audio guide or physical cue only when it helps.</p></div>

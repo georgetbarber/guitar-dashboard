@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assessSustainedPitch } from "./pitchAssessment";
+import { assessSustainedPitch, estimateFramePitch } from "./pitchAssessment";
 import type { TimedAudioFrame } from "./pitchAssessment";
 
 const RATE = 48_000;
@@ -69,5 +69,18 @@ describe("a bounded sustained-note estimate", () => {
       status: "uncertain",
       reason: "interrupted",
     });
+  });
+
+  it("names a low E whose fundamental a phone microphone barely picks up, not its octave", () => {
+    // Phone microphones roll off below ~100 Hz, so an open low E arrives with a
+    // weak 82 Hz fundamental under a much stronger second harmonic.
+    const E2 = 440 * 2 ** ((40 - 69) / 12);
+    const samples = Float32Array.from({ length: 4096 }, (_, index) => {
+      const time = index / RATE;
+      return sine(E2, 0.03)(time) + sine(E2 * 2, 0.15)(time) + sine(E2 * 3, 0.04)(time) + sine(E2 * 4, 0.06)(time);
+    });
+    const estimate = estimateFramePitch(samples, RATE);
+    expect(estimate).not.toBeNull();
+    expect(Math.round(69 + 12 * Math.log2(estimate!.frequencyHz / 440))).toBe(40);
   });
 });

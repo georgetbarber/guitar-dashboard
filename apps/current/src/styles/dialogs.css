@@ -484,3 +484,181 @@
     flex-wrap: wrap;
   }
 }
+
+/* Notes and checks: a link row in Settings, and two sub-views that replace its body. */
+.notes-panel-links {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: var(--rule-ink);
+  background: var(--paper);
+}
+
+.notes-panel-links p {
+  margin-bottom: var(--space-3);
+  font-size: var(--type-small);
+}
+
+.settings-subview {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+}
+
+.settings-subview > .text-action {
+  justify-self: start;
+  margin-left: calc(-1 * var(--space-2));
+}
+
+.settings-subview h3 {
+  margin: 0;
+  font: var(--font-subhead);
+}
+
+.settings-subview p {
+  margin: 0;
+}
+
+.settings-subview__empty,
+.settings-subview__message {
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.feedback-list,
+.checks-group ul {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedback-list > li,
+.checks-group li {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: var(--rule-ink);
+  background: var(--paper);
+}
+
+.feedback-list > li.is-resolved,
+.checks-group li.is-ticked {
+  border-color: var(--line-dark);
+  border-style: dashed;
+}
+
+.feedback-list h4,
+.checks-group h4 {
+  margin: 0;
+  font: var(--font-item);
+}
+
+.feedback-list__meta,
+.feedback-list__where,
+.checks-label {
+  color: var(--ink-soft);
+  font: var(--font-meta);
+}
+
+.checks-label {
+  display: inline-block;
+  min-width: 2.5rem;
+  text-transform: uppercase;
+}
+
+.feedback-list__text {
+  white-space: pre-wrap;
+}
+
+.feedback-list .text-action,
+.checks-group .text-action {
+  justify-self: start;
+  margin-left: calc(-1 * var(--space-2));
+}
+
+.checks-group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.checks-group .check-line {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  font: var(--font-item);
+  text-transform: none;
+}
+
+.feedback-panel textarea {
+  width: 100%;
+  min-height: 8rem;
+}
+
+.feedback-context {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-4) 0;
+  padding: var(--space-3);
+  border: var(--rule-quiet);
+  background: var(--paper);
+  font-size: var(--type-small);
+}
+
+.feedback-context > div {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.feedback-context dt {
+  color: var(--ink-soft);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.feedback-context dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.feedback-text {
+  display: block;
+  margin-bottom: var(--space-2);
+  font: var(--font-item);
+}
+
+.feedback-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-4) 0;
+  padding: var(--space-3);
+  border: var(--rule-quiet);
+}
+
+.feedback-categories legend {
+  padding: 0 var(--space-1);
+  font: var(--font-label);
+  text-transform: uppercase;
+}
+
+.feedback-categories .check-line {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-height: var(--touch-min);
+  font: var(--weight-regular) var(--type-text) / var(--lh-tight) var(--serif);
+  text-transform: none;
+}
+
+.feedback-privacy {
+  color: var(--ink-soft);
+  font-size: var(--type-small);
+}
+
+.feedback-problem {
+  padding: var(--space-2) var(--space-3);
+  border-left: var(--rule-heavy) solid var(--caution-rule);
+  background: var(--paper);
+}
