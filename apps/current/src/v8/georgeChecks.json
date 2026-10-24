@@ -102,10 +102,24 @@
       "added": "2026-10-24 · Package 5"
     },
     {
+      "id": "guitar-unit-17-curl",
+      "group": "guitar",
+      "title": "Curl the ♭3 and answer a call",
+      "do": "Open the full lesson in Unit 17 (“Put it under the hands”). Practise the curl study: push the G on the high E (fret 3) a quarter-tone sharp and let it fall back. Then hear the app's call and play the answer in the next two bars.",
+      "pass": "The curl stays a colour, well short of a half bend, and you can tell when it has gone too far; the answer starts on time after the call. If “third finger with the second behind it” is the wrong advice for your hand, leave a note.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Unit 17 · Call and answer"
+      },
+      "source": "Batch 2 (Package 6): the course's first bend, agent-drafted; flagged by the independent review.",
+      "added": "2026-10-24 · Package 6"
+    },
+    {
       "id": "guitar-lantern-capstone",
       "group": "guitar",
       "title": "Play the Stage 3 capstone, Lantern, and make an answer",
-      "do": "In the Course map, open Stage 3 and choose “Open the capstone”. Play the melody along with the second guitar's chords at 60–72 BPM, once with the tab showing and once hidden. Then use “Open a new sketch in Create” to write a two-bar answer to the first phrase that ends on G, save it, and come back to report.",
+      "do": "In the Course map, open Stage 3 and choose “Open the capstone”. Play the melody along with the second guitar's chords at 60–72 BPM, once with the tab showing and once hidden. Then use “Open a new sketch in Create” to write two bars that answer Lantern's first two bars and end on G, save it, and come back to the capstone to report.",
       "pass": "Phrase 1 sounds unfinished on A and phrase 2 sounds home on G; the melody sits under the fingers in open position; and making the answer in Create took minutes, not a fight with the editor.",
       "link": {
         "route": "path",

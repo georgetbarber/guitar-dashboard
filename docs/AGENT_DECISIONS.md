@@ -357,7 +357,8 @@ first, so it is not buried.
 ### A18 · 2026-10-24 · Package 6 · A capstone can ask for something made in Create
 
 - **Decision:** a capstone may carry a `make` instruction. The piece player shows
-  it beside the self-report with "Open a new sketch in Create", and the report
+  it beside the self-report with "Open a new sketch in Create" (the sketch starts
+  in the piece's key and tempo), and the report
   wording says the learner reports on both. The Stage 3 capstone (*Lantern*) uses
   it for the map's "answering phrase saved in Create". The sketch is not linked
   to the capstone record; the learner's report says whether it was made.

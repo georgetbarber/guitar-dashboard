@@ -8,7 +8,7 @@ Tick them in the app under **Settings › Things to check**, where the same list
 keeps your ticks on this device and in sync. Leave a “Something's wrong here”
 note if a check fails.
 
-26 items, most valuable first within each group.
+27 items, most valuable first within each group.
 
 ## On the laptop
 
@@ -104,10 +104,19 @@ note if a check fails.
 - **Why:** Batch 1 (Package 5); originality rule in decision A13.
 - **Added:** 2026-10-24 · Package 5 · `guitar-low-road-riff`
 
+### Curl the ♭3 and answer a call
+
+- **Status:** needs George
+- **Do:** Open the full lesson in Unit 17 (“Put it under the hands”). Practise the curl study: push the G on the high E (fret 3) a quarter-tone sharp and let it fall back. Then hear the app's call and play the answer in the next two bars.
+- **Pass:** The curl stays a colour, well short of a half bend, and you can tell when it has gone too far; the answer starts on time after the call. If “third finger with the second behind it” is the wrong advice for your hand, leave a note.
+- **Where:** Learn › Course map · Unit 17 · Call and answer
+- **Why:** Batch 2 (Package 6): the course's first bend, agent-drafted; flagged by the independent review.
+- **Added:** 2026-10-24 · Package 6 · `guitar-unit-17-curl`
+
 ### Play the Stage 3 capstone, Lantern, and make an answer
 
 - **Status:** needs George
-- **Do:** In the Course map, open Stage 3 and choose “Open the capstone”. Play the melody along with the second guitar's chords at 60–72 BPM, once with the tab showing and once hidden. Then use “Open a new sketch in Create” to write a two-bar answer to the first phrase that ends on G, save it, and come back to report.
+- **Do:** In the Course map, open Stage 3 and choose “Open the capstone”. Play the melody along with the second guitar's chords at 60–72 BPM, once with the tab showing and once hidden. Then use “Open a new sketch in Create” to write two bars that answer Lantern's first two bars and end on G, save it, and come back to the capstone to report.
 - **Pass:** Phrase 1 sounds unfinished on A and phrase 2 sounds home on G; the melody sits under the fingers in open position; and making the answer in Create took minutes, not a fight with the editor.
 - **Where:** Learn › Course map · Stage 3 capstone · Lantern
 - **Why:** Batch 2 (Package 6): Stage 3 capstone with a making step, agent-drafted, not yet played on a guitar.
