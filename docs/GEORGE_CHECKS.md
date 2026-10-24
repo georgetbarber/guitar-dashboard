@@ -8,7 +8,7 @@ Tick them in the app under **Settings › Things to check**, where the same list
 keeps your ticks on this device and in sync. Leave a “Something's wrong here”
 note if a check fails.
 
-19 items, most valuable first within each group.
+23 items, most valuable first within each group.
 
 ## On the laptop
 
@@ -85,6 +85,42 @@ note if a check fails.
 - **Where:** Learn › Course map · Unit 10 · One fret changes the third
 - **Why:** Phase 6 lesson pipeline (Package 3); lesson drafted by an agent and not yet played on a guitar.
 - **Added:** 2026-10-23 · Package 3 · `guitar-unit-10-thirds`
+
+### Play the Stage 1 capstone, Front Step
+
+- **Status:** needs George
+- **Do:** In the Course map, open Stage 1 and choose “Open the capstone”. Play along with the band at 60–72 BPM: palm-muted roots through the 12-bar, the question and answer in the break, then the two hits and the long E. Then try it once with the tab hidden.
+- **Pass:** You keep your place through all sixteen bars, the band's chords sit with your roots, and it feels like playing with someone rather than against a machine.
+- **Where:** Learn › Course map · Stage 1 capstone · Front Step
+- **Why:** Batch 1 (Package 5): first piece and capstone, agent-drafted, not yet played on a guitar.
+- **Added:** 2026-10-24 · Package 5 · `guitar-front-step-capstone`
+
+### Play the Low Road riff
+
+- **Status:** needs George
+- **Do:** Open Play › Low Road and choose “The riff”. Play along at 66–84 BPM: muted A chugs with C5 and D5 kicking on the “and” of 2 and of 4.
+- **Pass:** The palm mute thuds rather than choking the note, the shape slides without rebuilding, the accents land on the off-beats, and the riff does not remind you of an existing song. If it does, leave a note naming it.
+- **Where:** Play · Low Road · The riff
+- **Why:** Batch 1 (Package 5); originality rule in decision A13.
+- **Added:** 2026-10-24 · Package 5 · `guitar-low-road-riff`
+
+### Check the written hand guidance
+
+- **Status:** needs George
+- **Do:** Open the full lessons in Units 2, 3 and 4 (palm muting, the thumb pulse, constant-motion strumming). Read “Your hands” in Learn it and try each instruction.
+- **Pass:** The words were enough to do it. Where they were not, leave a note on that lesson: those become the first demonstration videos to make.
+- **Where:** Learn › Course map · Units 2–4 · Learn it
+- **Why:** Completion brief §4.5: techniques that need seeing show “demonstration video still needed”.
+- **Added:** 2026-10-24 · Package 5 · `guitar-hand-guidance`
+
+### Tune by the unison pairs
+
+- **Status:** needs George
+- **Do:** Open Unit 7's full lesson and tune with the fifth-fret pairs (fourth fret on the G string), listening for the wobble to slow.
+- **Pass:** Afterwards a tuner app agrees within a few cents on each string, or chords sound clearly in tune.
+- **Where:** Learn › Course map · Unit 7 · Six landmarks and a drone
+- **Why:** Batch 1 (Package 5).
+- **Added:** 2026-10-24 · Package 5 · `guitar-unison-tuning`
 
 ### Try the sustained-note pitch check with real input
 
