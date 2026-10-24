@@ -27,7 +27,8 @@ export const enough = (text: string | undefined, minimum = 12) =>
 /** Provenance is honest: a draft names no reviewer; reviewed content names one and a date. */
 export function provenanceProblems(p: Provenance | undefined): string[] {
   if (!p?.author?.trim()) return ["provenance needs an author."];
-  if (p.reviewStatus === "draft" && (p.reviewer || p.reviewedAt)) return ["a draft cannot name a reviewer or review date."];
+  if (p.reviewStatus === "draft" && (p.reviewer || p.reviewedAt))
+    return ["a draft cannot name a reviewer or review date."];
   if (p.reviewStatus !== "draft" && (!p.reviewer.trim() || !Number.isFinite(Date.parse(p.reviewedAt ?? ""))))
     return ["reviewed content needs a named reviewer and a review date."];
   return [];

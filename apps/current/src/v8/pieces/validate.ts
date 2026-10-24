@@ -102,7 +102,9 @@ export function validatePiece(piece: Piece): string[] {
     if (!CAPABILITY.test(capability.id) || capability.action !== "playing")
       add(`the stage ${capstone.stage} capstone needs a playing capability with a valid id.`);
     if (CAPSTONE_CAPABILITIES[capstone.stage - 1] !== capability.id)
-      add(`the stage ${capstone.stage} capstone must use ${CAPSTONE_CAPABILITIES[capstone.stage - 1]} from the catalogue.`);
+      add(
+        `the stage ${capstone.stage} capstone must use ${CAPSTONE_CAPABILITIES[capstone.stage - 1]} from the catalogue.`,
+      );
     if (!enough(capability.title, 4) || !enough(capability.criterion) || !enough(capstone.criterion))
       add(`the stage ${capstone.stage} capstone needs a title and honest criteria.`);
     // A capstone combines its stage's work: every part it uses is taught by then.
