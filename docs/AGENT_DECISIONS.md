@@ -317,3 +317,24 @@ first, so it is not buried.
   risk).
 - **Reversible:** yes, with a migration if a later package needs it.
 - **Where:** `docs/CURRICULUM_MAP.md` §4.
+
+### A16 · 2026-10-24 · Package 5 · Offline-shell review threshold 1300 KiB
+
+- **Decision:** the automatic offline shell's review threshold moves from
+  1280 KiB to 1300 KiB, once, in Batch 1.
+- **Why:** after Batch 1 the Firebase-enabled shell is about 1278.7 KiB.
+  Everything that grows with the course (lessons, pieces, both players, the
+  music engine and the score views) is already outside it in per-stage packs
+  (A9). What still grows inside it is small and shell-side by nature: the
+  lesson and piece catalogues the course map and Continue need before any
+  pack loads (about a quarter of a KiB per lesson), George's checklist, and
+  the course-map features. Batches 2–4 add about 36 catalogue entries and a
+  dozen checklist items, roughly 15 KiB in all. The guest startup budget
+  (420 KiB) is unchanged; the lesson-pack helper was moved out of guest
+  startup to keep it at about 410 KiB.
+- **Alternatives:** squeezing each batch under 1280 KiB (would push the
+  checklist or catalogue into lesson packs, making them unavailable offline
+  before a stage is saved); a much larger threshold (would stop the check
+  catching real growth).
+- **Reversible:** yes; the number is in `scripts/check-offline-shell.mjs` and
+  `tests/e2e/offline-shell.spec.ts`.

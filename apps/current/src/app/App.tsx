@@ -12,7 +12,6 @@ import { PlacementSampler } from "../v8/components/PlacementSampler";
 import { Today } from "../v8/features/Today";
 import { Path } from "../v8/features/Path";
 import { Practice } from "../v8/features/Practice";
-import { warmLessonPacks } from "../v8/lessonPacks";
 import { nextUnit } from "../v8/learning";
 import { unitById } from "../v8/curriculum";
 import { LessonPackMissing } from "../v8/components/LessonPackMissing";
@@ -64,7 +63,7 @@ function V8Application() {
   const selectedStage = hydrated ? unitById(state.activeUnitId).stage : 0;
   useEffect(() => {
     if (!import.meta.env.PROD || !workingStage) return;
-    void warmLessonPacks([workingStage, selectedStage]);
+    void import("../v8/lessonPacks").then(({ warmLessonPacks }) => warmLessonPacks([workingStage, selectedStage]));
   }, [workingStage, selectedStage]);
   if (cloud.accountChoice) return <AccountWorkspaceChoice />;
   if (!hydrated) return <div className="loading-screen"><span>Interval</span><p>Loading your learning path…</p></div>;

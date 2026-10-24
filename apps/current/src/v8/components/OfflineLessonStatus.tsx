@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { selectedLessonReadyOffline } from "../offlineReadiness";
-import { PACKS_CHANGED, packFiles, readManifest, saveStagePack, stagePackSaved } from "../lessonPacks";
+/** Loaded on demand so the pack helper stays out of guest startup. */
+const packs = () => import("../lessonPacks");
+/** Fired by lessonPacks.ts when a pack is saved or repaired. */
+const PACKS_CHANGED = "interval:lesson-packs";
 
 type Readiness =
   | { kind: "checking" }
@@ -28,6 +31,7 @@ export function OfflineLessonStatus({ stage }: { stage: number }) {
     let mounted = true;
     const check = async () => {
       const shell = await selectedLessonReadyOffline();
+      const { packFiles, readManifest, stagePackSaved } = await packs();
       const manifest = await readManifest();
       const lessons = Boolean(manifest && packFiles(manifest, stage).length);
       const pack = lessons ? await stagePackSaved(stage, manifest) : true;
@@ -53,7 +57,7 @@ export function OfflineLessonStatus({ stage }: { stage: number }) {
     setSaving(true);
     setError("");
     try {
-      await saveStagePack(stage);
+      await (await packs()).saveStagePack(stage);
     } catch {
       setError("The lessons could not be saved. Check the connection and try again.");
     } finally {

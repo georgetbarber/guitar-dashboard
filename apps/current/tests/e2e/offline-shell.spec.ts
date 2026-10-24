@@ -31,7 +31,7 @@ test("a selected unit reports its offline copy, with its stage's lessons, and re
     return bytes;
   });
   expect(cachedBytes).toBeGreaterThan(100 * 1024);
-  expect(cachedBytes).toBeLessThan(1280 * 1024);
+  expect(cachedBytes).toBeLessThan(1300 * 1024); // decision A16
   if (testInfo.project.name === "desktop-chromium") {
     console.log(
       `Local preview first-page transfer: ${foregroundBytes} bytes; installed precache: ${cachedBytes} bytes.`,

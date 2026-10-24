@@ -121,7 +121,7 @@ export async function saveStagePack(stage: number, manifest?: PackManifest | nul
   announce();
 }
 
-/** Readiness displays listen for this after a pack is saved or repaired. */
+/** Readiness displays listen for this after a pack is saved or repaired (OfflineLessonStatus.tsx repeats the literal). */
 export const PACKS_CHANGED = "interval:lesson-packs";
 function announce() {
   if (typeof window !== "undefined") window.dispatchEvent(new Event(PACKS_CHANGED));
