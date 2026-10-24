@@ -50,7 +50,7 @@ interface Props {
   requestCloseRef?: MutableRefObject<(() => void) | null>;
 }
 
-/** A piece from the repertoire: choose a part, hear everything, play along with the band, and (for a capstone) report how it went. */
+/** A piece from the repertoire: choose a part, hear everything, play along with the second guitar, and (for a capstone) report how it went. */
 export function PiecePlayer({ request, onClose, requestCloseRef }: Props) {
   const piece = PIECES.find((item) => item.id === request.pieceId);
   if (!piece)
@@ -340,7 +340,7 @@ function PieceBody({ piece, request, onClose, requestCloseRef }: Props & { piece
           </div>
           <div className="pilot-play-actions">
             <button className="primary-action large" onClick={() => void play(true)}>
-              {backing.length ? "Play along with the band" : "Count in and play"}
+              {backing.length ? "Play along with the second guitar" : "Count in and play"}
             </button>
             <button className="secondary-action" onClick={() => void play(false)}>
               {backing.length ? "Hear everything" : "Hear this part"}
@@ -373,7 +373,7 @@ function PieceBody({ piece, request, onClose, requestCloseRef }: Props & { piece
                   maxLength={1000}
                   value={observation}
                   onChange={(event) => setObservation(event.target.value)}
-                  placeholder="Where did you lose or keep your place? What did the band and you do together?"
+                  placeholder="Where did you lose or keep your place? Where did you and the second guitar line up or drift apart?"
                 />
               </label>
               <small>

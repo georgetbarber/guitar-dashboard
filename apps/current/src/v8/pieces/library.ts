@@ -29,13 +29,15 @@ const chug = (note: string) => Array.from({ length: 8 }, () => `e ${note}[pm]`).
 const E = chug("6:0");
 const A = chug("5:0");
 const B = chug("5:2");
+/** Bar 12 leaves the last beat free to lift the palm and reach the open high E for the break. */
+const B_INTO_BREAK = `${Array.from({ length: 6 }, () => "e 5:2[pm]").join(" ")} q r`;
 const QUESTION = "q 1:0 q r q 1:0 q r";
 const ANSWER = "q 1:0 q 1:0 q r q 1:0";
 
 const FORM_SECTIONS = [
   ["line-1", "Line 1 · E", 1, 4],
   ["line-2", "Line 2 · A to E", 5, 8],
-  ["line-3", "Line 3 · B, A, E", 9, 12],
+  ["line-3", "Line 3 · B, A, E, B", 9, 12],
   ["break", "Break · question and answer", 13, 14],
   ["ending", "Ending · stop together", 15, 16],
 ] as const;
@@ -71,7 +73,24 @@ const frontStepRoots = score({
   voices: {
     roots: {
       label: "Roots, palm-muted",
-      text: [E, E, E, E, A, A, E, E, B, A, E, B, QUESTION, ANSWER, "q 6:0 q r q 6:0 q r", "w 6:0"].join(" | "),
+      text: [
+        E,
+        E,
+        E,
+        E,
+        A,
+        A,
+        E,
+        E,
+        B,
+        A,
+        E,
+        B_INTO_BREAK,
+        QUESTION,
+        ANSWER,
+        "q 6:0+5:2[st] q r q 6:0+5:2[st] q r",
+        "w 6:0+5:2",
+      ].join(" | "),
     },
   },
   sections: FORM_SECTIONS,
@@ -88,7 +107,7 @@ const frontStepBand = score({
   ...FRONT_STEP,
   tempo: [50, 72, 100],
   id: "front-step-band",
-  title: "Front Step: the band's chords",
+  title: "Front Step: the second guitar's chords",
   bars: 16,
   voicings: FRONT_STEP_CHORDS,
   voices: {
@@ -145,7 +164,7 @@ export const FRONT_STEP_PIECE: Piece = {
       scoreId: frontStepRoots.id,
       accompanimentIds: [frontStepBand.id],
       instruction:
-        "Play the root of each bar as palm-muted eighths while the second guitar plays the chords: E for four bars, A for two, E for two, then B, A, E, B. The band stops for your question and answer, then you finish together on two short hits and a long E.",
+        "Play the root of each bar as palm-muted eighths while the second guitar plays the chords: E for four bars, A for two, E for two, then B, A, E, B, leaving the last beat of bar 12 free to reach the high E. The second guitar stops for your question and answer, then you finish together on two short E5 hits and a long E5.",
       unitIds: ["unit-01", "unit-02", "unit-04", "unit-05"],
     },
   ],
@@ -157,9 +176,11 @@ export const FRONT_STEP_PIECE: Piece = {
         id: "piece.front-step.one-finger",
         action: "playing",
         title: "Play Front Step with one finger",
-        criterion: "Keep the root eighths, the break and the ending in time with the band through all sixteen bars.",
+        criterion:
+          "Keep the root eighths, the break and the ending in time with the second guitar through all sixteen bars.",
       },
-      criterion: "I kept my place through all twelve bars and stopped together with the band.",
+      criterion:
+        "I kept my place through the twelve bars, the break and the ending, and stopped together with the second guitar.",
     },
   ],
 };
@@ -209,7 +230,7 @@ const lowRoadRiff = score({
   title: "Low Road: the riff",
   key: "A minor",
   bars: 4,
-  tempo: [66, 84, 112],
+  tempo: [56, 84, 112],
   voices: {
     riff: {
       label: "Riff",
@@ -224,9 +245,9 @@ const lowRoadBand = score({
   title: "Low Road: the second guitar",
   key: "A minor",
   bars: 4,
-  tempo: [60, 84, 116],
+  tempo: [56, 84, 116],
   voices: {
-    pad: { label: "Second guitar", text: [`w ${A5}`, `w ${A5}`, `w ${A5}`, `h ${C5} h ${D5}`].join(" | ") },
+    pad: { label: "Second guitar", text: [`w ${A5}`, `w ${A5}`, `w ${A5}`, `h ${A5} h ${D5}`].join(" | ") },
   },
 });
 
@@ -279,7 +300,7 @@ const lowRoadInE = lowRoadWhole(
   ].join(" | "),
 );
 
-const bandFor = (id: string, key: "A minor" | "E minor", one: string, three: string, four: string) =>
+const bandFor = (id: string, key: "A minor" | "E minor", one: string) =>
   score({
     ...LOW_ROAD,
     id,
@@ -290,22 +311,13 @@ const bandFor = (id: string, key: "A minor" | "E minor", one: string, three: str
     voices: {
       pad: {
         label: "Second guitar",
-        text: [
-          `w ${one}`,
-          `w ${one}`,
-          `w ${one}`,
-          "w r",
-          `w ${one}`,
-          `w ${one}`,
-          `h ${three} h ${four}`,
-          `w ${one}`,
-        ].join(" | "),
+        text: [`w ${one}`, `w ${one}`, `w ${one}`, "w r", `w ${one}`, `w ${one}`, `w ${one}`, `w ${one}`].join(" | "),
       },
     },
   });
 
-const lowRoadBandA = bandFor("low-road-band-a", "A minor", A5, C5, D5);
-const lowRoadBandE = bandFor("low-road-band-e", "E minor", E5, G5, A5_LOW);
+const lowRoadBandA = bandFor("low-road-band-a", "A minor", A5);
+const lowRoadBandE = bandFor("low-road-band-e", "E minor", E5);
 
 export const LOW_ROAD_PIECE: Piece = {
   id: "piece-low-road",
@@ -334,7 +346,7 @@ export const LOW_ROAD_PIECE: Piece = {
       scoreId: lowRoadRiff.id,
       accompanimentIds: [lowRoadBand.id],
       instruction:
-        "Keep the A chugs going and lift the palm for the two accents: C5 on the “and” of 2, D5 on the “and” of 4. The same root-and-fifth shape slides up the A string for both.",
+        "Keep the A chugs going and lift the palm for the two accents: C5 on the “and” of 2, D5 on the “and” of 4. The same root-and-fifth shape slides up the A string for both. In bar 4, D5 arrives on count 3 and holds.",
       unitIds: ["unit-09"],
     },
     {
@@ -354,7 +366,7 @@ export const LOW_ROAD_PIECE: Piece = {
       scoreId: lowRoadInE.id,
       accompanimentIds: [lowRoadBandE.id],
       instruction:
-        "Play everything a fourth lower from the low E string. The power-chord and octave shapes move unchanged; the tag's thirds change shape because they no longer sit on the G and B strings.",
+        "Play everything a fourth lower from the low E string. The power-chord and octave shapes move unchanged. In the tag, the major third becomes the open G and B strings (same fret, still major); the minor third moves to the D and G strings: D-string fret 2 with the open G.",
       unitIds: ["unit-12"],
     },
   ],

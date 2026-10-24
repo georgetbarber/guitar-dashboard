@@ -71,7 +71,7 @@ describe("the piece player", () => {
     expect(screen.getByRole("list", { name: "Form" }).textContent).toContain("Line 1 · E bars 1–4");
     expect(screen.getByText("Not yet checked on a guitar")).toBeTruthy();
     expect(screen.getByText(/Demonstration video still needed/).closest("p")!.textContent).toContain("muting");
-    await user.click(screen.getByRole("button", { name: "Play along with the band" }));
+    await user.click(screen.getByRole("button", { name: "Play along with the second guitar" }));
     const [lead, options] = vi.mocked(player.startScorePlayback).mock.calls[0];
     expect(lead.id).toBe("front-step-one-finger");
     expect(options.mode).toBe("count-only");
@@ -125,7 +125,7 @@ describe("the piece player", () => {
     await screen.findByRole("heading", { name: "Low Road" });
     expect(screen.getByRole("heading", { name: "Riff, octave fill and tag in A" })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "The same piece from E · capstone" }));
-    await user.click(screen.getByRole("button", { name: "Play along with the band" }));
+    await user.click(screen.getByRole("button", { name: "Play along with the second guitar" }));
     const [lead, options] = vi.mocked(player.startScorePlayback).mock.calls[0];
     expect([lead.id, options.accompaniment?.[0].id]).toEqual(["low-road-whole-e", "low-road-band-e"]);
   });

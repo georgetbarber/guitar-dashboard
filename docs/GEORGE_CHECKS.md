@@ -89,8 +89,8 @@ note if a check fails.
 ### Play the Stage 1 capstone, Front Step
 
 - **Status:** needs George
-- **Do:** In the Course map, open Stage 1 and choose “Open the capstone”. Play along with the band at 60–72 BPM: palm-muted roots through the 12-bar, the question and answer in the break, then the two hits and the long E. Then try it once with the tab hidden.
-- **Pass:** You keep your place through all sixteen bars, the band's chords sit with your roots, and it feels like playing with someone rather than against a machine.
+- **Do:** In the Course map, open Stage 1 and choose “Open the capstone”. Play along with the second guitar at 60–72 BPM: palm-muted roots through the 12-bar, the question and answer in the break, then the two E5 hits and the long E5. Then try it once with the tab hidden.
+- **Pass:** You keep your place through all sixteen bars, the second guitar's chords sit with your roots, and it feels like playing with someone rather than against a machine.
 - **Where:** Learn › Course map · Stage 1 capstone · Front Step
 - **Why:** Batch 1 (Package 5): first piece and capstone, agent-drafted, not yet played on a guitar.
 - **Added:** 2026-10-24 · Package 5 · `guitar-front-step-capstone`

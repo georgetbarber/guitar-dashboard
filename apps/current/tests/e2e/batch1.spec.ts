@@ -61,12 +61,12 @@ test("Stage 2: the Unit 9 lesson ends by opening the Low Road riff with its band
   await page.getByRole("button", { name: "Play it in Low Road →" }).click();
   await expect(page.getByRole("heading", { name: "Low Road", level: 1 })).toBeVisible();
   await expect(page.getByRole("heading", { name: "The riff" })).toBeVisible();
-  await page.getByRole("button", { name: "Play along with the band" }).click();
+  await page.getByRole("button", { name: "Play along with the second guitar" }).click();
   await expect(page.getByText(/Count in: \d/)).toBeVisible();
   await page.getByRole("button", { name: "Stop sound" }).click();
 });
 
-test("the Stage 1 and Stage 2 capstones open from the course map, play with the band and take a report", async ({
+test("the Stage 1 and Stage 2 capstones open from the course map, play with the second guitar and take a report", async ({
   page,
 }) => {
   test.setTimeout(90_000);
@@ -75,7 +75,7 @@ test("the Stage 1 and Stage 2 capstones open from the course map, play with the 
   await expect(page.getByRole("heading", { name: "Front Step", level: 1 })).toBeVisible();
   await expect(page.getByText("Stage 1 capstone · Blues-rock")).toBeVisible();
   await expect(page.getByRole("list", { name: "Form" })).toContainText("Line 3 · B, A, E");
-  await page.getByRole("button", { name: "Play along with the band" }).click();
+  await page.getByRole("button", { name: "Play along with the second guitar" }).click();
   await expect(page.getByText(/Your part · bar \d+ of 16/)).toBeVisible({ timeout: 10_000 });
   await page.getByRole("button", { name: "Stop sound" }).click();
   await page.getByRole("checkbox", { name: "Hide the tab" }).check();

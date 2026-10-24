@@ -57,10 +57,10 @@ Each table lists the authored episode's core, the templated activity it **stands
 | Unit | Title (working) | Episode core | Stands in for | Piece · layer | Prerequisites |
 | --- | --- | --- | --- | --- | --- |
 | 7 | Open-string compass | The six open strings as landmarks; tuning by fifth-fret unisons (fourth fret on the G string) and hearing a unison beat slow down as it comes into tune; a melody on the B and high E strings over an open D drone | `technique` | *Porch Light* L1 (roots found from open-string landmarks) | 1 |
-| 8 | Octaves reveal the neck | Octave shapes as geometry: low E→D string and A→G string are two strings and two frets up; D→B and G→high E are three frets up (the B-string shift). An octave line with the middle string muted, soul style. 66–90 BPM | `technique` | *Sunday Glide* L1 (octave roots) | 7 |
+| 8 | Octaves reveal the neck | Octave shapes as geometry: low E→D string and A→G string are two strings and two frets up; D→B and G→high E are three frets up (the B-string shift). An octave line with the middle string muted: the root part *Sunday Glide* builds on. 56–88 BPM | `technique` | *Sunday Glide* L1 (octave roots) | 7 |
 | 9 | Root and fifth skeleton | The root–fifth power chord on the low E and A strings as one movable shape; the *Low Road* riff: palm-muted A5 eighth chugs with C5 accented on the "and" of 2 and D5 on the "and" of 4 (roots 1, ♭3 and 4 of A). Its fingerprint is that off-beat rhythm over continuous chugs; it has no ♭5 passing chord and no block-chord rhythm with rests, so it cannot be mistaken for a well-known riff built on the same roots. 66–112 BPM | `technique` | *Low Road* L2 | 2, 8 |
 | 10 | Thirds change colour | **Already authored** (Package 3): E–G–E and E–G♯–E on the high E string; reversed order; transfer from F | `technique` (existing) | *Front Step* L3 (later, the ♭3 that curls toward 3) | 7 |
-| 11 | Crossing the B string | Shapes that change at the G–B boundary: octaves (+3 not +2), thirds as double-stops on the G and B strings (same fret = major third, B string one fret lower = minor third), sixths on the G and high E strings with the B string skipped and muted | `technique` | *Low Road* L4 (double-stop tag), *Sunday Glide* L3 (sixths) | 8, 10 |
+| 11 | Crossing the B string | Shapes that change at the G–B boundary: octaves (+3 not +2), thirds as double-stops on the G and B strings (same fret = major third, B string one fret lower = minor third), sixths on the G and high E strings with the B string skipped and muted | `technique` | *Low Road* L4 (double-stop tag), *Sunday Glide* L3 (sixths) | 8, 9, 10 |
 | 12 | Transpose without losing meaning | Move the *Low Road* riff from an A-string root to an E-string root (E5 chugs with G5 and A5 accents) and to D, keeping every interval and the off-beat fingerprint; the octave and power-chord shapes as rulers. The same move gives *Two Rivers*' A5–G5 root pulse | `technique` | *Low Road* (moved), *Two Rivers* L1 | 9, 11 |
 
 ### Stage 3 — Tonal hearing and melody
@@ -187,7 +187,7 @@ Each capstone combines its stage's work into something worth playing for its own
 
 | Stage | Capstone | What it combines | Self-report criterion |
 | --- | --- | --- | --- |
-| 1 | *Front Step*, one finger | Root notes as palm-muted eighths through a 12-bar in E (2, 4), the question and answer as a two-bar break (1), stop-time hits to end (5). No Stage 1 unit teaches the 12-bar form, so the capstone shows it: three lines of four bars with the root of each bar and a bar counter | "I kept my place through all twelve bars and stopped together with the band." |
+| 1 | *Front Step*, one finger | Root notes as palm-muted eighths through a 12-bar in E (2, 4), the question and answer as a two-bar break (1), stop-time hits to end (5). No Stage 1 unit teaches the 12-bar form, so the capstone shows it: three lines of four bars with the root of each bar and a bar counter | "I kept my place through the twelve bars, the break and the ending, and stopped together with the second guitar." |
 | 2 | *Low Road* | Power-chord riff (9), octave fill (8), double-stop tag (11), then the whole thing from E (12) | "I played the riff in A and in E without the tab." |
 | 3 | *Lantern* | Melody by degrees (13–16) with a chosen ending, then an answering phrase saved in Create (17) | "I played the melody with both endings and saved an answer of my own." |
 | 4 | *Porch Light* | Travis accompaniment (22) with melody pinches (14), common tones (21), hammer-ons inside shapes (19) | "The bass kept alternating while the melody sang on top." |
@@ -224,7 +224,7 @@ Where each item in brief §4.4 is introduced (**I**), practised (P) and applied 
 | Ensemble timing | **S1 capstone** (play-along) | every capstone, 30 | all pieces |
 | Readable rhythm | **1** (count grid and rhythm row) | 4, 26 (sixteenth grid) | all |
 | Triplets | **29** (shuffle as triplets) | 30, 33 | *Front Step* |
-| Actual swing playback | **8** (heard in *Sunday Glide*'s swung-sixteenth accompaniment), played from **20** | 26, 29 (shuffle), 30 (all feels compared) | *Front Step*, *Sunday Glide*, *Night Market* |
+| Actual swing playback | **20** (*Sunday Glide*'s swung sixteenths, heard and played) | 26, 29 (shuffle), 30 (all feels compared) | *Front Step*, *Sunday Glide*, *Night Market* |
 | Richer tab | **1** (technique marks shipped in Package 3) | every unit | all |
 | Optional staff notation | **13** (optional view, never required) | 14–18 | melodies |
 

@@ -231,7 +231,7 @@ export const PREREQUISITES: Readonly<Record<number, readonly number[]>> = {
   8: [7],
   9: [2, 8],
   10: [7],
-  11: [8, 10],
+  11: [8, 9, 10],
   12: [9, 11],
   13: [7, 10],
   14: [13],

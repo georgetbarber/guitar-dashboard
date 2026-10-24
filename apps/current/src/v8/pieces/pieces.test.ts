@@ -82,7 +82,12 @@ describe("Front Step", () => {
 
   it("plays palm-muted eighths in the 12 bars, the Unit 1 question and answer in the break while the band rests, and ends together", () => {
     const chorus = roots.events.filter((event) => barOf(event.at) <= 12);
-    expect(chorus.every((event) => event.kind === "note" && event.dur === 24 && event.art?.palmMute)).toBe(true);
+    const chorusNotes = chorus.filter((event) => event.kind !== "rest");
+    expect(chorusNotes.every((event) => event.kind === "note" && event.dur === 24 && event.art?.palmMute)).toBe(true);
+    // The last beat of bar 12 is left free to lift the palm and reach the open high E for the break.
+    expect(chorus.filter((event) => event.kind === "rest").map((event) => [event.at, event.dur])).toEqual([
+      [11 * 192 + 144, 48],
+    ]);
     const breakNotes = attacks(roots).filter((attack) => [13, 14].includes(barOf(attack.at)));
     expect(breakNotes.map((attack) => [attack.at - 12 * 192, attack.midi])).toEqual([
       [0, [64]],
@@ -99,13 +104,23 @@ describe("Front Step", () => {
         .filter((attack) => barOf(attack.at) >= 15)
         .map((attack) => attack.at);
     expect(hits(roots)).toEqual(hits(band));
+    // The ending is the Unit 5 stop-time figure: E5 (E2 with B2) twice, short, then held.
+    expect(
+      attacks(roots)
+        .filter((attack) => barOf(attack.at) >= 15)
+        .map((attack) => attack.midi),
+    ).toEqual([
+      [40, 47],
+      [40, 47],
+      [40, 47],
+    ]);
   });
 
   it("shows the 12-bar form as three lines of four bars, then the break and the ending", () => {
     expect(roots.sections.map((section) => [section.label, barOf(section.from), section.to / 192])).toEqual([
       ["Line 1 · E", 1, 4],
       ["Line 2 · A to E", 5, 8],
-      ["Line 3 · B, A, E", 9, 12],
+      ["Line 3 · B, A, E, B", 9, 12],
       ["Break · question and answer", 13, 14],
       ["Ending · stop together", 15, 16],
     ]);

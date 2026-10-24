@@ -457,7 +457,7 @@ export const THUMB_PULSE_LESSON: Lesson = {
   title: "A thumb that keeps time",
   purpose: "Give the music a floor: a steady thumb on the root of each chord that never hurries and never waits.",
   destination:
-    "Four bars of thumb roots under G, Em, C and D, the first layer of Porch Light, with every change landing on count 1.",
+    "Four bars of thumb roots under G, Em, C and D, the first layer of Porch Light (a later piece), with every change landing on count 1.",
   variable: "Where the steady thumb lands: one open string, then a new root each bar.",
   capabilities: [
     {
@@ -560,7 +560,7 @@ export const THUMB_PULSE_LESSON: Lesson = {
   transfer: {
     scoreId: waltzRoots.id,
     instruction:
-      "Keep the same thumb in three: C (A string fret 3) for a bar of three counts, then Am (open A), twice. The roots of Harbour Song.",
+      "Keep the same thumb in three: C (A string fret 3) for a bar of three counts, then Am (open A), twice: the first two roots of Harbour Song (a later piece).",
     changed: ["key", "rhythm"],
   },
   performance: {
@@ -633,7 +633,8 @@ export const CONSTANT_MOTION_LESSON: Lesson = {
   title: "The hand that never stops",
   purpose:
     "Feel the eighths inside every beat by keeping the strumming hand swinging down and up all the time, whether it hits the strings or not.",
-  destination: "Two bars of Em7 with a lilt: down, down-up, miss, up, down-up. The first layer of Night Market.",
+  destination:
+    "Two bars of Em7 with a bounce: down, down-up, miss, up, down-up. The first layer of Night Market (a later piece).",
   variable: "Which of the hand's eighth-note strokes actually touch the strings.",
   capabilities: [
     {
@@ -707,7 +708,7 @@ export const CONSTANT_MOTION_LESSON: Lesson = {
   ],
   cueFading: [
     {
-      id: "hear-the-lilt",
+      id: "hear-the-bounce",
       phase: "learn",
       cues: "full",
       scoreId: em7Groove.id,
@@ -833,9 +834,9 @@ export const STABS_LESSON: Lesson = {
   demonstration: {
     scoreId: stabs.id,
     handGuidance: [
-      "Em7 has three open strings, so lifting your fingers will not stop it. Straight after each stab, lay the fretting hand flat across all the strings, or drop the heel of the strumming hand onto them.",
-      "Keep the strumming hand swinging in eighths through the rests, exactly as in Unit 4; it simply misses the strings.",
-      "For the stop-time hits, play E5 (open low E and the A string at fret 2) and stop it with the heel of the strumming hand on count 2.",
+      "Em7 has three open strings, so lifting your fingers will not stop it. Stop each stab with the fretting hand: ease off and lay it flat across all the strings straight after the chord.",
+      "That leaves the strumming hand free to keep swinging in eighths through the rests, exactly as in Unit 4; it simply misses the strings.",
+      "For the stop-time hits, play E5 (open low E and the A string at fret 2) and stop each hit with the heel of the strumming hand on the count after it (2 and 4).",
     ],
     videoNeeded: ["muting", "strumming hand"],
   },
@@ -863,7 +864,7 @@ export const STABS_LESSON: Lesson = {
       id: "stab-rings",
       signal: "The chord keeps ringing into the rest.",
       repair:
-        "Right after each stab, lay the fretting hand flat across the strings or drop the heel of the strumming hand. Loop one bar slowly until the rests are silent, then both bars.",
+        "Right after each stab, ease the fretting hand off and lay it flat across the strings, keeping the strumming hand moving. Loop one bar slowly until the rests are silent, then both bars.",
       scoreId: stabs.id,
       from: 0,
       to: 192,
@@ -917,7 +918,8 @@ export const STABS_LESSON: Lesson = {
     kind: "piece",
     pieceId: "piece-front-step",
     partId: "front-step-one-finger",
-    instruction: "Play the Stage 1 capstone, Front Step: its ending is exactly these stop-time hits, with the band.",
+    instruction:
+      "Play the Stage 1 capstone, Front Step: its ending is exactly these stop-time hits, with the second guitar.",
   },
 };
 

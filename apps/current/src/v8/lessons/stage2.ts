@@ -228,15 +228,16 @@ const unisons = score({
   id: "compass-fifth-fret-unisons",
   title: "Fifth-fret unisons, low to high",
   key: "D major",
-  bars: 3,
+  bars: 4,
   tempo: [48, 60, 72],
   voices: {
-    pairs: { label: "Pairs", text: "h 6:5+5:0 h 5:5+4:0 | h 4:5+3:0 h 3:4+2:0 | w 2:5+1:0" },
+    pairs: { label: "Pairs", text: "w 6:0[lr] | h 6:5+5:0 h 5:5+4:0 | h 4:5+3:0 h 3:4+2:0 | w 2:5+1:0" },
   },
   sections: [
-    ["low", "Low E to A, A to D", 1, 1],
-    ["middle", "D to G, G to B (fourth fret)", 2, 2],
-    ["high", "B to high E", 3, 3],
+    ["reference", "Reference: the app's low E", 1, 1],
+    ["low", "Low E to A, A to D", 2, 2],
+    ["middle", "D to G, G to B (fourth fret)", 3, 3],
+    ["high", "B to high E", 4, 4],
   ],
 });
 
@@ -261,7 +262,7 @@ const droneMelodyInA = score({
   bars: 2,
   tempo: [56, 72, 88],
   voices: {
-    melody: { label: "Melody", text: "q 2:0 q 2:2 q 1:0 q 1:2 | q 2:2 q 2:0 h 1:0" },
+    melody: { label: "Melody", text: "q 2:0 q 2:2 q 1:0 q 1:2 | q 2:2 q 2:0 h 3:2" },
     drone: { label: "Drone", text: "w 5:0[lr] | w 5:0[lr]" },
   },
   derivedFrom: { id: "compass-melody-over-d", version: 1, changed: ["key", "pitch"] },
@@ -303,11 +304,12 @@ export const COMPASS_LESSON: Lesson = {
   demonstration: {
     scoreId: unisons.id,
     handGuidance: [
+      "First match your open low E to the app's low E (or to a tuner), so the whole guitar agrees with everything the app plays.",
       "Each pair is the same pitch on two strings: fret 5 of one string matches the next open string, except the G string, where fret 4 matches the open B.",
-      "Let both notes ring together. If they wobble, turn the higher string's peg a little one way; if the wobble speeds up, turn it back the other way.",
-      "For the melody, let the open D ring under everything with the thumb, and pick the melody on the B and high E strings.",
+      "Let both notes ring together. If they wobble, turn the peg of the open string in the pair (the thinner one) a little one way; if the wobble speeds up, turn it back. The app's pairs are exactly in tune, so the wobble you listen for comes from your own guitar.",
+      "For the melody, pluck the open D with the thumb and let it ring under everything; pluck the melody on the B and high E strings with your fingers.",
     ],
-    videoNeeded: [],
+    videoNeeded: ["fingerpicking hand"],
   },
   studies: [
     {
@@ -335,14 +337,14 @@ export const COMPASS_LESSON: Lesson = {
       repair:
         "Play only the first pair and let it ring for a long time; listen for a slow pulsing. Turn the peg a tiny amount, listen again, then move to the next pair and finish all five.",
       scoreId: unisons.id,
-      from: 0,
-      to: 192,
+      from: 192,
+      to: 288,
     },
     {
       id: "drone-covers-melody",
       signal: "The drone drowns out the melody.",
       repair:
-        "Pluck the drone softly with the thumb and the melody a little harder with a finger or pick. Loop the first bar until the melody sits on top, then play both bars.",
+        "Pluck the drone softly with the thumb and the melody a little harder with a finger. Loop the first bar until the melody sits on top, then play both bars.",
       scoreId: droneMelody.id,
       from: 0,
       to: 192,
@@ -354,7 +356,8 @@ export const COMPASS_LESSON: Lesson = {
       phase: "learn",
       cues: "full",
       scoreId: unisons.id,
-      instruction: "Hear each unison pair, then play along, letting both notes ring and listening for the wobble.",
+      instruction:
+        "Match your low E to the app's first note, then play each pair on your guitar, letting both notes ring and listening for the wobble. The app's pairs never wobble; yours will until they are in tune.",
     },
     {
       id: "melody-with-count",
@@ -380,7 +383,7 @@ export const COMPASS_LESSON: Lesson = {
   transfer: {
     scoreId: droneMelodyInA.id,
     instruction:
-      "Let the open A ring instead of the D and play a new melody in A on the same two strings. The landmark changed, so the melody's home changed with it.",
+      "Let the open A ring instead of the D and play a new melody in A that walks down to A on the G string. The landmark changed, so the melody's home changed with it.",
     changed: ["key", "pitch"],
   },
   performance: {
@@ -412,7 +415,6 @@ const octaveLine = score({
   id: "octave-line-d-g-a",
   title: "Octave roots: D, G and A",
   key: "D major",
-  feel: "swing-16",
   bars: 2,
   tempo: [56, 72, 88],
   voices: {
@@ -425,7 +427,6 @@ const octaveLineInA = score({
   id: "octave-line-a-d-e",
   title: "Octave roots in A: A, D and E",
   key: "A major",
-  feel: "swing-16",
   bars: 2,
   tempo: [56, 72, 88],
   voices: {
@@ -444,7 +445,7 @@ export const OCTAVES_LESSON: Lesson = {
   checkKind: "playing",
   title: "The same note, higher up",
   purpose: "See the neck as repeating patterns: find any note again an octave higher with one fixed shape.",
-  destination: "A short line of octave roots, D, G and A, in the soul style Sunday Glide will use.",
+  destination: "A short line of octave roots, D, G and A: the root part Sunday Glide (a later piece) is built on.",
   variable: "Which pair of strings carries the octave, and so whether the shape is two frets or three.",
   capabilities: [
     {
@@ -472,7 +473,8 @@ export const OCTAVES_LESSON: Lesson = {
     handGuidance: [
       "First finger on the root, third or fourth finger two strings higher and two frets up. The first finger leans lightly on the string in between so it cannot ring.",
       "From the D string to the B string, and from the G string to the high E, the upper note is three frets up instead of two: the B string is tuned one fret lower than the pattern expects.",
-      "Strum through all three strings or pluck the two notes with thumb and finger; either way only the octave should sound.",
+      "To strum the octave, mute everything else with the fretting hand: the first finger's tip touches the string below the root and its underside the string in between, and the upper finger's underside touches the strings above, so even a wider strum gives only the octave. Or pluck the two notes with thumb and finger.",
+      "With an open root (the A and E in the transfer), no finger sits on the root, so lean the upper finger back to touch the string in between, or pluck the two strings with thumb and finger.",
     ],
     videoNeeded: ["muting"],
   },
@@ -580,7 +582,7 @@ const powerRiff = score({
   title: "The Low Road riff",
   key: "A minor",
   bars: 2,
-  tempo: [66, 84, 112],
+  tempo: [56, 84, 112],
   voices: {
     riff: {
       label: "Riff",
@@ -617,27 +619,30 @@ export const POWER_CHORD_LESSON: Lesson = {
       id: "fretboard.root-fifth.locate",
       action: "locating",
       title: "Place the shape on a root",
-      criterion: "Put the shape on A, C and D on the A string without looking, root under the first finger.",
+      criterion:
+        "Find A5 as the open A with D-string fret 2, and put the locked shape on C and D on the A string without looking, root under the first finger.",
     },
     {
       id: "ear.fifth.hear",
       action: "listening",
       title: "Hear the fifth",
-      criterion: "Hear the open, hollow sound of a root with its fifth, and tell it from a full chord.",
+      criterion: "Hear the open, hollow sound of a root with its fifth: no third, so neither major nor minor.",
     },
     {
       id: "chord.power.change",
       action: "playing",
       title: "Move the shape in time",
-      criterion: "Slide the shape between roots without the fingers rearranging, landing each on its count.",
+      criterion:
+        "Move between the open A5 and the locked C5–D5 shape in time, sliding the shape from C to D without the fingers rearranging.",
     },
   ],
   scores: [powerShape, powerRiff, powerShapeOnE],
   demonstration: {
     scoreId: powerShape.id,
     handGuidance: [
-      "A5 is the open A string with the D string at fret 2. For C5 and D5, put the first finger on the root on the A string and the third finger two frets higher on the D string.",
-      "Keep the two fingers locked together and slide the whole shape; do not rebuild it at each root.",
+      "A5 is the open A string with the D string at fret 2: fret that note with the first finger.",
+      "The locked shape starts at C5: first finger on the root on the A string, third finger two frets higher on the D string. D5 is the same shape two frets up.",
+      "Keep the two fingers locked together and slide the whole shape from C5 to D5; do not rebuild it.",
       "In the riff, rest the edge of the strumming hand near the bridge for the chugs and lift it for the two accents so they ring out.",
     ],
     videoNeeded: ["muting"],
@@ -657,7 +662,7 @@ export const POWER_CHORD_LESSON: Lesson = {
     },
   ],
   successCriteria: [
-    "Play A5, C5 and D5 with the same locked shape, landing each on its count.",
+    "Play A5, C5 and D5, landing each on its count, with C5 and D5 as one locked shape.",
     "Play two bars of the riff with the chugs muted and the two accents ringing on the “and” of 2 and of 4.",
     "Say which note in each power chord is the root and which the fifth.",
   ],
@@ -666,10 +671,10 @@ export const POWER_CHORD_LESSON: Lesson = {
       id: "shape-rebuilds",
       signal: "My fingers rearrange when the shape moves.",
       repair:
-        "Lock the first and third fingers as one shape and slide it from C to D without lifting. Loop the first bar slowly, then the whole two bars.",
+        "Lock the first and third fingers as one shape and slide it from C to D without lifting. Loop the C5 to D5 move slowly, then the whole two bars.",
       scoreId: powerShape.id,
-      from: 0,
-      to: 192,
+      from: 96,
+      to: 288,
     },
     {
       id: "accents-late",
@@ -772,7 +777,8 @@ export const B_STRING_LESSON: Lesson = {
   title: "The B string's one-fret shift",
   purpose:
     "Play two notes at once, thirds and sixths, and know exactly how each shape bends where the B string breaks the pattern.",
-  destination: "The double-stop tag that ends Low Road, and a run of sliding-ready sixths for Sunday Glide.",
+  destination:
+    "The double-stop tag that ends Low Road, and a run of sliding-ready sixths for Sunday Glide (a later piece).",
   variable: "Which pair of strings carries the interval: across the B string the shape shifts by a fret.",
   capabilities: [
     {
@@ -801,9 +807,11 @@ export const B_STRING_LESSON: Lesson = {
     handGuidance: [
       "C with E: G string fret 5 and B string fret 5, barred with one finger or with two fingers side by side. Same fret on G and B is a major third.",
       "A with C: G string fret 2 and B string fret 1. The B string note is one fret lower, which makes the third minor.",
-      "For the sixths, pluck the G and high E strings together, with the finger on the G string leaning slightly onto the B string so it cannot ring.",
+      "The tag ends on A5: the open A with D-string fret 2, as in Unit 9.",
+      "On the G and high E strings, the same fret is a major sixth and the high E one fret lower a minor sixth. In D the four sixths go major, minor, minor, major: A with F♯, B with G, C♯ with A, D with B.",
+      "For the sixths, pluck the G string with the thumb (or a pick) and the high E with the middle finger, with the finger fretting the G string leaning slightly onto the B string so it cannot ring.",
     ],
-    videoNeeded: ["muting"],
+    videoNeeded: ["muting", "fingerpicking hand"],
   },
   studies: [
     {
@@ -883,7 +891,7 @@ export const B_STRING_LESSON: Lesson = {
     kind: "piece",
     pieceId: "piece-low-road",
     partId: "low-road-whole-a",
-    instruction: "Play Low Road in A, which ends with exactly this double-stop tag.",
+    instruction: "Play Low Road in A, which ends with this double-stop tag, twice as fast.",
   },
 };
 

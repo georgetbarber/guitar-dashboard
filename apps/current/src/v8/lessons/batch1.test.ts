@@ -139,8 +139,16 @@ describe("what each lesson says it plays", () => {
 
   it("Unit 7: every pair is a unison, low to high, with the fourth fret on the G string", () => {
     const unisons = scoreById(COMPASS_LESSON, "compass-fifth-fret-unisons");
-    expect(pairs(unisons).map(span)).toEqual([0, 0, 0, 0, 0]);
-    expect(notes(unisons).map((event) => event.notes[0].fret)).toEqual([5, 5, 5, 4, 5]);
+    // Bar 1 is the app's open low E, to tune the guitar to before the pairs.
+    const [reference, ...pairEvents] = notes(unisons);
+    expect(reference.notes).toEqual([{ string: 6, fret: 0 }]);
+    expect(pairEvents.map((event) => event.notes.length)).toEqual([2, 2, 2, 2, 2]);
+    expect(
+      pairs(unisons)
+        .filter((pair) => !Number.isNaN(span(pair)))
+        .map(span),
+    ).toEqual([0, 0, 0, 0, 0]);
+    expect(pairEvents.map((event) => event.notes[0].fret)).toEqual([5, 5, 5, 4, 5]);
   });
 
   it("Unit 8: every shape is an octave, two frets up below the B string and three across it", () => {
