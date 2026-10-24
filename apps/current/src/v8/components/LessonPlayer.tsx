@@ -128,6 +128,8 @@ export function LessonPlayer({ entry, ...props }: PlayerProps & { entry: LessonE
 
 function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson: Lesson }) {
   const { state, dispatch } = useV8Store();
+  // Every hook runs before the early return below, so the order never changes between renders.
+  const openPiece = useOpenPiece();
   const unit = unitById(lesson.unitId);
   const activityId = `${lesson.unitId}-${lesson.activityKind}`;
   const cursor = lessonCursor(state, lesson);
@@ -336,7 +338,6 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
     );
   };
 
-  const openPiece = useOpenPiece();
   const playThePiece = () => {
     if (lesson.performance.kind !== "piece") return;
     if (observation.trim()) {
@@ -713,7 +714,9 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
               <button className="primary-action" onClick={playThePiece}>
                 Play it in {PIECE_TITLES[lesson.performance.pieceId] ?? "the piece"} →
               </button>
-              <small>The piece opens with its band. Come back to this lesson any time from the course map.</small>
+              <small>
+                The piece opens with its second guitar. Come back to this lesson any time from the course map.
+              </small>
             </div>
           )}
           {step === "create" && (

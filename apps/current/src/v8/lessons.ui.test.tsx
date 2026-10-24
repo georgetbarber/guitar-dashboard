@@ -112,6 +112,20 @@ describe("score views", () => {
 });
 
 describe("the lesson player", () => {
+  it("keeps the same hooks in the same order from its first render, before a lesson position exists", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    render(
+      <V8StoreProvider>
+        <LessonPlayer entry={entry("lesson-unit-09-power-chords")} />
+      </V8StoreProvider>,
+    );
+    expect(await screen.findByRole("heading", { name: "Root and fifth, anywhere" })).toBeTruthy();
+    expect(
+      errors.mock.calls.map((call) => String(call[0])).filter((text) => /order of Hooks|more hooks/.test(text)),
+    ).toEqual([]);
+    errors.mockRestore();
+  });
+
   it("runs learn, practise, a repair and the unaided check, recording a self-report against the unit's activity", async () => {
     const user = userEvent.setup();
     render(
