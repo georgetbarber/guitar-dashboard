@@ -338,3 +338,18 @@ first, so it is not buried.
   catching real growth).
 - **Reversible:** yes; the number is in `scripts/check-offline-shell.mjs` and
   `tests/e2e/offline-shell.spec.ts`.
+
+### A17 · 2026-10-24 · Package 5 · Swing is first heard in Unit 20, not Unit 8
+
+- **Decision:** Unit 8's octave lines are straight. The map's "actual swing
+  playback" row now starts at Unit 20, where *Sunday Glide*'s swung sixteenths
+  are both heard and played.
+- **Why:** the Batch 1 review found the octave lines were tagged as swung
+  sixteenths but contained only quarter notes, so the swing could not be heard;
+  calling them "soul style" overclaimed. Adding sixteenths to Unit 8 would load
+  a fretboard unit with a rhythm problem it does not need.
+- **Alternatives:** a ghosted sixteenth scratch voice in Unit 8 (more to play at
+  Stage 2, for a feel nothing yet asks the learner to produce).
+- **Reversible:** yes; a later version of the Unit 8 lesson can add it.
+- **Where:** `src/v8/lessons/stage2.ts` (Unit 8), `docs/CURRICULUM_MAP.md` §3
+  and §8; [Batch 1 review](reviews/2026-10-24-batch-1-review.md) item 5.
