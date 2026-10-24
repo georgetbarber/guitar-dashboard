@@ -10,6 +10,7 @@ import { ScoreView } from "./components/score/ScoreView";
 import { LESSON_CATALOG } from "./lessons/catalog";
 import { COMMON_TONE_LESSON } from "./lessons/stage1";
 import { THIRD_COLOUR_LESSON } from "./lessons/stage2";
+import { FEELS_LESSON } from "./lessons/stage5";
 import { scoreById } from "./lessons/format";
 import { validateState } from "./validation";
 import { localDateAt } from "./dates";
@@ -387,6 +388,60 @@ describe("the lesson player", () => {
         lessonAttempts: state.attempts.map((attempt: object) => ({ ...attempt, artifactId: "sketch/elsewhere" })),
       }),
     ).toThrow(/artifactId/);
+  });
+
+  it("runs a listening check: hidden examples, each answer marked at once and recorded as an exact answer", async () => {
+    const user = userEvent.setup();
+    render(
+      <V8StoreProvider>
+        <LessonPlayer entry={entry("lesson-unit-30-feels")} />
+        <Probe />
+      </V8StoreProvider>,
+    );
+    await screen.findByRole("heading", { name: "Three feels, one motif" });
+    await user.click(screen.getByRole("button", { name: "3 · Try unaided" }));
+    expect(screen.queryByRole("figure", { name: /^Score/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "I played it without the app sound" })).toBeNull();
+    const questions = FEELS_LESSON.listening!.questions;
+    const answers = [
+      questions[0].answer,
+      questions[1].choices.find((item) => item !== questions[1].answer)!,
+      questions[2].answer,
+      questions[3].answer,
+    ];
+    for (const [index, question] of questions.entries()) {
+      expect(screen.getByText(`Example ${index + 1} of 4`)).toBeTruthy();
+      await user.click(screen.getByRole("radio", { name: answers[index] }));
+      expect((screen.getByRole("button", { name: "Check my answer" }) as HTMLButtonElement).disabled).toBe(true);
+      await user.click(screen.getByRole("button", { name: `Hear example ${index + 1}` }));
+      const [played, options] = vi.mocked(player.startScorePlayback).mock.calls.at(-1)!;
+      expect([played.id, options.mode, options.tempo]).toEqual([question.scoreId, "reference", 72]);
+      await user.click(screen.getByRole("button", { name: "Check my answer" }));
+      expect(
+        screen.getByText(answers[index] === question.answer ? "Right." : `Not this time: it was ${question.answer}.`),
+      ).toBeTruthy();
+      expect(screen.getByText(question.explanation, { exact: false })).toBeTruthy();
+      if (index < 3) await user.click(screen.getByRole("button", { name: "Next example →" }));
+    }
+    expect(screen.getByText(/You named 3 of 4 correctly/)).toBeTruthy();
+    const state = probe();
+    expect(state.attempts).toEqual([
+      expect.objectContaining({ kind: "first-check", method: "exact-answer", outcome: "partial", assistance: "none" }),
+    ]);
+    const answered = state.evidence.filter(
+      (item: { activityId: string }) => item.activityId === "unit-30-listen-compare",
+    );
+    expect(new Set(answered.map((item: { checkId: string }) => item.checkId)).size).toBe(4);
+    expect(answered.every((item: { method: string }) => item.method === "exact-answer")).toBe(true);
+    expect(answered.filter((item: { outcome: string }) => item.outcome === "retry").length).toBeGreaterThan(0);
+    expect(() =>
+      validateState({
+        ...DEFAULT_STATE,
+        evidence: state.evidence,
+        lessonCursors: state.cursors,
+        lessonAttempts: state.attempts,
+      }),
+    ).not.toThrow();
   });
 
   it("explains plainly when a lesson's files cannot load", async () => {

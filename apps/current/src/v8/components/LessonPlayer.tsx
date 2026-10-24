@@ -778,7 +778,7 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
               )}
               {listening && lesson.listening ? (
                 <ListeningCheck
-                  key={cursor.attemptId}
+                  key={step}
                   questions={lesson.listening.questions}
                   onHear={(question) => hearScore(question.scoreId)}
                   onHint={() => hearScore(lesson.demonstration.scoreId)}

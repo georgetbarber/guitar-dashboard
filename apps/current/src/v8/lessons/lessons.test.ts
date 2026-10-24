@@ -234,6 +234,60 @@ describe("the lesson validator", () => {
     );
   });
 
+  it("holds a listening check to three or more fair questions whose examples stay out of sight", async () => {
+    const { FEELS_LESSON } = await import("./stage5");
+    const pieces = new Map(PIECES.map((piece) => [piece.id, new Set(piece.parts.map((part) => part.id))]));
+    const check = (change: (lesson: typeof FEELS_LESSON) => typeof FEELS_LESSON) =>
+      validateLesson(change(structuredClone(FEELS_LESSON)), pieces);
+    expect(check((lesson) => lesson)).toEqual([]);
+    const questions = FEELS_LESSON.listening!.questions;
+    const withQuestions = (lesson: typeof FEELS_LESSON, list: typeof questions) => ({
+      ...lesson,
+      listening: { questions: list },
+    });
+    expect(check((l) => withQuestions(l, questions.slice(0, 2)))).toContainEqual(
+      expect.stringContaining("at least three questions"),
+    );
+    expect(
+      check((l) =>
+        withQuestions(
+          l,
+          questions.map((q) => ({ ...q, version: 1 })),
+        ),
+      ),
+    ).toContainEqual(expect.stringContaining("content version from 2"));
+    expect(
+      check((l) =>
+        withQuestions(
+          l,
+          questions.map((q) => ({ ...q, answer: "Waltz" })),
+        ),
+      ),
+    ).toContainEqual(expect.stringContaining("answer is not one of its choices"));
+    expect(
+      check((l) =>
+        withQuestions(
+          l,
+          questions.map((q) => ({ ...q, answer: q.choices[0] })),
+        ),
+      ),
+    ).toContainEqual(expect.stringContaining("two different right answers"));
+    expect(
+      check((l) => ({ ...l, studies: [l.studies[0], { ...l.studies[1], scoreId: questions[1].scoreId }] })),
+    ).toContainEqual(expect.stringContaining("gives its answer away"));
+    expect(
+      check((l) => ({
+        ...l,
+        cueFading: l.cueFading.map((step, i) => (i === 2 ? { ...step, scoreId: l.demonstration.scoreId } : step)),
+      })),
+    ).toContainEqual(expect.stringContaining("unaided step plays one of its questions"));
+    expect(validateLesson({ ...THIRD_COLOUR_LESSON, listening: FEELS_LESSON.listening })).toContainEqual(
+      expect.stringContaining("only a listening check has questions"),
+    );
+    const { listening: _questions, ...without } = FEELS_LESSON;
+    expect(validateLesson(without, pieces)).toContainEqual(expect.stringContaining("at least three questions"));
+  });
+
   it("asks for no video for a part only the app plays, but does once the learner plays it", () => {
     const pieces = new Map(PIECES.map((piece) => [piece.id, new Set(piece.parts.map((part) => part.id))]));
     expect(validateLesson(BY_EAR_LESSON, pieces)).toEqual([]);

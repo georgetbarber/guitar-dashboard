@@ -1074,7 +1074,7 @@ export const BORROWED_LESSON: Lesson = {
     handGuidance: [
       "Small F (xx3211): third finger on the D string at fret 3, second on the G string at fret 2, first finger across the B and high E at fret 1. For Fm (xx3111) lift the second finger and let the first finger cover the G string too: A becomes A♭.",
       "C, Em and F all come from C major; Fm is borrowed from C minor, and its one changed note, A♭, is what makes it ache.",
-      "C and Em are the Unit 32 A-shape barres at the 3rd and 7th frets; the jump down to F is a shift: look at fret 1 before you move.",
+      "C is Unit 32's A-shape barre at the 3rd fret, and Em the same shape in minor at the 7th (x79987); the jump down to F is a shift: look at fret 1 before you move.",
     ],
     videoNeeded: ["fretting hand"],
   },
