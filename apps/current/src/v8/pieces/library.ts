@@ -187,33 +187,36 @@ const frontStepCalls = score({
  * stop-time E5 ending. All three shuffle parts share this form, so any one can
  * play along with another.
  */
-const SHUFFLE_FORM = ["E7", "A7", "E7", "E7", "A7", "A7", "E7", "E7", "B7", "A7", "E7", "B7"] as const;
+export const SHUFFLE_FORM = ["E7", "A7", "E7", "E7", "A7", "A7", "E7", "E7", "B7", "A7", "E7", "B7"] as const;
 const SHUFFLE = { ...FRONT_STEP, feel: "shuffle-8", bars: 14 } as const;
-const SHUFFLE_HARMONY = SHUFFLE_FORM.map(
-  (chord, index) => [index + 1, 1, chord, chord === "E7" ? "I7" : chord === "A7" ? "IV7" : "V7"] as const,
-).concat([[13, 1, "E", "I"]] as const);
+const SHUFFLE_HARMONY: readonly (readonly [number, number, string, string])[] = [
+  ...SHUFFLE_FORM.map(
+    (chord, index) => [index + 1, 1, chord, chord === "E7" ? "I7" : chord === "A7" ? "IV7" : "V7"] as const,
+  ),
+  [13, 1, "E", "I"],
+];
 const SHUFFLE_SECTIONS = [
   ["line-1", "Line 1 · E7, quick change to A7", 1, 4],
   ["line-2", "Line 2 · A7 to E7", 5, 8],
   ["line-3", "Line 3 · B7, A7, E7, turnaround", 9, 12],
   ["ending", "Ending · stop together", 13, 14],
 ] as const;
-const STOP_TIME = ["q 6:0+5:2[st] q r q 6:0+5:2[st] q r", "w 6:0+5:2"];
+export const STOP_TIME = ["q 6:0+5:2[st] q r q 6:0+5:2[st] q r", "w 6:0+5:2"];
 
 /** The boogie: root and fifth twice, root and sixth twice, on every beat pair. */
-const BOOGIE = {
+export const BOOGIE = {
   E7: "e 6:0+5:2 e 6:0+5:2 e 6:0+5:4 e 6:0+5:4 e 6:0+5:2 e 6:0+5:2 e 6:0+5:4 e 6:0+5:4",
   A7: "e 5:0+4:2 e 5:0+4:2 e 5:0+4:4 e 5:0+4:4 e 5:0+4:2 e 5:0+4:2 e 5:0+4:4 e 5:0+4:4",
   B7: "e 5:2+4:4 e 5:2+4:4 e 5:2+4:6 e 5:2+4:6 e 5:2+4:4 e 5:2+4:4 e 5:2+4:6 e 5:2+4:6",
 } as const;
 
-const SEVENTHS = {
+export const SEVENTHS = {
   E7: { symbol: "E7", shape: "020100", fingers: "-2-1--" },
   A7: { symbol: "A7", shape: "x02020", fingers: "x-2-3-" },
   B7: { symbol: "B7", shape: "x21202", fingers: "x213-4" },
 };
 /** A shuffled down, down-up, a short stab on 3, and a beat of space to change. */
-const sevenths = (chord: string) => `q D:${chord} e D:${chord} e U:${chord} q D:${chord}[st] q r`;
+export const sevenths = (chord: string) => `q D:${chord} e D:${chord} e U:${chord} q D:${chord}[st] q r`;
 
 const frontStepBoogie = score({
   ...SHUFFLE,
@@ -405,17 +408,20 @@ const LOW_ROAD = {
  * power chords as accents on the "and" of 2 and the "and" of 4. No ♭5 passing
  * chord and no block chords with rests (decision A13).
  */
-const riffBar = (root: string, flat3: string, four: string) =>
+export const riffBar = (root: string, flat3: string, four: string) =>
   `e ${root}[pm] e ${root}[pm] e ${root}[pm] e ${flat3}[>] e ${root}[pm] e ${root}[pm] e ${root}[pm] e ${four}[>]`;
-const riffTurn = (root: string, flat3: string, four: string) =>
+export const riffTurn = (root: string, flat3: string, four: string) =>
   `e ${root}[pm] e ${root}[pm] e ${root}[pm] e ${flat3}[>] h ${four}`;
 
-const A5 = "5:0+4:2";
-const C5 = "5:3+4:5";
-const D5 = "5:5+4:7";
-const E5 = "6:0+5:2";
-const G5 = "6:3+5:5";
-const A5_LOW = "6:5+5:7";
+export const POWER = {
+  A5: "5:0+4:2",
+  C5: "5:3+4:5",
+  D5: "5:5+4:7",
+  E5: "6:0+5:2",
+  G5: "6:3+5:5",
+  A5_LOW: "6:5+5:7",
+} as const;
+const { A5, C5, D5, E5, G5, A5_LOW } = POWER;
 
 const lowRoadChugs = score({
   ...LOW_ROAD,
@@ -1229,7 +1235,7 @@ const sundaySixths = score({
  * fret below, and ghosted scratches on the "and" of 1, 3 and 4. Ghosts stay on
  * the long side of each swung pair, where the hand has time for them.
  */
-const sundaySlideBar = (chord: "D" | "G") => {
+export const sundaySlideBar = (chord: "D" | "G") => {
   const shape = chord === "D" ? "3:7+2:7+1:5" : "3:7+2:8+1:7";
   return [
     `s ${shape}[si,>]`,
@@ -1353,7 +1359,7 @@ const NIGHT_HARMONY = (bars: readonly ("Em7" | "A7")[]) =>
   bars.map((chord, index) => [index + 1, 1, chord, chord === "Em7" ? "i7" : "IV7"] as const);
 
 /** Units 4 and 5: the bounce (down, down-up, miss, up, down-up), then two stabs and space. */
-const nightBounce = "q D:Em7 e D:Em7 e U:Em7 e r e U:Em7 e D:Em7 e U:Em7";
+export const nightBounce = "q D:Em7 e D:Em7 e U:Em7 e r e U:Em7 e D:Em7 e U:Em7";
 const nightStabs = "e D:Em7[st] e r e r e D:Em7[st] h r";
 
 /**
@@ -1389,7 +1395,7 @@ export const NIGHT_RIFF = {
 } as const;
 
 /** The second guitar's low line: the root three times, then a walk to the next root. */
-const NIGHT_BASS = {
+export const NIGHT_BASS = {
   Em7: "e 6:0 e r e r e 6:0 e r e 6:0 e 6:2 e 6:3",
   A7: "e 5:0 e r e r e 5:0 e r e 5:0 e 6:3 e 6:2",
 } as const;
@@ -1517,7 +1523,7 @@ const nightWholeBand = score({
 });
 
 /** Unit 36: each accented hit slides into its shape from a fret below; the scratches stay ghosted. */
-const nightSlideBar = (chord: "Em7" | "A7") => {
+export const nightSlideBar = (chord: "Em7" | "A7") => {
   const shape = chord === "Em7" ? "4:2+3:4+2:3+1:3" : "4:2+3:2+2:2+1:3";
   return nightGroove(chord).replace(`s D:${chord}[>]`, `s ${shape}[si,>]`);
 };
@@ -1634,7 +1640,7 @@ export const RIVERS_CHORDS = {
   D: { symbol: "D", shape: "xx0232", fingers: "xx-132" },
 };
 /** Down, down-up, a missed beat, up, and beat 4 free to change. */
-const riversStrum = (chord: string) => `q D:${chord} e D:${chord} e U:${chord} e r e U:${chord} q r`;
+export const riversStrum = (chord: string) => `q D:${chord} e D:${chord} e U:${chord} e r e U:${chord} q r`;
 const MIXO_HARMONY = [
   [1, 1, "A", "I"],
   [2, 1, "G", "♭VII"],
@@ -1801,7 +1807,7 @@ export const GLASS_CHORDS = {
   F: { symbol: "F", shape: "xx3211", fingers: "xx3211", barre: [1, 1, 2, 1] as const },
   Fm: { symbol: "Fm", shape: "xx3111", fingers: "xx3111", barre: [1, 1, 3, 1] as const },
 };
-const glassStrum = (chord: string) => `q D:${chord} e D:${chord} e U:${chord} h D:${chord}`;
+export const glassStrum = (chord: string) => `q D:${chord} e D:${chord} e U:${chord} h D:${chord}`;
 
 const glassRoots = score({
   ...GLASS,

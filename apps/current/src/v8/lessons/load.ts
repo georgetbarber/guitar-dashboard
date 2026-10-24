@@ -12,6 +12,8 @@ export const STAGE_LOADERS: Readonly<Record<number, () => Promise<{ LESSONS: rea
   2: () => import("./stage2"),
   3: () => import("./stage3"),
   4: () => import("./stage4"),
+  5: () => import("./stage5"),
+  6: () => import("./stage6"),
 };
 
 export class LessonUnavailableError extends Error {
