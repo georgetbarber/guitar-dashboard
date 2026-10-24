@@ -1,5 +1,6 @@
 import type { CloudProfile } from "./sync";
 import { checkedAnswerIsValid, conceptCheckById } from "./conceptChecks";
+import { lessonAnswerIsValid, lessonAnswerKey } from "./lessonAnswers";
 import { PILOT_REVIEW_FOCUS_IDS } from "./pilotReview";
 import type { ChecklistTick, CompetencyEvidence, FeedbackNote, LearnerSettings, LessonAttempt, LessonCursor, ReviewMark, Sketch, V8State } from "./types";
 import { FEEDBACK_CATEGORIES, SKETCH_SYNC_FIELDS } from "./types";
@@ -164,6 +165,9 @@ function evidence(value: unknown, path: string) {
     if (c.key === undefined || c.mode === undefined) fail(`${path}.checked answer context`);
     const known = conceptCheckById(v.checkId as string);
     if ((v.contentVersion === 1 && !known) || (known && v.contentVersion === known.version && !checkedAnswerIsValid(v as unknown as CompetencyEvidence))) fail(`${path}.checked answer`);
+    // A lesson question's answer is checked against the shell's answer key when this build knows the question.
+    const lessonKey = lessonAnswerKey(v.checkId as string);
+    if (lessonKey && v.contentVersion === lessonKey.key.version && !lessonAnswerIsValid(v as unknown as CompetencyEvidence)) fail(`${path}.checked lesson answer`);
   }
 }
 function deletions(value: unknown, path: string) { for (const [key, time] of Object.entries(object(value, path))) { id(key, `${path} key`); date(time, `${path}.${key}`); } }
@@ -237,7 +241,8 @@ function lessonAttempt(value: unknown, path: string) {
   number(v.scoreVersion, `${path}.scoreVersion`, 1, 1000, true);
   choice(v.kind, ["first-check", "transfer-check", "later-check"], `${path}.kind`);
   choice(v.assistance, ["none", "hint", "reveal", "guided"], `${path}.assistance`);
-  choice(v.method, ["self-reported"], `${path}.method`);
+  // A listening check's attempt is marked by the app: an exact answer, never a self-report.
+  choice(v.method, ["self-reported", "exact-answer"], `${path}.method`);
   choice(v.outcome, ["successful", "partial", "retry"], `${path}.outcome`);
   number(v.tempo, `${path}.tempo`, 20, 400, true);
   str(v.observation, `${path}.observation`); if ((v.observation as string).length > 1000) fail(`${path}.observation length`);

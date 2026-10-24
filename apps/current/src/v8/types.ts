@@ -201,9 +201,11 @@ export interface LessonAttempt {
   scoreVersion: number;
   kind: "first-check" | "transfer-check" | "later-check";
   assistance: Assistance;
-  method: "self-reported";
+  /** Exact-answer for a listening check, which the app marks; self-reported for everything played or made. */
+  method: "self-reported" | "exact-answer";
   tempo: number;
   outcome: EvidenceOutcome;
+  /** The learner's observation, or for a listening check the app's summary of the answers. */
   observation: string;
   /** For a making check: the sketch the learner made and reported on. */
   artifactId?: string;

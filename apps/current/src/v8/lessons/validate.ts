@@ -220,6 +220,43 @@ export function validateLesson(lesson: Lesson, pieces: PieceParts = new Map()): 
       add("a making check needs what counts as made, how to start and a question to answer.");
   } else if (lesson.making) add("only a making check says what the learner makes.");
 
+  const questions = lesson.listening?.questions ?? [];
+  const questionScores = new Set(questions.map((question) => question.scoreId));
+  if (lesson.checkKind === "listening") {
+    if (questions.length < 3) add("a listening check needs at least three questions.");
+    const questionIds = new Set<string>();
+    for (const question of questions) {
+      const where = `listening question ${question.id}`;
+      if (!/^[a-z0-9-]{1,40}$/.test(question.id) || questionIds.has(question.id))
+        add(`${where} needs a unique id of lower-case letters, digits and hyphens.`);
+      questionIds.add(question.id);
+      // Version 1 of an unknown check is refused by older builds as a forged concept check (A19).
+      if (!Number.isInteger(question.version) || question.version < 2 || question.version > 1000)
+        add(`${where} needs a whole content version from 2.`);
+      need(question.scoreId, where);
+      if (!enough(question.prompt) || !enough(question.explanation)) add(`${where} needs a prompt and an explanation.`);
+      const choices = new Set(question.choices);
+      if (question.choices.length < 2 || question.choices.length > 4 || choices.size !== question.choices.length)
+        add(`${where} needs two to four different choices.`);
+      if (question.choices.some((choice) => !choice.trim() || choice.length > 80))
+        add(`${where} has an empty choice or one longer than 80 characters.`);
+      if (!choices.has(question.answer)) add(`${where}'s answer is not one of its choices.`);
+    }
+    if (new Set(questions.map((question) => question.answer)).size < 2)
+      add("a listening check needs at least two different right answers, so one guess cannot pass it.");
+    const last = lesson.cueFading.at(-1);
+    if (last && !questionScores.has(last.scoreId)) add("a listening check's unaided step plays one of its questions.");
+    // An example shown before the check would give its answer away.
+    const shown = [
+      lesson.demonstration.scoreId,
+      ...lesson.studies.map((study) => study.scoreId),
+      ...lesson.cueFading.filter((step) => step.phase !== "try-unaided").map((step) => step.scoreId),
+      lesson.transfer.scoreId,
+    ];
+    for (const id of shown)
+      if (questionScores.has(id)) add(`question score ${id} is shown outside the check, which gives its answer away.`);
+  } else if (lesson.listening) add("only a listening check has questions.");
+
   // A score the app only plays as accompaniment is never in the learner's hands.
   const learnerScores = new Set([
     lesson.demonstration.scoreId,
@@ -228,10 +265,9 @@ export function validateLesson(lesson: Lesson, pieces: PieceParts = new Map()): 
     lesson.retrieval.scoreId,
     lesson.transfer.scoreId,
   ]);
+  // Neither are a listening check's examples: the learner only hears them.
   const backingOnly = new Set(
-    Object.values(lesson.accompaniment ?? {})
-      .flat()
-      .filter((id) => !learnerScores.has(id)),
+    [...Object.values(lesson.accompaniment ?? {}).flat(), ...questionScores].filter((id) => !learnerScores.has(id)),
   );
   const seen = new Set(lesson.scores.filter((score) => !backingOnly.has(score.id)).flatMap(visibleTechniques));
   for (const technique of seen)

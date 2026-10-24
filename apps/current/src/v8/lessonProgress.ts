@@ -8,9 +8,9 @@
 import type { Score } from "../core/score/types";
 import { calendarDaysBetween, localDateAt } from "./dates";
 import { newId } from "./identity";
-import type { Lesson, MakingCheck } from "./lessons/format";
+import { lessonCheckId, scoreById, type Lesson, type ListeningQuestion, type MakingCheck } from "./lessons/format";
 import { newSketch } from "./repository";
-import type { LessonAttempt, LessonCursor, Sketch, V8State } from "./types";
+import type { ActivityDefinition, CompetencyEvidence, LessonAttempt, LessonCursor, Sketch, V8State } from "./types";
 
 export function newLessonCursor(lesson: Lesson, now = new Date()): LessonCursor {
   const first = lesson.cueFading[0];
@@ -142,3 +142,39 @@ export const NOTHING_YET: Readonly<Record<MakingCheck["adds"], string>> = {
   melody: "Change the melody in Create, then come back.",
   any: "Add or change something in Create, then come back.",
 };
+
+/**
+ * One answer to a listening question, as exact-answer evidence against the
+ * lesson's stand-in activity: one record per capability the activity builds.
+ */
+export function recordLessonAnswer(
+  lesson: Lesson,
+  question: ListeningQuestion,
+  response: string,
+  usedHint: boolean,
+  activity: Pick<ActivityDefinition, "id" | "competencyIds">,
+  now = new Date(),
+): CompetencyEvidence[] {
+  if (!question.choices.includes(response)) throw new Error("Choose one of the answers shown in this check.");
+  const { key } = scoreById(lesson, question.scoreId);
+  return activity.competencyIds.map((competencyId) => ({
+    id: newId("evidence"),
+    competencyId,
+    source: "recognition" as const,
+    assistance: usedHint ? ("hint" as const) : ("none" as const),
+    context: { key: key.tonic, mode: key.mode },
+    outcome: response === question.answer ? ("successful" as const) : ("retry" as const),
+    occurredAt: now.toISOString(),
+    localDate: localDateAt(now),
+    activityId: activity.id,
+    method: "exact-answer" as const,
+    checkId: lessonCheckId(lesson.id, question.id),
+    contentVersion: question.version,
+    response,
+  }));
+}
+
+/** A whole set of answers as one lesson outcome: all right is a success, at least half is partial. */
+export function listeningOutcome(right: number, total: number): LessonAttempt["outcome"] {
+  return right === total ? "successful" : right * 2 >= total ? "partial" : "retry";
+}

@@ -374,3 +374,32 @@ first, so it is not buried.
   the sketch.
 - **Where:** `src/v8/pieces/format.ts` (`Capstone.make`, `reportPrompt`),
   `src/v8/components/PiecePlayer.tsx`, `src/v8/pieces/library.ts` (*Lantern*).
+
+### A19 · 2026-10-24 · Package 7 · Listening checks record exact answers, numbered from version 2
+
+- **Decision:** a lesson whose check is listening (`checkKind: "listening"`,
+  Units 30 and 34) asks concealed questions with one right answer each. The app
+  marks every answer and records it as `exact-answer` evidence against the
+  unit's stand-in activity, named `lesson:<lesson id>:<question id>`. The set
+  becomes one lesson attempt with method `exact-answer`. Lesson questions carry
+  content versions from **2**, and their answer keys travel in the shell's
+  lesson catalogue, so any build that knows a question validates its answers as
+  strictly as concept checks.
+- **Why:** an answer the app can mark is not a self-report, and the evidence
+  should say so. Every build before this one refuses `exact-answer` evidence
+  whose check it does not know **at version 1**, treating it as a forged
+  concept check, and shows a sync error for it. That includes the live site
+  and the open pull requests. Unknown checks at version 2 or later are left
+  to the build that wrote them. Starting at 2 lets a not-yet-updated device
+  accept these answers quietly instead of reporting an error.
+- **Alternatives:** version 1 with a sync error on un-updated devices until they
+  update; self-reporting the answers (untrue, since the app knows them); keeping
+  listening answers only in the device-local lesson attempt (they would never
+  count as evidence or sync).
+- **Reversible:** partly. Recorded answers keep their check ids and versions for
+  good; the starting number only matters for builds that never saw lesson
+  questions.
+- **Where:** `src/v8/lessons/format.ts` (`ListeningCheck`, `lessonCheckId`,
+  `LessonEntry.answers`), `src/v8/lessonAnswers.ts`, `src/v8/validation.ts`,
+  `src/v8/lessonProgress.ts` (`recordLessonAnswer`),
+  `src/v8/components/ListeningCheck.tsx`.

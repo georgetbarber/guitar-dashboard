@@ -14,6 +14,7 @@
  * from its unaided check is recorded against that activity, so progress keeps
  * one meaning across templated and authored units.
  */
+import type { ModeId } from "../../core/music/types";
 import type { ChangedDimension, Provenance, Score } from "../../core/score/types";
 import type { CapabilityAction } from "../capabilities";
 import type { ActivityKind } from "../types";
@@ -109,6 +110,50 @@ export interface Lesson {
   accompaniment?: Readonly<Record<string, readonly string[]>>;
   /** Required for a making check (checkKind "creating"), absent otherwise. */
   making?: MakingCheck;
+  /** Required for a listening check (checkKind "listening"), absent otherwise. */
+  listening?: ListeningCheck;
+}
+
+/**
+ * A listening check: concealed examples, each with one right answer among a
+ * few choices. The app marks each answer, so it is recorded as an exact answer
+ * rather than a self-report.
+ */
+export interface ListeningCheck {
+  questions: readonly ListeningQuestion[];
+}
+
+export interface ListeningQuestion {
+  /** Unique within the lesson; with the lesson id it names the check in every recorded answer. */
+  id: string;
+  /**
+   * The content version recorded with each answer. It starts at 2: builds
+   * from before lesson questions existed refuse an unknown version-1 check as
+   * a forged concept check (decision A19).
+   */
+  version: number;
+  /** The example played. Its notes are never shown before the answer. */
+  scoreId: string;
+  prompt: string;
+  choices: readonly string[];
+  answer: string;
+  /** Shown once the learner has answered, right or wrong. */
+  explanation: string;
+}
+
+/** What the app shell keeps of a listening question, so an answer can be checked before any lesson loads. */
+export interface LessonAnswerKey {
+  questionId: string;
+  version: number;
+  choices: readonly string[];
+  answer: string;
+  key: string;
+  mode: ModeId;
+}
+
+/** The id recorded with a lesson question's answers: `lesson:<lesson id>:<question id>`. */
+export function lessonCheckId(lessonId: string, questionId: string): string {
+  return `lesson:${lessonId}:${questionId}`;
 }
 
 /**
@@ -132,16 +177,33 @@ export interface LessonEntry {
   stage: number;
   activityKind: ActivityKind;
   title: string;
+  /** For a listening check: each question's answer key, so recorded answers can be validated anywhere. */
+  answers?: readonly LessonAnswerKey[];
 }
 
 export function entryOf(lesson: Lesson): LessonEntry {
-  return {
+  const entry: LessonEntry = {
     id: lesson.id,
     version: lesson.version,
     unitId: lesson.unitId,
     stage: lesson.stage,
     activityKind: lesson.activityKind,
     title: lesson.title,
+  };
+  if (!lesson.listening) return entry;
+  return {
+    ...entry,
+    answers: lesson.listening.questions.map((question) => {
+      const { key } = scoreById(lesson, question.scoreId);
+      return {
+        questionId: question.id,
+        version: question.version,
+        choices: question.choices,
+        answer: question.answer,
+        key: key.tonic,
+        mode: key.mode,
+      };
+    }),
   };
 }
 

@@ -18,22 +18,25 @@ import {
   lessonCursor,
   lessonLaterSuccess,
   lessonRecallDue,
+  listeningOutcome,
   madeSomething,
   madeSummary,
   newLessonCursor,
   NOTHING_YET,
+  recordLessonAnswer,
   sketchFromScore,
   transferSuccess,
 } from "../lessonProgress";
 import { loadLesson } from "../lessons/load";
 import { discardBrokenPackFiles } from "../lessonPacks";
-import { scoreById, type Lesson, type LessonEntry } from "../lessons/format";
+import { scoreById, type Lesson, type LessonEntry, type ListeningQuestion } from "../lessons/format";
 import { PIECE_CATALOG } from "../pieces/catalog";
 import { useOpenPiece } from "../pieceOverlay";
 import { useV8Store } from "../store";
 import type { EvidenceOutcome, LessonAttempt, LessonCursor, LessonStep } from "../types";
 import { ContentStatus } from "./ContentStatus";
 import { RecordSaveStatus } from "./SaveStatus";
+import { ListeningCheck } from "./ListeningCheck";
 import { ScoreView } from "./score/ScoreView";
 import { useUpdateHold } from "./UpdateNotice";
 
@@ -201,6 +204,9 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
   const check = step === "try" || step === "transfer" || step === "return";
   /** A making check: the learner makes their own version in Create and reports on it (checkKind "creating"). */
   const making = lesson.checkKind === "creating" && step === "try";
+  /** A listening check: the app plays concealed examples and marks each answer (checkKind "listening"). */
+  const listening =
+    lesson.checkKind === "listening" && Boolean(lesson.listening) && (step === "try" || step === "return");
   const madeSketch = making && cursor.sketchId ? state.sketches.find((item) => item.id === cursor.sketchId) : undefined;
   // The version starts as the check's music; it counts as made once the learner has added what the lesson asks for.
   const madeIt = Boolean(madeSketch && lesson.making && madeSomething(madeSketch, lesson.making));
@@ -257,7 +263,7 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
     });
   };
 
-  const play = async (mode: ScorePlaybackMode, playScore: Score = score) => {
+  const play = async (mode: ScorePlaybackMode, playScore: Score = score, playTempo = tempo) => {
     stop();
     const mine = generation.current;
     setNotice("");
@@ -265,7 +271,7 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
       const stopPlayback = await startScorePlayback(
         playScore,
         {
-          tempo,
+          tempo: playTempo,
           fromTick: playScore === score ? fromTick : 0,
           toTick: playScore === score ? toTick : totalTicks(playScore),
           mode,
@@ -367,6 +373,48 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
           ? "Your self-report was added to this workspace. Nothing measured your playing. Check the save status before leaving."
           : "Your self-report was added. Pick the problem you met under “When something gets stuck”, then try again.",
     );
+  };
+
+  /** Play a listening question's example, or the lesson's own version as a hint, at its own tempo. */
+  const hearScore = (id: string) => {
+    const example = scoreById(lesson, id);
+    void play("reference", example, example.tempo.default);
+  };
+
+  /** Each answer to a first check is recorded at once, as exact-answer evidence for the unit's activity. */
+  const answerQuestion = (question: ListeningQuestion, response: string, usedHint: boolean) => {
+    if (step !== "try") return;
+    const target = activityById(activityId);
+    if (!target) return;
+    const evidence = recordLessonAnswer(lesson, question, response, usedHint, target);
+    dispatch({ type: "recordActivity", activityId: target.id, evidence });
+    setEvidenceIds((ids) => [...ids, ...evidence.map((item) => item.id)]);
+  };
+
+  /** The whole set becomes one lesson attempt, marked by the app. */
+  const finishListening = (right: number, total: number, usedHint: boolean) => {
+    if (!cursor.attemptId) return;
+    const now = new Date();
+    dispatch({
+      type: "recordLessonAttempt",
+      attempt: {
+        id: cursor.attemptId,
+        cursorId: cursor.id,
+        lessonId: lesson.id,
+        lessonVersion: lesson.version,
+        scoreId: score.id,
+        scoreVersion: score.version,
+        kind: step === "try" ? "first-check" : "later-check",
+        assistance: usedHint ? "hint" : "none",
+        method: "exact-answer",
+        tempo,
+        outcome: listeningOutcome(right, total),
+        observation: `Named ${right} of ${total} examples correctly${usedHint ? " after hearing the lesson's version again" : ""}.`,
+        occurredAt: now.toISOString(),
+        localDate: localDateAt(now),
+      },
+    });
+    update({ attemptId: newId("lesson-attempt") });
   };
 
   /** Start the learner's own version of the check's music in Create, and remember it for the report. */
@@ -571,7 +619,7 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
               <small>{lesson.studies.find((study) => study.scoreId === cursor.scoreId)?.changes}</small>
             </div>
           )}
-          {step !== "create" && (
+          {step !== "create" && !listening && (
             <ScoreView
               score={score}
               activeTick={conceal ? null : (progress?.tick ?? null)}
@@ -581,7 +629,7 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
               eyebrow={step === "practise" ? "Exact study" : step === "transfer" ? "New context" : undefined}
             />
           )}
-          {step !== "create" && (lesson.accompaniment?.[score.id] ?? []).length > 0 && (
+          {step !== "create" && !listening && (lesson.accompaniment?.[score.id] ?? []).length > 0 && (
             <p className="lesson-accompaniment">
               {conceal
                 ? "While you play, a synthesised second guitar plays along."
@@ -590,7 +638,7 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
                     .join("; ")}.`}
             </p>
           )}
-          {step !== "create" && (
+          {step !== "create" && !listening && (
             <div className="pilot-controls">
               <label className="lesson-tempo">
                 Tempo · {tempo} BPM
@@ -657,7 +705,7 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
               </label>
             </div>
           )}
-          {step !== "create" && (
+          {step !== "create" && !listening && (
             <div className="pilot-play-actions">
               <button
                 className="primary-action large"
@@ -728,71 +776,86 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
                   ))}
                 </ul>
               )}
-              {making ? (
-                <div className="lesson-making">
-                  <button className="secondary-action" onClick={makeMine}>
-                    {madeSketch ? "Open my version in Create again →" : "Make my version in Create →"}
-                  </button>
-                  <p role="status">
-                    {madeSketch && lesson.making
-                      ? madeIt
-                        ? `Your version: “${madeSketch.name}”, ${madeSummary(madeSketch, lesson.making)}. Report on it below.`
-                        : `“${madeSketch.name}” has nothing of yours in it yet. ${NOTHING_YET[lesson.making.adds]}`
-                      : cursor.sketchId
-                        ? "The version you started is no longer in Create. Make a new one."
-                        : lesson.making?.start}
-                  </p>
-                </div>
-              ) : (
-                !played && (
-                  <button
-                    className="text-action"
-                    onClick={() => {
-                      recording.current = false;
-                      setPlayed(true);
-                    }}
-                  >
-                    I played it without the app sound
-                  </button>
-                )
-              )}
-              {!making && cursor.assistance !== "reveal" && (
-                <button className="text-action" onClick={() => update({ assistance: "reveal" })}>
-                  Show the notes to help me
-                </button>
-              )}
-              <label>
-                One concrete observation{" "}
-                <textarea
-                  maxLength={1000}
-                  value={observation}
-                  onChange={(event) => setObservation(event.target.value)}
-                  placeholder={making ? lesson.making?.prompt : "What happened at the change, the third, or the count?"}
+              {listening && lesson.listening ? (
+                <ListeningCheck
+                  key={cursor.attemptId}
+                  questions={lesson.listening.questions}
+                  onHear={(question) => hearScore(question.scoreId)}
+                  onHint={() => hearScore(lesson.demonstration.scoreId)}
+                  onAnswer={answerQuestion}
+                  onFinish={finishListening}
                 />
-              </label>
-              <small>
-                {making
-                  ? cursor.assistance === "none"
-                    ? "This is your own version, made without replaying the lesson's version during this check."
-                    : "You heard the lesson's version first; this is recorded as assisted."
-                  : cursor.assistance === "none"
-                    ? "This check is unaided if you keep the notes hidden."
-                    : "You used the notes or the sound; this check is recorded as assisted."}{" "}
-                {making
-                  ? "The result is your report on what you made; nothing graded it."
-                  : "The result is your report, not a score from the microphone."}
-              </small>
-              <div className="pilot-outcomes">
-                {(["retry", "partial", "successful"] as const).map((outcome) => (
-                  <button
-                    key={outcome}
-                    disabled={!(making ? madeIt : played) || observation.trim().length < 8}
-                    onClick={() => record(outcome)}
-                  >
-                    {OUTCOME_LABELS[outcome]}
-                  </button>
-                ))}
-              </div>
+              ) : (
+                <>
+                  {making ? (
+                    <div className="lesson-making">
+                      <button className="secondary-action" onClick={makeMine}>
+                        {madeSketch ? "Open my version in Create again →" : "Make my version in Create →"}
+                      </button>
+                      <p role="status">
+                        {madeSketch && lesson.making
+                          ? madeIt
+                            ? `Your version: “${madeSketch.name}”, ${madeSummary(madeSketch, lesson.making)}. Report on it below.`
+                            : `“${madeSketch.name}” has nothing of yours in it yet. ${NOTHING_YET[lesson.making.adds]}`
+                          : cursor.sketchId
+                            ? "The version you started is no longer in Create. Make a new one."
+                            : lesson.making?.start}
+                      </p>
+                    </div>
+                  ) : (
+                    !played && (
+                      <button
+                        className="text-action"
+                        onClick={() => {
+                          recording.current = false;
+                          setPlayed(true);
+                        }}
+                      >
+                        I played it without the app sound
+                      </button>
+                    )
+                  )}
+                  {!making && cursor.assistance !== "reveal" && (
+                    <button className="text-action" onClick={() => update({ assistance: "reveal" })}>
+                      Show the notes to help me
+                    </button>
+                  )}
+                  <label>
+                    One concrete observation{" "}
+                    <textarea
+                      maxLength={1000}
+                      value={observation}
+                      onChange={(event) => setObservation(event.target.value)}
+                      placeholder={
+                        making ? lesson.making?.prompt : "What happened at the change, the third, or the count?"
+                      }
+                    />
+                  </label>
+                  <small>
+                    {making
+                      ? cursor.assistance === "none"
+                        ? "This is your own version, made without replaying the lesson's version during this check."
+                        : "You heard the lesson's version first; this is recorded as assisted."
+                      : cursor.assistance === "none"
+                        ? "This check is unaided if you keep the notes hidden."
+                        : "You used the notes or the sound; this check is recorded as assisted."}{" "}
+                    {making
+                      ? "The result is your report on what you made; nothing graded it."
+                      : "The result is your report, not a score from the microphone."}
+                  </small>
+                  <div className="pilot-outcomes">
+                    {(["retry", "partial", "successful"] as const).map((outcome) => (
+                      <button
+                        key={outcome}
+                        disabled={!(making ? madeIt : played) || observation.trim().length < 8}
+                        onClick={() => record(outcome)}
+                      >
+                        {OUTCOME_LABELS[outcome]}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
               {evidenceIds.length > 0 && <RecordSaveStatus evidenceIds={evidenceIds} />}
             </div>
           )}

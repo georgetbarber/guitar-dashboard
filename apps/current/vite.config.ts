@@ -18,7 +18,7 @@ const LESSON_MODULES = [
   /\/src\/core\/music\/chordSymbols\.ts$/,
   /\/src\/audio\/(?:scorePlayer|pluck)\.ts$/,
   /\/src\/v8\/components\/score\//,
-  /\/src\/v8\/components\/(?:LessonPlayer|PilotEpisodePlayer|PiecePlayer)\.tsx$/,
+  /\/src\/v8\/components\/(?:LessonPlayer|PilotEpisodePlayer|PiecePlayer|ListeningCheck)\.tsx$/,
   /\/src\/v8\/pieces\/(?:library|validate)\.ts$/,
   /\/src\/v8\/lessons\/validate\.ts$/,
   // The score views' styles travel with them.
