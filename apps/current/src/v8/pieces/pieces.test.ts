@@ -5,12 +5,14 @@ import type { NoteEvent, Score } from "../../core/score/types";
 import { CURRICULUM } from "../curriculum";
 import { LESSONS as STAGE_1 } from "../lessons/stage1";
 import { LESSONS as STAGE_2 } from "../lessons/stage2";
+import { LESSONS as STAGE_3 } from "../lessons/stage3";
+import { LESSONS as STAGE_4 } from "../lessons/stage4";
 import { PIECE_CATALOG } from "./catalog";
 import { pieceEntryOf, pieceScore, type Piece } from "./format";
 import { FRONT_STEP_PIECE, LOW_ROAD_PIECE, PIECES } from "./library";
 import { validatePiece, validatePieceSet } from "./validate";
 
-const LESSONS = [...STAGE_1, ...STAGE_2];
+const LESSONS = [...STAGE_1, ...STAGE_2, ...STAGE_3, ...STAGE_4];
 const firstStage = (piece: Piece) =>
   Math.min(
     ...piece.parts.flatMap((part) => part.unitIds.map((id) => CURRICULUM.find((unit) => unit.id === id)!.stage)),
@@ -39,10 +41,12 @@ describe("the repertoire", () => {
     expect(PIECE_CATALOG).toEqual(PIECES.map((piece) => pieceEntryOf(piece, firstStage(piece))));
   });
 
-  it("gives Stages 1 and 2 their capstones, as the curriculum map plans", () => {
+  it("gives Stages 1 to 4 their capstones, as the curriculum map plans", () => {
     expect(PIECES.flatMap((piece) => piece.capstones.map((capstone) => [capstone.stage, piece.id]))).toEqual([
       [1, "piece-front-step"],
       [2, "piece-low-road"],
+      [3, "piece-lantern"],
+      [4, "piece-porch-light"],
     ]);
   });
 });

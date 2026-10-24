@@ -10,6 +10,8 @@ import type { Lesson, LessonEntry } from "./format";
 export const STAGE_LOADERS: Readonly<Record<number, () => Promise<{ LESSONS: readonly Lesson[] }>>> = {
   1: () => import("./stage1"),
   2: () => import("./stage2"),
+  3: () => import("./stage3"),
+  4: () => import("./stage4"),
 };
 
 export class LessonUnavailableError extends Error {

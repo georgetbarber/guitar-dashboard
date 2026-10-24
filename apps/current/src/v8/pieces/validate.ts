@@ -107,6 +107,8 @@ export function validatePiece(piece: Piece): string[] {
       );
     if (!enough(capability.title, 4) || !enough(capability.criterion) || !enough(capstone.criterion))
       add(`the stage ${capstone.stage} capstone needs a title and honest criteria.`);
+    if (capstone.make !== undefined && !enough(capstone.make))
+      add(`the stage ${capstone.stage} capstone must say what to make in Create.`);
     // A capstone combines its stage's work: every part it uses is taught by then.
     for (const id of capstone.partIds) {
       const part = piece.parts.find((item) => item.id === id);

@@ -36,6 +36,25 @@ vi.mock("../audio/scorePlayer", async (original) => ({
   stopScorePlayback: vi.fn(),
 }));
 
+/** Stands in for the learner adding a chord to their latest sketch in Create. */
+function AddChord() {
+  const { state, dispatch } = useV8Store();
+  const sketch = state.sketches.at(-1);
+  return (
+    <button
+      onClick={() =>
+        sketch &&
+        dispatch({
+          type: "updateSketch",
+          sketch: { ...sketch, chords: [{ id: "chord-test", symbol: "G", beats: 4, voicing: [3, 0, 0, 0, 2, 3] }] },
+        })
+      }
+    >
+      Add a chord in Create
+    </button>
+  );
+}
+
 function Probe() {
   const { state } = useV8Store();
   return (
@@ -290,6 +309,68 @@ describe("the lesson player", () => {
       ["Am", 4, [0, 1, 2, 2, 0, null]],
     ]);
     expect(probe().route).toBe("create");
+  });
+
+  it("names and plays the second guitar a lesson study is accompanied by", async () => {
+    const user = userEvent.setup();
+    render(
+      <V8StoreProvider>
+        <LessonPlayer entry={entry("lesson-unit-13-home")} />
+      </V8StoreProvider>,
+    );
+    await screen.findByRole("heading", { name: "Where home is" });
+    expect(screen.getByText(/the app plays A low G held under you on a synthesised second guitar/)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Hear the exact music" }));
+    const [lead, options] = vi.mocked(player.startScorePlayback).mock.calls[0];
+    expect([lead.id, options.accompaniment?.map((item) => item.id)]).toEqual(["home-degrees-g", ["home-low-g-drone"]]);
+  });
+
+  it("runs a making check: the tune stays visible, Create opens with it, and the report links what was made", async () => {
+    const user = userEvent.setup();
+    render(
+      <V8StoreProvider>
+        <LessonPlayer entry={entry("lesson-unit-24-harmonise")} />
+        <AddChord />
+        <Probe />
+      </V8StoreProvider>,
+    );
+    await screen.findByRole("heading", { name: "Chords under a tune" });
+    await user.click(screen.getByRole("button", { name: "3 · Try unaided" }));
+    expect(screen.queryByRole("figure", { name: "Score: hidden during this check" })).toBeNull();
+    expect(screen.getByRole("figure", { name: "Score: Lantern's tune" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "I played it without the app sound" })).toBeNull();
+    await user.type(screen.getByLabelText(/One concrete observation/), "Em under bar five, for the colour.");
+    const report = screen.getByRole("button", { name: "I could do it" }) as HTMLButtonElement;
+    expect(report.disabled).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Make my version in Create →" }));
+    expect(screen.getByText("Record or clear your observation before opening Create.")).toBeTruthy();
+    await user.clear(screen.getByLabelText(/One concrete observation/));
+    await user.click(screen.getByRole("button", { name: "Make my version in Create →" }));
+    const [sketch] = probe().sketches;
+    expect(sketch).toMatchObject({ name: "Chords under a tune: my version", chords: [], tempo: 72 });
+    expect(sketch.melody.length).toBeGreaterThan(0);
+    expect(probe().route).toBe("create");
+    expect(screen.getByText(/has nothing in it yet/)).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Add a chord in Create" }));
+    expect(
+      screen.getByText("Your version: “Chords under a tune: my version”, 1 chord. Report on it below."),
+    ).toBeTruthy();
+    await user.type(screen.getByLabelText(/One concrete observation/), "Em under bar five, for the colour.");
+    await user.click(screen.getByRole("button", { name: "I could do it" }));
+    const state = probe();
+    expect(state.attempts).toEqual([
+      expect.objectContaining({ kind: "first-check", scoreId: "harmonise-lantern-tune", artifactId: sketch.id }),
+    ]);
+    expect(state.evidence.at(-1)).toMatchObject({ activityId: "unit-24-creative", artifactId: sketch.id });
+    expect(() =>
+      validateState({
+        ...DEFAULT_STATE,
+        sketches: state.sketches,
+        lessonCursors: state.cursors,
+        lessonAttempts: state.attempts,
+      }),
+    ).not.toThrow();
   });
 
   it("explains plainly when a lesson's files cannot load", async () => {

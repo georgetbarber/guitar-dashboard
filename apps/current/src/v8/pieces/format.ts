@@ -54,6 +54,20 @@ export interface Capstone {
   capability: LessonCapability;
   /** What the learner reports, in their own terms. */
   criterion: string;
+  /**
+   * Something the learner also makes and saves in Create (the Stage 3 answer).
+   * The app opens a new sketch; the report, not the app, says whether it was made.
+   */
+  make?: string;
+}
+
+/** A first-person criterion ("I kept my place…") turned into what the learner is asked to report. */
+export function reportPrompt(criterion: string): string {
+  if (!/^I /.test(criterion)) return `Report whether this was true: “${criterion}”`;
+  return criterion
+    .replace(/^I /, "Report whether you ")
+    .replace(/\bmy\b/g, "your")
+    .replace(/\bme\b/g, "you");
 }
 
 export interface Piece {

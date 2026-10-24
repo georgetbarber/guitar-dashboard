@@ -115,8 +115,13 @@ export function differsIn(dimension: ChangedDimension, a: Score, b: Score): bool
     case "texture":
       return a.voices.length !== b.voices.length;
     case "harmony":
-      return a.voicings.map((v) => v.symbol).join() !== b.voicings.map((v) => v.symbol).join();
+      return harmonyOf(a) !== harmonyOf(b);
   }
+}
+
+/** The chords a score names: its strummed voicings, then any chord marks (fingerpicked scores have only marks). */
+function harmonyOf(score: Score): string {
+  return [...score.voicings.map((v) => v.symbol), "|", ...(score.harmony ?? []).map((mark) => mark.symbol)].join();
 }
 
 /** A study is distinct when its music differs, not merely its title. */
@@ -204,7 +209,20 @@ export function validateLesson(lesson: Lesson, pieces: PieceParts = new Map()): 
   const demonstration = need(lesson.demonstration.scoreId, "the demonstration");
   if (!lesson.demonstration.handGuidance.length || lesson.demonstration.handGuidance.some((line) => !enough(line)))
     add("the demonstration needs written hand guidance.");
-  const seen = new Set(lesson.scores.flatMap(visibleTechniques));
+  // A score the app only plays as accompaniment is never in the learner's hands.
+  const learnerScores = new Set([
+    lesson.demonstration.scoreId,
+    ...lesson.studies.map((study) => study.scoreId),
+    ...lesson.cueFading.map((step) => step.scoreId),
+    lesson.retrieval.scoreId,
+    lesson.transfer.scoreId,
+  ]);
+  const backingOnly = new Set(
+    Object.values(lesson.accompaniment ?? {})
+      .flat()
+      .filter((id) => !learnerScores.has(id)),
+  );
+  const seen = new Set(lesson.scores.filter((score) => !backingOnly.has(score.id)).flatMap(visibleTechniques));
   for (const technique of seen)
     if (!lesson.demonstration.videoNeeded.includes(technique))
       add(`uses ${technique}, so it must show that a demonstration video is still needed.`);

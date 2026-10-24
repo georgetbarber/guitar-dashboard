@@ -36,15 +36,20 @@ function Probe() {
   const { state } = useV8Store();
   return (
     <output data-testid="state">
-      {JSON.stringify({ evidence: state.evidence, favourites: state.favoriteActivityIds ?? [] })}
+      {JSON.stringify({
+        evidence: state.evidence,
+        favourites: state.favoriteActivityIds ?? [],
+        sketches: state.sketches.length,
+        route: state.route,
+      })}
     </output>
   );
 }
 const probe = () => JSON.parse(screen.getByTestId("state").textContent ?? "{}");
-const renderPiece = (request: Parameters<typeof PiecePlayer>[0]["request"]) =>
+const renderPiece = (request: Parameters<typeof PiecePlayer>[0]["request"], onClose = vi.fn()) =>
   render(
     <V8StoreProvider>
-      <PiecePlayer request={request} onClose={vi.fn()} />
+      <PiecePlayer request={request} onClose={onClose} />
       <Probe />
     </V8StoreProvider>,
   );
@@ -108,6 +113,20 @@ describe("the piece player", () => {
     );
     await user.click(screen.getByRole("button", { name: "I played it" }));
     expect(probe().evidence[1]).toMatchObject({ assistance: "none", outcome: "successful" });
+  });
+
+  it("asks for the Stage 3 answer to be made in Create, and words the report as a question", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderPiece({ pieceId: "piece-lantern", capstoneStage: 3 }, onClose);
+    await screen.findByRole("heading", { name: "Lantern" });
+    expect(
+      screen.getByText(/Report whether you played the melody with both endings and saved an answer of your own/),
+    ).toBeTruthy();
+    expect(screen.getByText(/write a two-bar phrase that answers Lantern's first phrase/)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Open a new sketch in Create →" }));
+    expect(onClose).toHaveBeenCalled();
+    expect(probe()).toMatchObject({ sketches: 1, route: "create" });
   });
 
   it("offers no self-report outside a capstone, and saves a piece as a familiar favourite", async () => {

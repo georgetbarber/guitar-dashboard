@@ -10,6 +10,7 @@ import {
   LAYER_NAMES,
   pieceFavouriteId,
   pieceScore,
+  reportPrompt,
   STYLE_NAMES,
   type Piece,
 } from "../pieces/format";
@@ -208,6 +209,18 @@ function PieceBody({ piece, request, onClose, requestCloseRef }: Props & { piece
     );
   };
 
+  /** Leave the piece for a new sketch; the learner comes back to report once it is saved. */
+  const makeInCreate = () => {
+    if (observation.trim()) {
+      setNotice("Record or clear your observation before opening Create.");
+      return;
+    }
+    stop();
+    onClose();
+    dispatch({ type: "createSketch" });
+    history.pushState({}, "", "/create");
+  };
+
   const where = () => {
     if (progress?.tick === null || progress?.tick === undefined) return `${part.title} · ${clamped} BPM`;
     const { bar, count } = barAndCount(progress.tick, lead.metre);
@@ -362,6 +375,14 @@ function PieceBody({ piece, request, onClose, requestCloseRef }: Props & { piece
           </small>
           {capstone && inCapstone && (
             <div className="pilot-check">
+              {capstone.make && (
+                <div className="piece-capstone-make">
+                  <p>{capstone.make}</p>
+                  <button className="secondary-action" onClick={makeInCreate}>
+                    Open a new sketch in Create →
+                  </button>
+                </div>
+              )}
               {!played && (
                 <button className="text-action" onClick={() => setPlayed(true)}>
                   I played it without the app sound
@@ -380,7 +401,7 @@ function PieceBody({ piece, request, onClose, requestCloseRef }: Props & { piece
                 {assisted
                   ? "The tab was showing, so this is recorded as played with a hint. Hide the tab to try it unaided."
                   : "With the tab hidden, this is recorded as unaided."}{" "}
-                {capstone.criterion.replace(/^I /, "Report whether you ")} The result is your report, not a measurement.
+                {reportPrompt(capstone.criterion)} The result is your report, not a measurement.
               </small>
               <div className="pilot-outcomes">
                 {(["retry", "partial", "successful"] as const).map((outcome) => (

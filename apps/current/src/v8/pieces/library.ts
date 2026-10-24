@@ -137,15 +137,59 @@ const frontStepBand = score({
   harmony: FORM_HARMONY,
 });
 
+/*
+ * Layer 3 (Unit 17): two-bar calls and two-bar answers in E minor
+ * pentatonic, open position, over the same 12-bar; the ♭3 (G on the high E,
+ * fret 3) curls a quarter-tone toward the major third twice. Then the Unit 1
+ * break and the E5 ending, so it fits the second guitar's 16 bars.
+ */
+const frontStepCalls = score({
+  ...FRONT_STEP,
+  id: "front-step-calls",
+  title: "Front Step: calls and answers",
+  bars: 16,
+  voices: {
+    lead: {
+      label: "Calls and answers",
+      text: [
+        "q r e 2:3{D} e 1:0 q 1:3{G}[b.5] q 1:0",
+        "h 2:0 h r",
+        "q r e 3:2 e 3:0{G} q 2:0 q 3:2",
+        "h 4:2 h r",
+        "q r e 2:3{D} e 1:0 q 2:3{D} q 2:0",
+        "h 3:2 h r",
+        "q r e 2:0 e 2:3{D} q 1:0 q 2:3{D}",
+        "h 1:0 h r",
+        "q r e 2:3{D} e 2:0 q 3:2 q 3:0{G}",
+        "h 3:2 h r",
+        "q r e 1:3{G}[b.5] e 1:0 q 2:0 q 4:2",
+        "h 2:0 h r",
+        QUESTION,
+        ANSWER,
+        "q 6:0+5:2[st] q r q 6:0+5:2[st] q r",
+        "w 6:0+5:2",
+      ].join(" | "),
+    },
+  },
+  sections: [
+    ["line-1", "Line 1 · call, answer", 1, 4],
+    ["line-2", "Line 2 · call, answer", 5, 8],
+    ["line-3", "Line 3 · call, answer", 9, 12],
+    ["break", "Break · question and answer", 13, 14],
+    ["ending", "Ending · stop together", 15, 16],
+  ],
+  harmony: FORM_HARMONY,
+});
+
 export const FRONT_STEP_PIECE: Piece = {
   id: "piece-front-step",
-  version: 1,
+  version: 2,
   provenance: DRAFT_BY_AGENT,
   title: "Front Step",
   styles: ["blues-rock"],
   description:
     "A blues in E built on a call and an answer: it starts with one open string and one low root, and grows into a shuffle with a solo chorus.",
-  scores: [frontStepQuestion, frontStepRoots, frontStepBand],
+  scores: [frontStepQuestion, frontStepRoots, frontStepBand, frontStepCalls],
   parts: [
     {
       id: "front-step-question-answer",
@@ -166,6 +210,16 @@ export const FRONT_STEP_PIECE: Piece = {
       instruction:
         "Play the root of each bar as palm-muted eighths while the second guitar plays the chords: E for four bars, A for two, E for two, then B, A, E, B, leaving the last beat of bar 12 free to reach the high E. The second guitar stops for your question and answer, then you finish together on two short E5 hits and a long E5.",
       unitIds: ["unit-01", "unit-02", "unit-04", "unit-05"],
+    },
+    {
+      id: "front-step-calls",
+      layer: 3,
+      title: "Calls and answers",
+      scoreId: frontStepCalls.id,
+      accompanimentIds: [frontStepBand.id],
+      instruction:
+        "Each line of the 12-bar is a two-bar call and a two-bar answer in E minor pentatonic, open position, with a beat of space before each. Curl the G on the high E a little sharp where it is marked, then play the break and the ending as before.",
+      unitIds: ["unit-17"],
     },
   ],
   capstones: [
@@ -385,4 +439,540 @@ export const LOW_ROAD_PIECE: Piece = {
   ],
 };
 
-export const PIECES: readonly Piece[] = [FRONT_STEP_PIECE, LOW_ROAD_PIECE];
+/* ------------------------------------------------------------------ */
+/* LANTERN · a melody in G with two endings                              */
+/* ------------------------------------------------------------------ */
+
+const LANTERN = {
+  version: 1,
+  provenance: DRAFT_BY_AGENT,
+  key: "G major",
+  metre: "4/4",
+  bars: 8,
+  tempo: [60, 72, 88],
+  sections: [
+    ["phrase-1", "Phrase 1 · open ending", 1, 4],
+    ["phrase-2", "Phrase 2 · settled ending", 5, 8],
+  ],
+  harmony: [
+    [1, 1, "G", "I"],
+    [2, 1, "C", "IV"],
+    [3, 1, "D", "V"],
+    [5, 1, "Em", "vi"],
+    [6, 1, "C", "IV"],
+    [7, 1, "D", "V"],
+    [8, 1, "G", "I"],
+  ],
+} as const;
+
+/** The open-position shapes the course has taught by Stage 3 (G, C and Em in Unit 6, D in Unit 16). */
+export const OPEN_G_C_D_EM = {
+  G: { symbol: "G", shape: "320003", fingers: "21---3" },
+  C: { symbol: "C", shape: "x32010", fingers: "x32-1-" },
+  D: { symbol: "D", shape: "xx0232", fingers: "xx-132" },
+  Em: { symbol: "Em", shape: "022000", fingers: "-12---" },
+};
+
+/*
+ * The motif is 3–2–1 (B, A, G) with its own rhythm: a short note on 1, a
+ * longer one on the "and" of 1, the landing held from the "and" of 2, and a
+ * rest. Bars 2 and 3 move the same rhythm up through 6–5–4 and 7–6–5.
+ * Phrase 1 stops on 2 (A) over D, open; phrase 2 comes home to 1 (G).
+ */
+export const LANTERN_MELODY_BARS = [
+  "e 2:0 q 3:2 q. 3:0 q r",
+  "e 1:0 q 2:3 q. 2:1 q r",
+  "e 1:2 q 1:0 q. 2:3 q r",
+  "e 2:3 q 2:0 q. 3:2 q r",
+  "e 2:0 q 3:2 q. 3:0 q r",
+  "e 1:0 q 2:3 q. 2:1 q r",
+  "e 1:2 q 1:0 q. 2:3 e 2:0 e 3:2",
+  "w 3:0",
+];
+
+/** A down strum, then down-up, a missed beat 3 and an up strum that rings through 4 while the hand changes. */
+export const lanternStrum = (chord: string) => `q D:${chord} e D:${chord} e U:${chord} e r q. U:${chord}`;
+const LANTERN_CHORD_BARS = ["G", "C", "D", "D", "Em", "C", "D"].map(lanternStrum).concat("w D:G");
+
+const lanternMelody = score({
+  ...LANTERN,
+  id: "lantern-melody",
+  title: "Lantern: the melody",
+  voices: { melody: { label: "Melody", text: LANTERN_MELODY_BARS.join(" | ") } },
+});
+
+const lanternChords = score({
+  ...LANTERN,
+  id: "lantern-chords",
+  title: "Lantern: the chords",
+  voicings: OPEN_G_C_D_EM,
+  voices: { chords: { label: "Chords", text: LANTERN_CHORD_BARS.join(" | ") } },
+});
+
+const lanternDrone = score({
+  ...LANTERN,
+  id: "lantern-drone",
+  title: "Lantern: the open-G drone",
+  voices: { drone: { label: "Open G", text: Array.from({ length: 8 }, () => "h 3:0[lr] h 3:0[lr]").join(" | ") } },
+});
+
+export const LANTERN_PIECE: Piece = {
+  id: "piece-lantern",
+  version: 1,
+  provenance: DRAFT_BY_AGENT,
+  title: "Lantern",
+  styles: ["melody"],
+  description:
+    "An eight-bar melody in G built from one three-note motif: the first phrase stops open, the second comes home.",
+  scores: [lanternMelody, lanternChords, lanternDrone],
+  parts: [
+    {
+      id: "lantern-drone",
+      layer: 1,
+      title: "The open-G drone",
+      scoreId: lanternDrone.id,
+      accompanimentIds: [lanternMelody.id, lanternChords.id],
+      instruction:
+        "Pluck the open G string on counts 1 and 3 and let it ring while the melody and chords move above it. Notice where the melody leans away from your G and where it comes back to it.",
+      unitIds: ["unit-13"],
+    },
+    {
+      id: "lantern-chords",
+      layer: 2,
+      title: "The chords",
+      scoreId: lanternChords.id,
+      accompanimentIds: [lanternMelody.id],
+      instruction:
+        "Strum G, C, D, D, then Em, C, D and G under the melody: down, down-up, miss, up, letting the last up-strum ring while you change.",
+      unitIds: ["unit-16", "unit-24"],
+    },
+    {
+      id: "lantern-melody",
+      layer: 3,
+      title: "The melody",
+      scoreId: lanternMelody.id,
+      accompanimentIds: [lanternChords.id],
+      instruction:
+        "Play the melody on the top three strings while the second guitar strums. Phrase 1 stops on A, open; phrase 2 comes home to G.",
+      unitIds: ["unit-14", "unit-15", "unit-16"],
+    },
+  ],
+  capstones: [
+    {
+      stage: 3,
+      partIds: ["lantern-melody"],
+      capability: {
+        id: "piece.lantern.melody",
+        action: "playing",
+        title: "Play Lantern's melody",
+        criterion:
+          "Play both phrases in time with the chords, the first stopping open on A and the second coming home to G, and save a two-bar answer of your own in Create.",
+      },
+      criterion: "I played the melody with both endings and saved an answer of my own.",
+      make: "Then make your answer: in a new sketch, write a two-bar phrase that answers Lantern's first phrase and ends on G, and save it. Come back here to report on both.",
+    },
+  ],
+};
+
+/* ------------------------------------------------------------------ */
+/* PORCH LIGHT · Travis picking in G                                     */
+/* ------------------------------------------------------------------ */
+
+const PORCH = {
+  version: 1,
+  provenance: DRAFT_BY_AGENT,
+  key: "G major",
+  metre: "4/4",
+  bars: 8,
+  tempo: [56, 72, 90],
+  sections: [
+    ["first", "G, Em, C, D", 1, 4],
+    ["second", "G, Em, D, G", 5, 8],
+  ],
+  harmony: [
+    [1, 1, "G", "I"],
+    [2, 1, "Em", "vi"],
+    [3, 1, "C", "IV"],
+    [4, 1, "D", "V"],
+    [5, 1, "G", "I"],
+    [6, 1, "Em", "vi"],
+    [7, 1, "D", "V"],
+    [8, 1, "G", "I"],
+  ],
+} as const;
+
+/** Per chord: the thumb's root and second bass note, and the strings the index and middle fingers take. */
+export const TRAVIS = {
+  G: { root: "6:3", alt: "4:0", i: "3:0", m: "2:0" },
+  Em: { root: "6:0", alt: "4:2", i: "3:0", m: "2:0" },
+  C: { root: "5:3", alt: "4:2", i: "3:0", m: "2:1" },
+  D: { root: "4:0", alt: "3:2", i: "2:3", m: "1:2" },
+} as const;
+export type TravisChord = keyof typeof TRAVIS;
+const PORCH_CHORDS: TravisChord[] = ["G", "Em", "C", "D", "G", "Em", "D"];
+
+export const thumbAlternating = (chord: TravisChord) => {
+  const { root, alt } = TRAVIS[chord];
+  return `q ${root}@p q ${alt}@p q ${root}@p q ${alt}@p`;
+};
+export const fingersOffBeats = (chord: TravisChord) => {
+  const { i, m } = TRAVIS[chord];
+  return `e r e ${i}@i e r e ${m}@m e r e ${i}@i e r e ${m}@m`;
+};
+
+/** The top line, pinched with the thumb on beats 1 and 3; bar 3 hammers B up to C inside the C shape. */
+const PORCH_MELODY_BARS = [
+  "h 1:3@m h 2:0@i",
+  "h 1:0@m h 2:0@i",
+  "h 1:0@m e 2:0@i e 2:1[h] q r",
+  "h 1:2@m h 2:3@i",
+  "h 1:3@m h 2:0@i",
+  "h 1:0@m h 1:3@m",
+  "h 1:2@m h 2:3@i",
+  "w 1:3@m",
+];
+
+const porchRoots = score({
+  ...PORCH,
+  id: "porch-light-roots",
+  title: "Porch Light: thumb roots",
+  voices: {
+    thumb: {
+      label: "Thumb",
+      text: PORCH_CHORDS.map((chord) => Array.from({ length: 4 }, () => `q ${TRAVIS[chord].root}@p`).join(" "))
+        .concat("w 6:3@p")
+        .join(" | "),
+    },
+  },
+});
+
+const porchTravis = score({
+  ...PORCH,
+  id: "porch-light-travis",
+  title: "Porch Light: Travis picking",
+  voices: {
+    fingers: { label: "Fingers", text: PORCH_CHORDS.map(fingersOffBeats).concat("w 1:3@m").join(" | ") },
+    thumb: { label: "Thumb", text: PORCH_CHORDS.map(thumbAlternating).concat("w 6:3@p").join(" | ") },
+  },
+});
+
+const porchMelody = score({
+  ...PORCH,
+  id: "porch-light-melody",
+  title: "Porch Light: melody over the thumb",
+  voices: {
+    melody: { label: "Melody", text: PORCH_MELODY_BARS.join(" | ") },
+    thumb: { label: "Thumb", text: PORCH_CHORDS.map(thumbAlternating).concat("w 6:3@p").join(" | ") },
+  },
+});
+
+const porchTune = score({
+  ...PORCH,
+  id: "porch-light-tune",
+  title: "Porch Light: the tune alone",
+  voices: { melody: { label: "Tune", text: PORCH_MELODY_BARS.join(" | ") } },
+});
+
+export const PORCH_LIGHT_PIECE: Piece = {
+  id: "piece-porch-light",
+  version: 1,
+  provenance: DRAFT_BY_AGENT,
+  title: "Porch Light",
+  styles: ["folk"],
+  description:
+    "A fingerpicked tune in G: a thumb that keeps time on the bass strings and a melody pinched on top, from one note a beat to full Travis picking.",
+  scores: [porchRoots, porchTravis, porchMelody, porchTune],
+  parts: [
+    {
+      id: "porch-light-roots",
+      layer: 1,
+      title: "Thumb roots",
+      scoreId: porchRoots.id,
+      accompanimentIds: [porchMelody.id],
+      instruction:
+        "Play each chord's root with your thumb on every count, G, E, C, D, G, E, D, then a long G, while the other guitar plays the whole arrangement.",
+      unitIds: ["unit-03"],
+    },
+    {
+      id: "porch-light-travis",
+      layer: 2,
+      title: "Travis picking",
+      scoreId: porchTravis.id,
+      accompanimentIds: [porchTune.id],
+      instruction:
+        "The thumb alternates root and second bass note on every count; the index and middle fingers answer on the off-beats. The other guitar plays the tune.",
+      unitIds: ["unit-22"],
+    },
+    {
+      id: "porch-light-melody",
+      layer: 3,
+      title: "Melody over the thumb",
+      scoreId: porchMelody.id,
+      accompanimentIds: [],
+      instruction:
+        "Keep the thumb alternating and pinch the melody with it on counts 1 and 3. In bar 3, hammer the B string from open to fret 1 inside the C shape.",
+      unitIds: ["unit-14", "unit-19", "unit-22"],
+    },
+  ],
+  capstones: [
+    {
+      stage: 4,
+      partIds: ["porch-light-melody"],
+      capability: {
+        id: "piece.porch-light.travis",
+        action: "playing",
+        title: "Play Porch Light, thumb and melody",
+        criterion: "Keep the thumb alternating through all eight bars while the melody sounds on counts 1 and 3.",
+      },
+      criterion: "The bass kept alternating while the melody sang on top.",
+    },
+  ],
+};
+
+/* ------------------------------------------------------------------ */
+/* HARBOUR SONG · a fingerpicked waltz in C                              */
+/* ------------------------------------------------------------------ */
+
+const HARBOUR = {
+  version: 1,
+  provenance: DRAFT_BY_AGENT,
+  key: "C major",
+  metre: "3/4",
+  bars: 8,
+  tempo: [60, 72, 90],
+  sections: [
+    ["first", "C, Am, Fmaj7, G", 1, 4],
+    ["second", "C, Am, G, C", 5, 8],
+  ],
+  harmony: [
+    [1, 1, "C", "I"],
+    [2, 1, "Am", "vi"],
+    [3, 1, "Fmaj7", "IVmaj7"],
+    [4, 1, "G", "V"],
+    [5, 1, "C", "I"],
+    [6, 1, "Am", "vi"],
+    [7, 1, "G", "V"],
+    [8, 1, "C", "I"],
+  ],
+} as const;
+
+/** Per chord: the thumb's bass, and the G, B and high E string notes for i, m and a. */
+export const WALTZ = {
+  C: { bass: "5:3", i: "3:0", m: "2:1", a: "1:0" },
+  Am: { bass: "5:0", i: "3:2", m: "2:1", a: "1:0" },
+  Fmaj7: { bass: "4:3", i: "3:2", m: "2:1", a: "1:0" },
+  G: { bass: "6:3", i: "3:0", m: "2:0", a: "1:3" },
+} as const;
+export type WaltzChord = keyof typeof WALTZ;
+const HARBOUR_CHORDS: WaltzChord[] = ["C", "Am", "Fmaj7", "G", "C", "Am", "G"];
+
+/** Thumb on 1, then index, middle, ring, middle, index: six eighths that keep ringing. */
+export const waltzFingers = (chord: WaltzChord) => {
+  const { i, m, a } = WALTZ[chord];
+  return `e r e ${i}@i[lr] e ${m}@m[lr] e ${a}@a[lr] e ${m}@m[lr] e ${i}@i[lr]`;
+};
+export const waltzBass = (chord: WaltzChord) => `h. ${WALTZ[chord].bass}@p`;
+
+export const HARBOUR_MELODY_BARS = [
+  "h 1:0 q 2:3",
+  "q 2:1 q 1:0 q 1:5",
+  "h 1:5 q 1:3",
+  "h. 2:3",
+  "h 1:0 q 2:3",
+  "q 2:1 q 1:0 q 1:5",
+  "q 1:3 q 1:1 q 2:3",
+  "h. 2:1",
+];
+
+const harbourBass = score({
+  ...HARBOUR,
+  id: "harbour-song-bass",
+  title: "Harbour Song: bass on one",
+  voices: { thumb: { label: "Thumb", text: HARBOUR_CHORDS.map(waltzBass).concat("h. 5:3@p").join(" | ") } },
+});
+
+const harbourArpeggio = score({
+  ...HARBOUR,
+  id: "harbour-song-arpeggio",
+  title: "Harbour Song: the waltz arpeggio",
+  voices: {
+    fingers: {
+      label: "Fingers",
+      text: HARBOUR_CHORDS.map(waltzFingers).concat("e r e 3:0@i[lr] e 2:1@m[lr] q. 1:0@a").join(" | "),
+    },
+    thumb: { label: "Thumb", text: HARBOUR_CHORDS.map(waltzBass).concat("h. 5:3@p").join(" | ") },
+  },
+});
+
+const harbourMelody = score({
+  ...HARBOUR,
+  id: "harbour-song-melody",
+  title: "Harbour Song: the melody",
+  voices: { melody: { label: "Melody", text: HARBOUR_MELODY_BARS.join(" | ") } },
+});
+
+export const HARBOUR_SONG_PIECE: Piece = {
+  id: "piece-harbour-song",
+  version: 1,
+  provenance: DRAFT_BY_AGENT,
+  title: "Harbour Song",
+  styles: ["folk"],
+  description:
+    "A slow waltz in C: a thumb on the bass, a ringing p-i-m-a arpeggio, and a melody you find by ear before you see it.",
+  scores: [harbourBass, harbourArpeggio, harbourMelody],
+  parts: [
+    {
+      id: "harbour-song-bass",
+      layer: 1,
+      title: "Bass on one",
+      scoreId: harbourBass.id,
+      accompanimentIds: [harbourMelody.id],
+      instruction:
+        "Pluck each bar's bass note with the thumb on count 1 and let it ring for all three counts: C, A, F, G, C, A, G, C.",
+      unitIds: ["unit-06", "unit-21"],
+    },
+    {
+      id: "harbour-song-arpeggio",
+      layer: 2,
+      title: "The waltz arpeggio",
+      scoreId: harbourArpeggio.id,
+      accompanimentIds: [harbourMelody.id],
+      instruction:
+        "Thumb on the bass on 1, then index, middle, ring, middle, index across the G, B and high E strings, letting everything ring. The B string's fret 1 stays down from C through Am to Fmaj7.",
+      unitIds: ["unit-21"],
+    },
+    {
+      id: "harbour-song-melody",
+      layer: 3,
+      title: "The melody",
+      scoreId: harbourMelody.id,
+      accompanimentIds: [harbourArpeggio.id],
+      instruction:
+        "Play the melody on the B and high E strings while the other guitar plays the arpeggio. It counts in three.",
+      unitIds: ["unit-18"],
+    },
+  ],
+  capstones: [],
+};
+
+/* ------------------------------------------------------------------ */
+/* SUNDAY GLIDE · a soul vamp in D                                       */
+/* ------------------------------------------------------------------ */
+
+const SUNDAY = {
+  version: 1,
+  provenance: DRAFT_BY_AGENT,
+  key: "D major",
+  metre: "4/4",
+  feel: "swing-16",
+  bars: 4,
+  tempo: [60, 72, 88],
+  harmony: [
+    [1, 1, "D", "I"],
+    [2, 1, "G", "IV"],
+    [3, 1, "D", "I"],
+    [4, 1, "G", "IV"],
+  ],
+} as const;
+
+/** D in root position and G in second inversion on the top three strings at the 7th fret: I to IV by one or two frets. */
+export const TOP_STRING_D_G = {
+  D: { symbol: "D", shape: "xxx775", fingers: "xxx341" },
+  G: { symbol: "G", shape: "xxx787", fingers: "xxx121", inversion: "second" as const },
+};
+
+/** Hits on 1, the "a" of 1, the "and" of 2, 3 and the "a" of 3; the hand keeps moving in sixteenths through the gaps. */
+export const sixteenthGroove = (chord: string) =>
+  `s D:${chord}[>] s r s r s U:${chord} s r s r s D:${chord} s r s D:${chord}[>] s r s r s U:${chord} s r s r s r s r`;
+
+const sundayRoots = score({
+  ...SUNDAY,
+  id: "sunday-glide-roots",
+  title: "Sunday Glide: octave roots",
+  voices: {
+    octaves: {
+      label: "Octaves",
+      text: ["5:5+3:7", "6:3+4:5", "5:5+3:7", "6:3+4:5"]
+        .map((octave) => Array.from({ length: 4 }, () => `q ${octave}`).join(" "))
+        .join(" | "),
+    },
+  },
+});
+
+const sundayRhythm = score({
+  ...SUNDAY,
+  id: "sunday-glide-rhythm",
+  title: "Sunday Glide: the rhythm part",
+  voicings: TOP_STRING_D_G,
+  voices: { hand: { label: "Strumming hand", text: ["D", "G", "D", "G"].map(sixteenthGroove).join(" | ") } },
+});
+
+const sundaySixths = score({
+  ...SUNDAY,
+  id: "sunday-glide-sixths",
+  title: "Sunday Glide: sliding sixths",
+  voices: {
+    sixths: {
+      label: "Sixths",
+      text: [
+        "q 3:2@p+1:2@m[si] e. r s 3:2@p+1:2@m h r",
+        "q 3:4@p+1:3@m[si] e. r s 3:4@p+1:3@m h r",
+        "q 3:2@p+1:2@m[si] e. r s 3:2@p+1:2@m h r",
+        "q 3:4@p+1:3@m[si] e. r s 3:4@p+1:3@m h r",
+      ].join(" | "),
+    },
+  },
+});
+
+export const SUNDAY_GLIDE_PIECE: Piece = {
+  id: "piece-sunday-glide",
+  version: 1,
+  provenance: DRAFT_BY_AGENT,
+  title: "Sunday Glide",
+  styles: ["soul-funk"],
+  description:
+    "A soul vamp in D, I to IV: octave roots, small chords on the top strings in swung sixteenths, and sixths that slide into the chord.",
+  scores: [sundayRoots, sundayRhythm, sundaySixths],
+  parts: [
+    {
+      id: "sunday-glide-roots",
+      layer: 1,
+      title: "Octave roots",
+      scoreId: sundayRoots.id,
+      accompanimentIds: [sundayRhythm.id],
+      instruction:
+        "Play D and G as octaves in quarter notes, D from the A string, G from the low E, with the string between them muted.",
+      unitIds: ["unit-08"],
+    },
+    {
+      id: "sunday-glide-rhythm",
+      layer: 2,
+      title: "The rhythm part",
+      scoreId: sundayRhythm.id,
+      accompanimentIds: [sundayRoots.id],
+      instruction:
+        "Strum only the top three strings, D then G at the 7th fret. Keep the hand moving down-up in sixteenths and let it touch the strings on 1, the “a” of 1, the “and” of 2, 3 and the “a” of 3.",
+      unitIds: ["unit-19", "unit-20"],
+    },
+    {
+      id: "sunday-glide-sixths",
+      layer: 3,
+      title: "Sliding sixths",
+      scoreId: sundaySixths.id,
+      accompanimentIds: [sundayRhythm.id],
+      instruction:
+        "Slide into each sixth from a fret below on count 1, then pluck it again just before count 2: A with F♯ over D, B with G over G.",
+      unitIds: ["unit-23"],
+    },
+  ],
+  capstones: [],
+};
+
+export const PIECES: readonly Piece[] = [
+  FRONT_STEP_PIECE,
+  LOW_ROAD_PIECE,
+  LANTERN_PIECE,
+  PORCH_LIGHT_PIECE,
+  HARBOUR_SONG_PIECE,
+  SUNDAY_GLIDE_PIECE,
+];

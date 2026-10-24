@@ -10,7 +10,7 @@ import type { PieceEntry } from "./format";
 export const PIECE_CATALOG: readonly PieceEntry[] = [
   {
     id: "piece-front-step",
-    version: 1,
+    version: 2,
     title: "Front Step",
     styles: ["blues-rock"],
     description:
@@ -27,6 +27,46 @@ export const PIECE_CATALOG: readonly PieceEntry[] = [
       "A driving riff in A: palm-muted root chugs with two power chords kicking on the off-beats, an octave fill and a double-stop tag, then the whole thing moved to E.",
     firstStage: 1,
     capstoneStages: [2],
+  },
+  {
+    id: "piece-lantern",
+    version: 1,
+    title: "Lantern",
+    styles: ["melody"],
+    description:
+      "An eight-bar melody in G built from one three-note motif: the first phrase stops open, the second comes home.",
+    firstStage: 3,
+    capstoneStages: [3],
+  },
+  {
+    id: "piece-porch-light",
+    version: 1,
+    title: "Porch Light",
+    styles: ["folk"],
+    description:
+      "A fingerpicked tune in G: a thumb that keeps time on the bass strings and a melody pinched on top, from one note a beat to full Travis picking.",
+    firstStage: 1,
+    capstoneStages: [4],
+  },
+  {
+    id: "piece-harbour-song",
+    version: 1,
+    title: "Harbour Song",
+    styles: ["folk"],
+    description:
+      "A slow waltz in C: a thumb on the bass, a ringing p-i-m-a arpeggio, and a melody you find by ear before you see it.",
+    firstStage: 1,
+    capstoneStages: [],
+  },
+  {
+    id: "piece-sunday-glide",
+    version: 1,
+    title: "Sunday Glide",
+    styles: ["soul-funk"],
+    description:
+      "A soul vamp in D, I to IV: octave roots, small chords on the top strings in swung sixteenths, and sixths that slide into the chord.",
+    firstStage: 2,
+    capstoneStages: [],
   },
 ];
 
