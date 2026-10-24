@@ -353,3 +353,23 @@ first, so it is not buried.
 - **Reversible:** yes; a later version of the Unit 8 lesson can add it.
 - **Where:** `src/v8/lessons/stage2.ts` (Unit 8), `docs/CURRICULUM_MAP.md` §3
   and §8; [Batch 1 review](reviews/2026-10-24-batch-1-review.md) item 5.
+
+### A18 · 2026-10-24 · Package 6 · A capstone can ask for something made in Create
+
+- **Decision:** a capstone may carry a `make` instruction. The piece player shows
+  it beside the self-report with "Open a new sketch in Create", and the report
+  wording says the learner reports on both. The Stage 3 capstone (*Lantern*) uses
+  it for the map's "answering phrase saved in Create". The sketch is not linked
+  to the capstone record; the learner's report says whether it was made.
+- **Why:** map §7 makes the Stage 3 capstone a performance plus a saved answer,
+  and the player had no way to ask for the second half. Linking the sketch to
+  the record would mean resuming a capstone from Create, which the store only
+  supports for unit activities; that is more machinery than one capstone needs,
+  and Stage 7 and 8 capstones (made in Create) will need a fuller design anyway.
+- **Alternatives:** drop the answer from the Stage 3 capstone (changes the map's
+  plan); a lesson-style making check inside the piece player (would duplicate
+  the lesson player's Create round trip).
+- **Reversible:** yes; `make` is optional content, and a later version can link
+  the sketch.
+- **Where:** `src/v8/pieces/format.ts` (`Capstone.make`, `reportPrompt`),
+  `src/v8/components/PiecePlayer.tsx`, `src/v8/pieces/library.ts` (*Lantern*).

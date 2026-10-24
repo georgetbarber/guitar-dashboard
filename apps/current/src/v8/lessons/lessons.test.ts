@@ -14,6 +14,8 @@ import { loadLesson, STAGE_LOADERS } from "./load";
 import { entryOf, scoreById, type Lesson } from "./format";
 import { COMMON_TONE_LESSON } from "./stage1";
 import { THIRD_COLOUR_LESSON } from "./stage2";
+import { BY_EAR_LESSON } from "./stage3";
+import { COMMON_TONES_LESSON } from "./stage4";
 import { differsIn, validateLesson, validateLessonSet } from "./validate";
 import { PIECES } from "../pieces/library";
 
@@ -204,5 +206,20 @@ describe("the lesson validator", () => {
     expect(differsIn("key", demo, reversed)).toBe(false);
     expect(differsIn("pitch", demo, reversed)).toBe(true);
     expect(differsIn("rhythm", demo, reversed)).toBe(false);
+    // Fingerpicked scores name their chords only in chord marks, not strummed voicings.
+    const inC = scoreById(COMMON_TONES_LESSON, "waltz-c-am-f-g");
+    const inG = scoreById(COMMON_TONES_LESSON, "waltz-g-em-c-d");
+    expect([inC.voicings, inG.voicings]).toEqual([[], []]);
+    expect(differsIn("harmony", inC, inG)).toBe(true);
+    expect(differsIn("harmony", inC, { ...inG, harmony: inC.harmony })).toBe(false);
+  });
+
+  it("asks for no video for a part only the app plays, but does once the learner plays it", () => {
+    const pieces = new Map(PIECES.map((piece) => [piece.id, new Set(piece.parts.map((part) => part.id))]));
+    expect(validateLesson(BY_EAR_LESSON, pieces)).toEqual([]);
+    const { accompaniment: _backing, ...unaccompanied } = BY_EAR_LESSON;
+    expect(validateLesson(unaccompanied, pieces)).toContainEqual(
+      expect.stringContaining("fingerpicking hand, so it must show"),
+    );
   });
 });

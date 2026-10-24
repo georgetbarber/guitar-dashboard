@@ -8,8 +8,8 @@ import { LESSONS as STAGE_2 } from "../lessons/stage2";
 import { LESSONS as STAGE_3 } from "../lessons/stage3";
 import { LESSONS as STAGE_4 } from "../lessons/stage4";
 import { PIECE_CATALOG } from "./catalog";
-import { pieceEntryOf, pieceScore, type Piece } from "./format";
-import { FRONT_STEP_PIECE, LOW_ROAD_PIECE, PIECES } from "./library";
+import { pieceEntryOf, pieceScore, reportPrompt, type Piece } from "./format";
+import { FRONT_STEP_PIECE, LANTERN_PIECE, LOW_ROAD_PIECE, PIECES } from "./library";
 import { validatePiece, validatePieceSet } from "./validate";
 
 const LESSONS = [...STAGE_1, ...STAGE_2, ...STAGE_3, ...STAGE_4];
@@ -228,6 +228,22 @@ describe("the piece validator", () => {
         scores: piece.scores.map((score) => ({ ...score, feel: "swing-16" as const })),
       })).join(),
     ).toMatch(/swing-16 feel, which none of its styles uses/);
+  });
+
+  it("refuses a capstone that asks for something to make without saying what", () => {
+    const lantern = structuredClone(LANTERN_PIECE);
+    expect(validatePiece(lantern)).toEqual([]);
+    const vague = { ...lantern, capstones: lantern.capstones.map((capstone) => ({ ...capstone, make: "Make it." })) };
+    expect(validatePiece(vague).join()).toMatch(/must say what to make in Create/);
+  });
+
+  it("turns a first-person capstone criterion into what the learner is asked to report", () => {
+    expect(reportPrompt("I kept my place and stopped with the second guitar.")).toBe(
+      "Report whether you kept your place and stopped with the second guitar.",
+    );
+    expect(reportPrompt("The bass kept alternating while the melody sang on top.")).toBe(
+      "Report whether this was true: “The bass kept alternating while the melody sang on top.”",
+    );
   });
 
   it("refuses a wrong chord shape in a band part", () => {

@@ -102,6 +102,48 @@
       "added": "2026-10-24 · Package 5"
     },
     {
+      "id": "guitar-lantern-capstone",
+      "group": "guitar",
+      "title": "Play the Stage 3 capstone, Lantern, and make an answer",
+      "do": "In the Course map, open Stage 3 and choose “Open the capstone”. Play the melody along with the second guitar's chords at 60–72 BPM, once with the tab showing and once hidden. Then use “Open a new sketch in Create” to write a two-bar answer to the first phrase that ends on G, save it, and come back to report.",
+      "pass": "Phrase 1 sounds unfinished on A and phrase 2 sounds home on G; the melody sits under the fingers in open position; and making the answer in Create took minutes, not a fight with the editor.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Stage 3 capstone · Lantern"
+      },
+      "source": "Batch 2 (Package 6): Stage 3 capstone with a making step, agent-drafted, not yet played on a guitar.",
+      "added": "2026-10-24 · Package 6"
+    },
+    {
+      "id": "guitar-porch-light-travis",
+      "group": "guitar",
+      "title": "Play the Stage 4 capstone, Porch Light",
+      "do": "In the Course map, open Stage 4 and choose “Open the capstone”. Start at 56 BPM: thumb alternating on every count (G on the low E and open D; Em low E and D-string fret 2; C on the A and D strings; D on the D and G strings) with the melody pinched on 1 and 3, and the hammer from B to C in bar 3.",
+      "pass": "The thumb keeps going without thinking about it by the third attempt, the melody is louder than the bass, and none of the eight bars needs a stretch or a change you cannot make in time. Note the tempo where it falls apart.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Stage 4 capstone · Porch Light"
+      },
+      "source": "Batch 2 (Package 6): Stage 4 capstone, agent-drafted; Travis picking is the hardest new hand skill in Stages 3–4.",
+      "added": "2026-10-24 · Package 6"
+    },
+    {
+      "id": "guitar-batch-2-up-the-neck",
+      "group": "guitar",
+      "title": "Try the small shapes up the neck",
+      "do": "Open the full lessons in Units 19, 20 and 23 (top-string triads at the 7th fret, three shapes of D, sliding sixths). Play each first study at its slowest tempo, then Sunday Glide's rhythm part from Play.",
+      "pass": "Each shape rings on all its strings, the hammer-on and the slides land on their counts, and the swung sixteenths feel like a groove rather than a drill. Leave a note on any shape that buzzes or any jump you cannot make.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Units 19, 20 and 23 · Learn it"
+      },
+      "source": "Batch 2 (Package 6): the course's first shapes above the 5th fret and its first swung sixteenths (decision A17), agent-drafted.",
+      "added": "2026-10-24 · Package 6"
+    },
+    {
       "id": "guitar-hand-guidance",
       "group": "guitar",
       "title": "Check the written hand guidance",

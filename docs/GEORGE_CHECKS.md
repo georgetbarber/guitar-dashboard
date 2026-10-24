@@ -8,7 +8,7 @@ Tick them in the app under **Settings › Things to check**, where the same list
 keeps your ticks on this device and in sync. Leave a “Something's wrong here”
 note if a check fails.
 
-23 items, most valuable first within each group.
+26 items, most valuable first within each group.
 
 ## On the laptop
 
@@ -103,6 +103,33 @@ note if a check fails.
 - **Where:** Play · Low Road · The riff
 - **Why:** Batch 1 (Package 5); originality rule in decision A13.
 - **Added:** 2026-10-24 · Package 5 · `guitar-low-road-riff`
+
+### Play the Stage 3 capstone, Lantern, and make an answer
+
+- **Status:** needs George
+- **Do:** In the Course map, open Stage 3 and choose “Open the capstone”. Play the melody along with the second guitar's chords at 60–72 BPM, once with the tab showing and once hidden. Then use “Open a new sketch in Create” to write a two-bar answer to the first phrase that ends on G, save it, and come back to report.
+- **Pass:** Phrase 1 sounds unfinished on A and phrase 2 sounds home on G; the melody sits under the fingers in open position; and making the answer in Create took minutes, not a fight with the editor.
+- **Where:** Learn › Course map · Stage 3 capstone · Lantern
+- **Why:** Batch 2 (Package 6): Stage 3 capstone with a making step, agent-drafted, not yet played on a guitar.
+- **Added:** 2026-10-24 · Package 6 · `guitar-lantern-capstone`
+
+### Play the Stage 4 capstone, Porch Light
+
+- **Status:** needs George
+- **Do:** In the Course map, open Stage 4 and choose “Open the capstone”. Start at 56 BPM: thumb alternating on every count (G on the low E and open D; Em low E and D-string fret 2; C on the A and D strings; D on the D and G strings) with the melody pinched on 1 and 3, and the hammer from B to C in bar 3.
+- **Pass:** The thumb keeps going without thinking about it by the third attempt, the melody is louder than the bass, and none of the eight bars needs a stretch or a change you cannot make in time. Note the tempo where it falls apart.
+- **Where:** Learn › Course map · Stage 4 capstone · Porch Light
+- **Why:** Batch 2 (Package 6): Stage 4 capstone, agent-drafted; Travis picking is the hardest new hand skill in Stages 3–4.
+- **Added:** 2026-10-24 · Package 6 · `guitar-porch-light-travis`
+
+### Try the small shapes up the neck
+
+- **Status:** needs George
+- **Do:** Open the full lessons in Units 19, 20 and 23 (top-string triads at the 7th fret, three shapes of D, sliding sixths). Play each first study at its slowest tempo, then Sunday Glide's rhythm part from Play.
+- **Pass:** Each shape rings on all its strings, the hammer-on and the slides land on their counts, and the swung sixteenths feel like a groove rather than a drill. Leave a note on any shape that buzzes or any jump you cannot make.
+- **Where:** Learn › Course map · Units 19, 20 and 23 · Learn it
+- **Why:** Batch 2 (Package 6): the course's first shapes above the 5th fret and its first swung sixteenths (decision A17), agent-drafted.
+- **Added:** 2026-10-24 · Package 6 · `guitar-batch-2-up-the-neck`
 
 ### Check the written hand guidance
 
