@@ -1,4 +1,4 @@
-import { estimateFramePitch } from "./pitchAssessment";
+import { estimateFramePitch, soundsLikeOneNote, QUIET_RMS } from "./pitchAssessment";
 import type { TimedAudioFrame } from "./pitchAssessment";
 
 export type NoteSequenceEstimate =
@@ -18,39 +18,61 @@ export function assessNoteSequence(
     if (gap <= 0 || gap > 350) return { status: "uncertain", reason: "interrupted" };
   }
 
-  const segments: TimedAudioFrame[][] = [];
-  let current: TimedAudioFrame[] = [];
-  let silence = 0;
-  let clipped = 0;
-  let voiced = 0;
-  for (const frame of frames) {
+  /*
+   * Silence is judged against this check's own input rather than a fixed level:
+   * a phone's automatic gain lifts the room between notes, and ordinary noise can
+   * sit above a fixed threshold. A gap is a frame well below the louder frames
+   * and clearly above nothing but the room's floor.
+   */
+  const levels = frames.map((frame) => {
     let power = 0;
     let peak = 0;
     for (const sample of frame.samples) {
       power += sample * sample;
       peak = Math.max(peak, Math.abs(sample));
     }
-    const rms = Math.sqrt(power / frame.samples.length);
+    return { rms: Math.sqrt(power / frame.samples.length), peak };
+  });
+  const sorted = levels.map((level) => level.rms).sort((a, b) => a - b);
+  const floor = sorted[Math.floor(sorted.length * 0.1)];
+  const loud = sorted[Math.floor(sorted.length * 0.9)];
+  // The floor term only applies when quieter frames exist; a fully sounding window has no gap to find.
+  const gate = Math.max(QUIET_RMS, Math.min(floor * 2.5, loud * 0.5), loud * 0.12);
+
+  const segments: TimedAudioFrame[][] = [];
+  let current: TimedAudioFrame[] = [];
+  let currentLevels: number[] = [];
+  let silence = 0;
+  let clipped = 0;
+  let voiced = 0;
+  let reattacked = false;
+  frames.forEach((frame, index) => {
+    const { rms, peak } = levels[index];
     if (peak >= 0.985 || rms > 0.7) {
       clipped += 1;
-      continue;
+      return;
     }
-    if (rms < 0.008) {
+    if (rms < gate) {
       silence += 1;
-      continue;
+      return;
     }
     voiced += 1;
     if (silence >= 2 && current.length) {
       segments.push(current);
       current = [];
+      currentLevels = [];
     }
     silence = 0;
+    // A sharp rise after a sound has settled is a new pluck with no gap before it.
+    const previous = currentLevels.at(-1);
+    if (currentLevels.length >= 2 && previous !== undefined && rms > previous * 1.8 && rms - previous > gate) reattacked = true;
     current.push(frame);
-  }
+    currentLevels.push(rms);
+  });
   if (current.length) segments.push(current);
   if (clipped > 1) return { status: "uncertain", reason: "clipped" };
   if (voiced < targets.length * 4) return { status: "uncertain", reason: "quiet" };
-  if (segments.length !== targets.length || segments.some((segment) => segment.length < 4))
+  if (reattacked || segments.length !== targets.length || segments.some((segment) => segment.length < 4))
     return { status: "uncertain", reason: "not-separated" };
 
   const notes: Extract<NoteSequenceEstimate, { status: "estimated" }>["notes"] = [];
@@ -73,9 +95,9 @@ function estimateSegment(segment: readonly TimedAudioFrame[], sampleRate: number
   const pitches: number[] = [];
   for (const frame of segment) {
     const pitch = estimateFramePitch(frame.samples, sampleRate);
-    if (pitch !== null) pitches.push(pitch.frequencyHz);
+    if (pitch !== null && soundsLikeOneNote(frame.samples, sampleRate, pitch.frequencyHz)) pitches.push(pitch.frequencyHz);
   }
-  if (pitches.length < Math.max(3, Math.ceil(segment.length * 0.7))) return { status: "uncertain", reason: "unclear" };
+  if (pitches.length < Math.max(3, Math.ceil(segment.length * 0.6))) return { status: "uncertain", reason: "unclear" };
   const sorted = [...pitches].sort((a, b) => a - b);
   const frequencyHz = sorted[Math.floor(sorted.length / 2)];
   const cents = pitches.map((pitch) => 1_200 * Math.log2(pitch / frequencyHz));

@@ -1,7 +1,8 @@
 import { SKETCH_SYNC_FIELDS } from "./types";
 import { completedActivityIdsFromEvidence } from "./learning";
-import type { CompetencyEvidence, LearnerSettings, Sketch, SketchSyncField, V8State } from "./types";
-import { validateEvidence, validateProfile, validateSketch } from "./validation";
+import type { ChecklistTick, CompetencyEvidence, FeedbackNote, LearnerSettings, ReviewMark, Sketch, SketchSyncField, V8State } from "./types";
+import { validateChecklistTick, validateEvidence, validateFeedbackNote, validateProfile, validateReviewMark, validateSketch } from "./validation";
+import { mergeByUpdatedAt } from "./notes";
 import { describeExceedances, profileExceedances, sketchExceedances } from "./limits";
 
 export interface CloudProfile {
@@ -19,6 +20,10 @@ export interface CloudSnapshot {
   profile?: CloudProfile | null;
   evidence?: CompetencyEvidence[];
   sketches?: Sketch[];
+  /** Separate collections; an older client neither reads nor rewrites them. */
+  feedback?: FeedbackNote[];
+  checks?: ChecklistTick[];
+  reviews?: ReviewMark[];
 }
 
 export function cloudProfile(state: V8State): CloudProfile {
@@ -133,6 +138,9 @@ export function mergeCloudSnapshot(state: V8State, incoming: CloudSnapshot): V8S
     evidence: evidence.sort((a, b) => a.occurredAt.localeCompare(b.occurredAt)),
     sketches: visibleSketches.sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     activeSketchId,
+    ...(incoming.feedback ? { feedbackNotes: mergeByUpdatedAt(state.feedbackNotes, incoming.feedback) } : {}),
+    ...(incoming.checks ? { checklistTicks: mergeByUpdatedAt(state.checklistTicks, incoming.checks) } : {}),
+    ...(incoming.reviews ? { reviewMarks: mergeByUpdatedAt(state.reviewMarks, incoming.reviews) } : {}),
     updatedAt: newestDate(state.updatedAt, profile?.updatedAt)
   };
 }
@@ -180,6 +188,18 @@ export function acceptEvidence(documents: Array<{ id: string; data: unknown }>):
   return acceptDocuments(documents, validateEvidence);
 }
 
+export function acceptFeedback(documents: Array<{ id: string; data: unknown }>): CloudIntake<FeedbackNote> {
+  return acceptDocuments(documents, validateFeedbackNote);
+}
+
+export function acceptChecks(documents: Array<{ id: string; data: unknown }>): CloudIntake<ChecklistTick> {
+  return acceptDocuments(documents, validateChecklistTick);
+}
+
+export function acceptReviews(documents: Array<{ id: string; data: unknown }>): CloudIntake<ReviewMark> {
+  return acceptDocuments(documents, validateReviewMark);
+}
+
 /** A profile is one document, so it is accepted whole or not at all — but its rejection must not stop sketches and observations from merging. */
 export function acceptProfile(value: unknown): { profile: CloudProfile | null; reason: string | null } {
   if (value === null || value === undefined) return { profile: null, reason: null };
@@ -208,7 +228,7 @@ export function describeRejected(count: number): string {
  * work remains safe."
  */
 export interface Withheld {
-  kind: "profile" | "sketch" | "evidence";
+  kind: "profile" | "sketch" | "evidence" | "feedback" | "check" | "review";
   id: string;
   reason: string;
 }
@@ -233,6 +253,18 @@ export function screenEvidence(evidence: CompetencyEvidence): Withheld | null {
     return null;
   } catch (error) {
     return { kind: "evidence", id: evidence.id, reason: error instanceof Error ? error.message : "This observation could not be prepared for the cloud." };
+  }
+}
+
+/** Notes, ticks and marks are screened with the same validator the intake uses. */
+export function screenRecord(kind: "feedback" | "check" | "review", record: FeedbackNote | ChecklistTick | ReviewMark): Withheld | null {
+  try {
+    if (kind === "feedback") validateFeedbackNote(record);
+    else if (kind === "check") validateChecklistTick(record);
+    else validateReviewMark(record);
+    return null;
+  } catch (error) {
+    return { kind, id: record.id, reason: error instanceof Error ? error.message : "This record could not be prepared for the cloud." };
   }
 }
 
@@ -266,7 +298,7 @@ export function describeWithheld(withheld: Withheld[]): string {
 }
 
 export interface PendingWrite<Batch> {
-  kind: "sketch" | "evidence";
+  kind: "sketch" | "evidence" | "feedback" | "check" | "review";
   id: string;
   apply: (batch: Batch) => void;
   /** The same write on its own, used to find the offender when a batch is refused. */

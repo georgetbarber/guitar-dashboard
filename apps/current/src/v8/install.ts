@@ -47,6 +47,8 @@ if (typeof window !== "undefined") {
 
     const offerWaiting = (worker: ServiceWorker | null | undefined) => {
       if (!worker) return;
+      // While still online, save the new build's lesson packs for every stage saved before.
+      void import("./lessonPacks").then(({ preparePacksForUpdate }) => preparePacksForUpdate());
       noteUpdateReady(() => {
         requestedHere = true;
         // generateSW is built with skipWaiting false, so it hands over only when

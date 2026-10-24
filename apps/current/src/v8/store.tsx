@@ -12,7 +12,7 @@ import { ONE_NOTE_QUESTION_ANSWER } from "./pilotEpisode";
 import { mergeCloudSnapshot } from "./sync";
 import type { CloudSnapshot } from "./sync";
 import { SKETCH_SYNC_FIELDS } from "./types";
-import type { CompetencyEvidence, ExploreFocus, LearnerSettings, PilotAttempt, PilotCursor, PilotListeningReview, PilotVariation, RecordedTake, RouteId, SessionPlan, Sketch, V8State } from "./types";
+import type { CompetencyEvidence, ExploreFocus, FeedbackNote, LearnerSettings, LessonAttempt, LessonCursor, PilotAttempt, PilotCursor, PilotListeningReview, PilotVariation, RecordedTake, ReviewMark, RouteId, SessionPlan, Sketch, V8State } from "./types";
 
 const ROUTES: RouteId[] = ["today", "path", "practice", "play", "create", "explore"];
 const ROUTE_PATHS: Record<RouteId, string> = {
@@ -74,7 +74,7 @@ export const DEFAULT_STATE: V8State = {
   sketches: [], deletedSketchIds: {}, activeSketchId: null, lastReflection: ""
 };
 
-type Action =
+export type Action =
   | { type: "hydrate"; state: V8State }
   | { type: "navigate"; route: RouteId; push?: boolean }
   | { type: "openUnit"; unitId: string }
@@ -86,6 +86,11 @@ type Action =
   | { type: "restartPilot"; cursor: PilotCursor }
   | { type: "updatePilot"; patch: Partial<Pick<PilotCursor, "step" | "sectionId" | "tempo" | "repairId" | "assistance" | "attemptId" | "reviewId">> }
   | { type: "recordPilotAttempt"; attempt: PilotAttempt }
+  | { type: "beginLesson"; cursor: LessonCursor }
+  | { type: "restartLesson"; cursor: LessonCursor }
+  | { type: "updateLesson"; lessonId: string; patch: Partial<Pick<LessonCursor, "step" | "scoreId" | "tempo" | "assistance" | "attemptId" | "errorId">> }
+  | { type: "recordLessonAttempt"; attempt: LessonAttempt }
+  | { type: "createFromLesson"; sketch: Sketch; returnActivityId: string }
   | { type: "recordPilotReview"; review: PilotListeningReview }
   | { type: "savePilotVariation"; variation: PilotVariation }
   | { type: "beginSession"; plan: SessionPlan }
@@ -105,7 +110,12 @@ type Action =
   | { type: "mergeCloud"; snapshot: CloudSnapshot }
   | { type: "setRestoreDecision"; id?: string }
   | { type: "confirmRestoreDecision"; id: string }
-  | { type: "replaceState"; state: V8State };
+  | { type: "replaceState"; state: V8State }
+  | { type: "addFeedbackNote"; note: FeedbackNote }
+  | { type: "setFeedbackResolved"; id: string; resolved: boolean }
+  | { type: "setChecklistTick"; id: string; done: boolean }
+  | { type: "markContentChecked"; mark: ReviewMark }
+  | { type: "withdrawContentCheck"; id: string };
 
 function withSketchFieldTimes(state: V8State): V8State {
   return {
@@ -125,7 +135,7 @@ function preparePersistedState(state: V8State): V8State {
   return withSketchFieldTimes(withEvidenceBackedCompletions(state));
 }
 
-function reducer(state: V8State, action: Action): V8State {
+export function reducer(state: V8State, action: Action): V8State {
   const changedAt = new Date().toISOString();
   switch (action.type) {
     case "hydrate": return preparePersistedState({ ...DEFAULT_STATE, ...action.state, deletedSketchIds: action.state.deletedSketchIds ?? {}, route: routeFromLocation() });
@@ -198,6 +208,42 @@ function reducer(state: V8State, action: Action): V8State {
           updatedAt: changedAt } : state.pilotCursor,
         updatedAt: changedAt
       };
+    case "beginLesson": {
+      const current = (state.lessonCursors ?? []).find((cursor) => cursor.lessonId === action.cursor.lessonId);
+      if (current?.lessonVersion === action.cursor.lessonVersion) return state;
+      return {
+        ...state,
+        lessonCursors: [...(state.lessonCursors ?? []).filter((cursor) => cursor.lessonId !== action.cursor.lessonId), action.cursor],
+        updatedAt: changedAt
+      };
+    }
+    case "restartLesson":
+      return {
+        ...state,
+        lessonCursors: [...(state.lessonCursors ?? []).filter((cursor) => cursor.lessonId !== action.cursor.lessonId), action.cursor],
+        updatedAt: changedAt
+      };
+    case "updateLesson":
+      if (!(state.lessonCursors ?? []).some((cursor) => cursor.lessonId === action.lessonId)) return state;
+      return {
+        ...state,
+        lessonCursors: (state.lessonCursors ?? []).map((cursor) => cursor.lessonId === action.lessonId
+          ? { ...cursor, ...action.patch, updatedAt: changedAt } : cursor),
+        updatedAt: changedAt
+      };
+    case "recordLessonAttempt":
+      if ((state.lessonAttempts ?? []).some((attempt) => attempt.id === action.attempt.id)) return state;
+      return {
+        ...state,
+        lessonAttempts: [...(state.lessonAttempts ?? []), action.attempt],
+        lessonCursors: (state.lessonCursors ?? []).map((cursor) => cursor.lessonId === action.attempt.lessonId
+          ? { ...cursor, attemptId: undefined, updatedAt: changedAt } : cursor),
+        updatedAt: changedAt
+      };
+    case "createFromLesson":
+      if (state.sketches.some((item) => item.id === action.sketch.id)) return state;
+      return { ...state, sketches: [...state.sketches, action.sketch], activeSketchId: action.sketch.id, route: "create",
+        activeActivityId: null, resumeActivityId: action.returnActivityId, updatedAt: changedAt };
     case "recordPilotReview":
       if ((state.pilotReviews ?? []).some((review) => review.id === action.review.id)) return state;
       return { ...state, pilotReviews: [...(state.pilotReviews ?? []), action.review], updatedAt: changedAt };
@@ -296,6 +342,30 @@ function reducer(state: V8State, action: Action): V8State {
       updatedAt: changedAt
     };
     case "setActiveSketch": return { ...state, activeSketchId: action.id, route: "create" };
+    /*
+     * Feedback notes, checklist ticks and review marks are not learning
+     * evidence. They never touch completions, evidence or the session plan, and
+     * they carry their own updatedAt for sync rather than the profile's.
+     */
+    case "addFeedbackNote":
+      if ((state.feedbackNotes ?? []).some((note) => note.id === action.note.id)) return state;
+      return { ...state, feedbackNotes: [...(state.feedbackNotes ?? []), action.note] };
+    case "setFeedbackResolved":
+      return { ...state, feedbackNotes: (state.feedbackNotes ?? []).map((note) => note.id === action.id
+        ? { ...note, resolvedAt: action.resolved ? changedAt : null, updatedAt: changedAt }
+        : note) };
+    case "setChecklistTick": {
+      const ticks = (state.checklistTicks ?? []).filter((tick) => tick.id !== action.id);
+      return { ...state, checklistTicks: [...ticks, { id: action.id, done: action.done, updatedAt: changedAt }] };
+    }
+    case "markContentChecked": {
+      const marks = (state.reviewMarks ?? []).filter((mark) => mark.id !== action.mark.id);
+      return { ...state, reviewMarks: [...marks, action.mark], reviewerName: action.mark.reviewer };
+    }
+    case "withdrawContentCheck":
+      return { ...state, reviewMarks: (state.reviewMarks ?? []).map((mark) => mark.id === action.id
+        ? { ...mark, withdrawn: true, updatedAt: changedAt }
+        : mark) };
   }
 }
 

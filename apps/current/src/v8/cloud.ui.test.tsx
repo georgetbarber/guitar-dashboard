@@ -18,6 +18,8 @@ const firebase = vi.hoisted(() => {
   return {
     authChanged: (_user: unknown) => {},
     snapshots: new Map<string, (snapshot: unknown) => void>(),
+    errors: new Map<string, (error: Error & { code?: string }) => void>(),
+    batchSets: [] as Array<[string, unknown]>,
   };
 });
 vi.mock("firebase/app", () => ({ getApps: () => [{}], initializeApp: vi.fn() }));
@@ -29,12 +31,13 @@ vi.mock("firebase/auth", () => ({
 vi.mock("firebase/firestore", () => ({
   getFirestore: () => ({}), doc: (_db: unknown, ...path: string[]) => path.join("/"),
   collection: (_db: unknown, ...path: string[]) => path.join("/"),
-  onSnapshot: (path: string, callback: (snapshot: unknown) => void) => {
+  onSnapshot: (path: string, callback: (snapshot: unknown) => void, onError: (error: Error) => void) => {
     firebase.snapshots.set(path, callback);
-    return () => firebase.snapshots.delete(path);
+    firebase.errors.set(path, onError);
+    return () => { firebase.snapshots.delete(path); firebase.errors.delete(path); };
   },
   setDoc: vi.fn(async () => {}), deleteDoc: vi.fn(async () => {}),
-  writeBatch: () => ({ set: vi.fn(), commit: async () => {} }),
+  writeBatch: () => ({ set: (path: string, data: unknown) => { firebase.batchSets.push([path, data]); }, commit: async () => {} }),
 }));
 vi.mock("firebase/storage", () => ({ getStorage: () => null, deleteObject: vi.fn(), getBlob: vi.fn(), ref: vi.fn(), uploadBytes: vi.fn() }));
 vi.mock("./repository", async (original) => ({
@@ -51,7 +54,9 @@ function Controls() {
     <output data-testid="account">{workspaceId}</output>
     <output data-testid="reflection">{state.lastReflection}</output>
     <output data-testid="sync-status">{cloud.status}</output>
+    <output data-testid="notes">{(state.feedbackNotes ?? []).map((note) => note.text).join("|")}</output>
     <button onClick={() => dispatch({ type: "updateSettings", settings: { dailyMinutes: 35 } })}>Ordinary edit</button>
+    <button onClick={() => dispatch({ type: "addFeedbackNote", note: { id: "note-local", contentId: "unit-01-listen", contentTitle: "Listen", showing: "instruction", text: "From the laptop", createdAt: "2026-10-20T12:00:00.000Z", localDate: "2026-10-20", resolvedAt: null, updatedAt: "2026-10-20T12:00:00.000Z" } })}>Leave a note</button>
     <button onClick={() => {
       dispatch({ type: "replaceState", state: { ...state, pendingRestoreId: "test-restore", updatedAt: new Date().toISOString(), settings: { ...state.settings, dailyMinutes: 55 } } });
     }}>Activate staged restore</button>
@@ -77,6 +82,7 @@ async function waitForAuthListener() {
 
 beforeEach(() => {
   vi.clearAllMocks(); vi.useFakeTimers(); resetUpdateStateForTests();
+  firebase.batchSets.length = 0;
   firebase.authChanged = noAuthChange;
   Object.defineProperty(window, "localStorage", { value: testStorage, configurable: true });
   vi.stubGlobal("localStorage", testStorage);
@@ -99,13 +105,9 @@ it("cancels a scheduled upload on restore and resumes only after a confirmed acc
   await waitForAuthListener();
   await act(async () => firebase.authChanged({ uid: "learner", email: "learner@example.test" }));
   expect(screen.getByTestId("account").textContent).toBe("account:learner");
-  expect(firebase.snapshots.size).toBe(3);
-  await act(async () => {
-    firebase.snapshots.get("users/learner")!({ exists: () => false });
-    firebase.snapshots.get("users/learner/evidence")!({ docs: [] });
-    firebase.snapshots.get("users/learner/sketches")!({ docs: [] });
-    await vi.advanceTimersByTimeAsync(1000);
-  });
+  expect(firebase.snapshots.size).toBe(6);
+  await emitEmptyAccount();
+  await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
   // Flush the upload scheduled by React's post-snapshot effect.
   await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
   expect(setDoc).toHaveBeenCalled();
@@ -127,11 +129,15 @@ it("cancels a scheduled upload on restore and resumes only after a confirmed acc
 });
 
 
-async function emitEmptyAccount() {
+async function emitEmptyAccount(newCollections: "empty" | "refused" = "empty") {
   await act(async () => {
     firebase.snapshots.get("users/learner")!({ exists: () => false });
     firebase.snapshots.get("users/learner/evidence")!({ docs: [] });
     firebase.snapshots.get("users/learner/sketches")!({ docs: [] });
+    for (const name of ["feedback", "checks", "reviews"]) {
+      if (newCollections === "empty") firebase.snapshots.get(`users/learner/${name}`)!({ docs: [] });
+      else firebase.errors.get(`users/learner/${name}`)!(Object.assign(new Error("Missing or insufficient permissions."), { code: "permission-denied" }));
+    }
   });
 }
 
@@ -188,7 +194,7 @@ it("keeps sync paused and the choice retryable when persisting confirmation fail
   expect(screen.getByTestId("sync-status").textContent).toBe("restore-hold");
   await act(async () => { fireEvent.click(screen.getByText("Merge with my account")); });
   expect(repository.confirmRestoreMerge).toHaveBeenLastCalledWith("account:learner", "saved-restore");
-  expect(firebase.snapshots.size).toBe(3);
+  expect(firebase.snapshots.size).toBe(6);
 });
 
 
@@ -201,4 +207,35 @@ it("does not subscribe or upload when the signed-in device workspace is unreadab
   expect(screen.getByTestId("sync-status").textContent).toBe("error");
   expect(firebase.snapshots.size).toBe(0);
   expect(setDoc).not.toHaveBeenCalled();
+});
+
+it("uploads a feedback note to its own collection and merges one from another device", async () => {
+  render(<V8StoreProvider><CloudSyncProvider><Controls /></CloudSyncProvider></V8StoreProvider>);
+  await waitForAuthListener();
+  await act(async () => firebase.authChanged({ uid: "learner" }));
+  await emitEmptyAccount();
+  fireEvent.click(screen.getByText("Leave a note"));
+  await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
+  expect(firebase.batchSets).toContainEqual(["users/learner/feedback/note-local", expect.objectContaining({ text: "From the laptop" })]);
+  // The profile document never carries notes, so an older client rewriting it cannot drop them.
+  for (const [path, data] of vi.mocked(setDoc).mock.calls as unknown as Array<[string, Record<string, unknown>]>) {
+    if (path === "users/learner") expect(Object.keys(data)).not.toContain("feedbackNotes");
+  }
+  const phoneNote = { id: "note-phone", contentId: "unit-01-listen", contentTitle: "Listen", showing: "instruction", text: "From the phone", createdAt: "2026-10-20T13:00:00.000Z", localDate: "2026-10-20", resolvedAt: null, updatedAt: "2026-10-20T13:00:00.000Z" };
+  await act(async () => firebase.snapshots.get("users/learner/feedback")!({ docs: [{ id: "note-phone", data: () => phoneNote }] }));
+  expect(screen.getByTestId("notes").textContent).toBe("From the laptop|From the phone");
+});
+
+it("keeps ordinary sync running when the server refuses the new collections", async () => {
+  render(<V8StoreProvider><CloudSyncProvider><Controls /></CloudSyncProvider></V8StoreProvider>);
+  await waitForAuthListener();
+  await act(async () => firebase.authChanged({ uid: "learner" }));
+  await emitEmptyAccount("refused");
+  fireEvent.click(screen.getByText("Leave a note"));
+  fireEvent.click(screen.getByText("Ordinary edit"));
+  await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
+  expect(setDoc).toHaveBeenCalledWith("users/learner", expect.objectContaining({ settings: expect.objectContaining({ dailyMinutes: 35 }) }));
+  expect(firebase.batchSets.some(([path]) => path.startsWith("users/learner/feedback/"))).toBe(false);
+  expect(screen.getByTestId("sync-status").textContent).toBe("synced");
+  expect(screen.getByTestId("notes").textContent).toBe("From the laptop");
 });

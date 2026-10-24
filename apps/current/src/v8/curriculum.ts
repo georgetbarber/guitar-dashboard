@@ -216,6 +216,61 @@ function makeActivity(unitId: string, seed: UnitSeed, index: number, template: t
   };
 }
 
+/**
+ * What each unit's music builds on (docs/CURRICULUM_MAP.md §3 and §5), by unit
+ * order. tests/curriculumMap.test.ts keeps this identical to the map.
+ */
+export const PREREQUISITES: Readonly<Record<number, readonly number[]>> = {
+  1: [],
+  2: [1],
+  3: [1],
+  4: [3],
+  5: [2, 4],
+  6: [3, 4],
+  7: [1],
+  8: [7],
+  9: [2, 8],
+  10: [7],
+  11: [8, 9, 10],
+  12: [9, 11],
+  13: [7, 10],
+  14: [13],
+  15: [4, 14],
+  16: [15],
+  17: [1, 14],
+  18: [6, 16],
+  19: [10, 11],
+  20: [19],
+  21: [3, 6],
+  22: [3, 21],
+  23: [11, 20],
+  24: [16, 19],
+  25: [12, 17, 19],
+  26: [4, 5, 19],
+  27: [17, 25],
+  28: [25],
+  29: [17, 27],
+  30: [26, 29],
+  31: [22],
+  32: [20, 31],
+  33: [27, 29],
+  34: [26, 31],
+  35: [19, 31, 32],
+  36: [23, 33],
+  37: [21],
+  38: [31, 33],
+  39: [28],
+  40: [22, 37],
+  41: [20, 22, 32],
+  42: [35, 40],
+  43: [18, 30],
+  44: [43],
+  45: [24, 35],
+  46: [42, 44],
+  47: [46],
+  48: [47],
+};
+
 export const CURRICULUM: CurriculumUnit[] = STAGES.flatMap((stage, stageIndex) =>
   stage.units.map((seed, unitIndex) => {
     const order = stageIndex * 6 + unitIndex + 1;
@@ -228,7 +283,7 @@ export const CURRICULUM: CurriculumUnit[] = STAGES.flatMap((stage, stageIndex) =
       title: seed.title,
       focus: seed.focus,
       outcome: seed.outcome,
-      prerequisiteIds: order === 1 ? [] : [`unit-${String(order - 1).padStart(2, "0")}`],
+      prerequisiteIds: (PREREQUISITES[order] ?? []).map((before) => `unit-${String(before).padStart(2, "0")}`),
       competencyIds: seed.strands.map((strand) => `${strand}:${id}`),
       microStudy: {
         title: seed.study[0], tempo: seed.study[1], metre: seed.study[2], rhythm: seed.study[3], tab: seed.study[4], purpose: seed.outcome,
