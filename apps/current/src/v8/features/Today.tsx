@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { pieceEntry } from "../pieces/catalog";
+import { useOpenPiece } from "../pieceOverlay";
 import { buildReturnSession, buildSession, daysSinceLastAttempt, liveObservations, nextUnit, pathSummary, sessionActivityComplete, unitProgress } from "../learning";
 import { activityById, CURRICULUM, STAGES } from "../curriculum";
 import { pilotCapabilitySnapshots } from "../capabilities";
@@ -7,6 +9,7 @@ import { useV8Store } from "../store";
 
 export function Today() {
   const { state, dispatch, navigate } = useV8Store();
+  const openPiece = useOpenPiece();
   const session = state.sessionPlan ?? buildSession(state);
   useEffect(() => {
     if (!state.sessionPlan) dispatch({ type: "beginSession", plan: session });
@@ -25,6 +28,10 @@ export function Today() {
     item.occurredAt >= session.generatedAt && session.items.some((part) => part.activityId === item.activityId));
   const reportedAttempts = new Set(sessionReports.map((item) => `${item.activityId}|${item.occurredAt}`)).size;
   const favorites = (state.favoriteActivityIds ?? []).map(activityById).filter((item) => item !== null);
+  const favouritePieces = (state.favoriteActivityIds ?? [])
+    .filter((id) => id.startsWith("piece:"))
+    .map((id) => pieceEntry(id.slice("piece:".length)))
+    .filter((item) => item !== null);
   const pilotCapabilities = pilotCapabilitySnapshots(state);
   const dueConcept = dueConceptKind(state.evidence);
   return (
@@ -69,6 +76,7 @@ export function Today() {
         </ol>
       </section>
 
+      {favouritePieces.length > 0 && <section className="card familiar-favorites"><span className="eyebrow">Favourite pieces</span><h2>Play something you know.</h2><div className="action-row">{favouritePieces.map((piece) => <button className="secondary-action" key={piece.id} onClick={() => openPiece({ pieceId: piece.id })}>{piece.title}</button>)}</div></section>}
       {favorites.length > 0 && <section className="card familiar-favorites"><span className="eyebrow">Familiar favourites</span><h2>Return to a sound you chose.</h2><p>These are quick ways back into music; opening one does not mark it complete.</p><div className="action-row">{favorites.slice(0, 4).map((activity) => <button className="secondary-action" key={activity.id} onClick={() => dispatch({ type: "openActivity", activityId: activity.id })}>{activity.title}</button>)}</div>{favorites.length > 4 && <details><summary>Show {favorites.length - 4} more favourites</summary><div className="action-row">{favorites.slice(4).map((activity) => <button className="secondary-action" key={activity.id} onClick={() => dispatch({ type: "openActivity", activityId: activity.id })}>{activity.title}</button>)}</div></details>}</section>}
 
       <div className="today-lower">

@@ -53,14 +53,17 @@ for (const chunk of chunks) {
     if (lessonFile(file)) throw new Error(`Shell file ${chunk.file} imports lesson pack file ${file} directly.`);
 }
 
-// Every lesson pack lists everything its stage's lessons, the lesson player and (stage 1) the pilot need.
+// Every lesson pack lists everything its stage's lessons, both players and (stage 1) the pilot need.
 const packs = JSON.parse(readFileSync(new URL("lesson-packs.json", dist), "utf8"));
 if (packs.version !== 1 || typeof packs.stages !== "object") throw new Error("lesson-packs.json is malformed.");
 const entryFor = (pattern) => chunks.find((chunk) => chunk.src && pattern.test(chunk.src));
 const player = entryFor(/src\/v8\/components\/LessonPlayer\.tsx$/);
 const pilot = entryFor(/src\/v8\/components\/PilotEpisodePlayer\.tsx$/);
+const piecePlayer = entryFor(/src\/v8\/components\/PiecePlayer\.tsx$/);
 if (!player || !lessonFile(player.file)) throw new Error("The lesson player is not built as a lesson pack file.");
 if (!pilot || !lessonFile(pilot.file)) throw new Error("The pilot player is not built as a lesson pack file.");
+if (!piecePlayer || !lessonFile(piecePlayer.file))
+  throw new Error("The piece player is not built as a lesson pack file.");
 const stageChunks = chunks.filter((chunk) => chunk.src && /src\/v8\/lessons\/stage\d+\.ts$/.test(chunk.src));
 const packed = new Set();
 const sizes = [];
@@ -70,6 +73,7 @@ for (const chunk of stageChunks) {
   const needed = [
     ...closure(chunk.file),
     ...closure(player.file),
+    ...closure(piecePlayer.file),
     ...(stage === "1" ? closure(pilot.file) : []),
   ].filter(lessonFile);
   for (const file of needed) if (!listed.has(file)) throw new Error(`Stage ${stage}'s lesson pack is missing ${file}.`);

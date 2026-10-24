@@ -15,6 +15,13 @@ import { Practice } from "../v8/features/Practice";
 import { warmLessonPacks } from "../v8/lessonPacks";
 import { nextUnit } from "../v8/learning";
 import { unitById } from "../v8/curriculum";
+import { LessonPackMissing } from "../v8/components/LessonPackMissing";
+import { PieceOverlayContext, type PieceRequest } from "../v8/pieceOverlay";
+const PiecePlayer = lazy(() =>
+  import("../v8/components/PiecePlayer")
+    .then((module) => ({ default: module.PiecePlayer }))
+    .catch(() => ({ default: ({ onClose }: { onClose: () => void }) => <LessonPackMissing onClose={onClose} /> }))
+);
 const Play = lazy(() => import("../v8/features/Play").then((module) => ({ default: module.Play })));
 const Create = lazy(() => import("../v8/features/Create").then((module) => ({ default: module.Create })));
 const Explore = lazy(() => import("../v8/features/Explore").then((module) => ({ default: module.Explore })));
@@ -49,6 +56,9 @@ function V8Application() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const activityCloseRef = useRef<(() => void) | null>(null);
   const closeActivity = () => dispatch({ type: "openActivity", activityId: null });
+  const [pieceRequest, setPieceRequest] = useState<PieceRequest | null>(null);
+  const pieceCloseRef = useRef<(() => void) | null>(null);
+  const closePiece = () => setPieceRequest(null);
   // Keep the stage the learner is working in ready offline, lessons included (src/v8/lessonPacks.ts).
   const workingStage = hydrated ? nextUnit(state).stage : 0;
   const selectedStage = hydrated ? unitById(state.activeUnitId).stage : 0;
@@ -61,6 +71,7 @@ function V8Application() {
   if (!state.settings.diagnosticComplete) return <Diagnostic />;
   return (
     <DialogNoticesContext.Provider value={<AppNotices />}>
+    <PieceOverlayContext.Provider value={setPieceRequest}>
     <div className="v8-shell">
       <a className="skip-link" href="#main-content">Skip to learning content</a>
       <header className="app-header">
@@ -101,8 +112,10 @@ function V8Application() {
       })}</nav>
       {/* Escape asks the player first: it keeps an unsaved reflection unless the learner uses Close activity. */}
       {state.activeActivityId && <Modal className="activity-overlay" labelledBy="activity-title" onRequestClose={() => (activityCloseRef.current ?? closeActivity)()}><ActivityPlayer key={state.activeActivityId} activityId={state.activeActivityId} onClose={closeActivity} requestCloseRef={activityCloseRef} /></Modal>}
+      {pieceRequest && <Modal className="activity-overlay" labelledBy="activity-title" onRequestClose={() => (pieceCloseRef.current ?? closePiece)()}><Suspense fallback={<section className="activity-player" aria-labelledby="activity-title"><header className="activity-header"><span /><h1 id="activity-title">Opening the piece…</h1></header></section>}><PiecePlayer key={`${pieceRequest.pieceId}|${pieceRequest.partId ?? ""}|${pieceRequest.capstoneStage ?? ""}`} request={pieceRequest} onClose={closePiece} requestCloseRef={pieceCloseRef} /></Suspense></Modal>}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </div>
+    </PieceOverlayContext.Provider>
     </DialogNoticesContext.Provider>
   );
 }

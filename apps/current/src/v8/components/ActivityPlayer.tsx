@@ -11,6 +11,7 @@ import { MicroStudy } from "./MicroStudy";
 import { ContentStatus } from "./ContentStatus";
 import { legacyActivityProvenance } from "../provenance";
 import { lessonForActivity } from "../lessons/catalog";
+import { LessonPackMissing } from "./LessonPackMissing";
 import { PilotStudy } from "./PilotStudy";
 import { RhythmNotation } from "./RhythmNotation";
 import { RecordSaveStatus } from "./SaveStatus";
@@ -26,20 +27,6 @@ const OUTCOMES: Array<{ value: EvidenceOutcome; label: string; description: stri
  * rather than with the app shell (src/v8/lessonPacks.ts). If one is not saved
  * and the device is offline, say so instead of failing.
  */
-function LessonPackMissing({ onClose }: { onClose?: () => void }) {
-  return (
-    <section className="pilot-episode" aria-labelledby="activity-title">
-      <header className="activity-header">
-        <button className="icon-button" onClick={onClose} aria-label="Close lesson" data-autofocus>←</button>
-        <div>
-          <h1 id="activity-title">This lesson isn’t saved on this device yet</h1>
-          <p className="pilot-notice" role="alert">Reconnect to the internet, then reload Interval to open it. To use it offline next time, choose “Save this stage for offline” in the Course map while you are connected.</p>
-          <button className="secondary-action" onClick={() => location.reload()}>Reload Interval</button>
-        </div>
-      </header>
-    </section>
-  );
-}
 const PilotEpisodePlayer = lazy(() => import("./PilotEpisodePlayer").then((module) => ({ default: module.PilotEpisodePlayer })).catch(() => ({ default: LessonPackMissing })));
 const LessonPlayer = lazy(() => import("./LessonPlayer").then((module) => ({ default: module.LessonPlayer })).catch(() => ({ default: LessonPackMissing })));
 

@@ -5,6 +5,8 @@ import type { ActivityKind, CurriculumUnit } from "../types";
 import { OfflineLessonStatus } from "../components/OfflineLessonStatus";
 import { PlacementSampler } from "../components/PlacementSampler";
 import { lessonForActivity } from "../lessons/catalog";
+import { capstoneForStage } from "../pieces/catalog";
+import { useOpenPiece } from "../pieceOverlay";
 
 const ACTIVITY_LABELS: Record<ActivityKind, string> = {
   "listen-compare": "Listen",
@@ -21,6 +23,7 @@ const ACTIVITY_LABELS: Record<ActivityKind, string> = {
 
 export function Path() {
   const { state, dispatch } = useV8Store();
+  const openPiece = useOpenPiece();
   const active = CURRICULUM.find((unit) => unit.id === state.activeUnitId) ?? CURRICULUM[0];
   const current = nextUnit(state);
   const isLocked = (unit: CurriculumUnit) => unit.order > current.order + 1
@@ -63,6 +66,11 @@ export function Path() {
               return <article className={`unit-card card ${unit.id === active.id ? "is-active" : ""} ${locked ? "is-locked" : ""}`} key={unit.id}><div className="unit-status"><span>{status}</span><i style={{ "--progress": `${progress}%` } as React.CSSProperties} /></div><h3>{unit.title}</h3><p>{unit.outcome}</p><div className="competency-tags">{unit.competencyIds.map((id) => <span key={id}>{id.split(":")[0]}</span>)}</div><button disabled={locked} className="secondary-action" title={blocker ? `Available after “${blocker.title}”` : undefined} onClick={() => dispatch({ type: "openUnit", unitId: unit.id })}>{locked ? "Later in the course" : progress ? "Continue unit" : "Open unit"}</button>{locked && blocker && <small className="lock-note">Available after “{blocker.title}”</small>}</article>;
             })}
           </div>
+          {(() => {
+            const capstone = capstoneForStage(active.stage);
+            if (!capstone) return null;
+            return <article className="capstone-card card"><div><span className="eyebrow">Stage {active.stage} capstone · a piece to play for its own sake</span><h3>{capstone.title}</h3><p>{capstone.description}</p></div><button className="secondary-action" onClick={() => openPiece({ pieceId: capstone.id, capstoneStage: active.stage })}>Open the capstone</button></article>;
+          })()}
           {activeLocked
             ? <section className="unit-detail locked-unit-detail card">
                 <header><div><span className="eyebrow">Later in the course</span><h2>{active.title}</h2><p>{active.outcome}</p></div><strong>Preview only</strong></header>

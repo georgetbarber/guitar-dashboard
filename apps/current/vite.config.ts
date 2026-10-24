@@ -18,7 +18,11 @@ const LESSON_MODULES = [
   /\/src\/core\/music\/chordSymbols\.ts$/,
   /\/src\/audio\/(?:scorePlayer|pluck)\.ts$/,
   /\/src\/v8\/components\/score\//,
-  /\/src\/v8\/components\/(?:LessonPlayer|PilotEpisodePlayer)\.tsx$/,
+  /\/src\/v8\/components\/(?:LessonPlayer|PilotEpisodePlayer|PiecePlayer)\.tsx$/,
+  /\/src\/v8\/pieces\/(?:library|validate)\.ts$/,
+  /\/src\/v8\/lessons\/validate\.ts$/,
+  // The score views' styles travel with them.
+  /\/src\/styles\/score\.css$/,
   /\/src\/v8\/lessonProgress\.ts$/,
   /\/src\/v8\/lessons\/(?:stage\d+|load)\.ts$/,
 ];
@@ -48,7 +52,8 @@ function lessonPacks(): Plugin {
         for (const chunk of chunks) if (chunk.facadeModuleId && pattern.test(chunk.facadeModuleId)) closure(chunk.fileName, files);
         return files;
       };
-      const engine = from(/\/src\/v8\/components\/LessonPlayer\.tsx$/);
+      // Every stage's pack holds both players: pieces recur across stages.
+      const engine = from(/\/src\/v8\/components\/(?:LessonPlayer|PiecePlayer)\.tsx$/);
       const pilot = from(/\/src\/v8\/components\/PilotEpisodePlayer\.tsx$/);
       const stages: Record<string, string[]> = {};
       for (const chunk of chunks) {
@@ -151,7 +156,7 @@ export default defineConfig({
         chunkFileNames: (chunk) => (isLessonChunk(chunk) ? "assets/lesson-[name]-[hash].js" : "assets/[name]-[hash].js"),
         // A lesson player's styles are named after it, so they travel in its pack.
         assetFileNames: (asset) =>
-          (asset.names ?? []).some((name) => /^(?:LessonPlayer|PilotEpisodePlayer)\.css$/.test(name))
+          (asset.names ?? []).some((name) => /^(?:LessonPlayer|PilotEpisodePlayer|PiecePlayer|ScoreView)\.css$/.test(name))
             ? "assets/lesson-[name]-[hash][extname]"
             : "assets/[name]-[hash][extname]"
       }
