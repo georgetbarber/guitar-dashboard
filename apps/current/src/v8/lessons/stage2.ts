@@ -445,7 +445,7 @@ export const OCTAVES_LESSON: Lesson = {
   checkKind: "playing",
   title: "The same note, higher up",
   purpose: "See the neck as repeating patterns: find any note again an octave higher with one fixed shape.",
-  destination: "A short line of octave roots, D, G and A: the root part Sunday Glide (a later piece) is built on.",
+  destination: "A short line of octave roots, D, G and A: the root part Sunday Glide is built on.",
   variable: "Which pair of strings carries the octave, and so whether the shape is two frets or three.",
   capabilities: [
     {
@@ -553,8 +553,11 @@ export const OCTAVES_LESSON: Lesson = {
     changed: ["key", "pitch", "position"],
   },
   performance: {
-    kind: "create",
-    instruction: "Make a bass line of octave roots in Create under two chords of your choice.",
+    kind: "piece",
+    pieceId: "piece-sunday-glide",
+    partId: "sunday-glide-roots",
+    instruction:
+      "Play Sunday Glide's octave roots, D from the A string and G from the low E, a quarter note each count, while the second guitar plays its rhythm part.",
   },
 };
 
@@ -777,8 +780,7 @@ export const B_STRING_LESSON: Lesson = {
   title: "The B string's one-fret shift",
   purpose:
     "Play two notes at once, thirds and sixths, and know exactly how each shape bends where the B string breaks the pattern.",
-  destination:
-    "The double-stop tag that ends Low Road, and a run of sliding-ready sixths for Sunday Glide (a later piece).",
+  destination: "The double-stop tag that ends Low Road, and a run of sliding-ready sixths for Sunday Glide.",
   variable: "Which pair of strings carries the interval: across the B string the shape shifts by a fret.",
   capabilities: [
     {

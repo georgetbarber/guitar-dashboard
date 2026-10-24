@@ -90,7 +90,8 @@ export type Action =
   | { type: "restartLesson"; cursor: LessonCursor }
   | { type: "updateLesson"; lessonId: string; patch: Partial<Pick<LessonCursor, "step" | "scoreId" | "tempo" | "assistance" | "attemptId" | "errorId" | "sketchId">> }
   | { type: "recordLessonAttempt"; attempt: LessonAttempt }
-  | { type: "createFromLesson"; sketch: Sketch; returnActivityId: string }
+  /** A sketch started from a lesson or a piece; `returnActivityId` is null when there is no activity to return to. */
+  | { type: "createFromLesson"; sketch: Sketch; returnActivityId: string | null }
   | { type: "recordPilotReview"; review: PilotListeningReview }
   | { type: "savePilotVariation"; variation: PilotVariation }
   | { type: "beginSession"; plan: SessionPlan }

@@ -12,6 +12,7 @@ import {
   OPEN_G_C_D_EM,
   TOP_STRING_D_G,
   TRAVIS,
+  WALTZ,
   fingersOffBeats,
   lanternStrum,
   sixteenthGroove,
@@ -117,9 +118,9 @@ export const TRIADS_LESSON: Lesson = {
   demonstration: {
     scoreId: triadsDDm.id,
     handGuidance: [
-      "D on the top three strings at the 7th fret: first finger on the high E at fret 5 (A, the 5), third finger on the G string at fret 7 (D, the root), fourth finger on the B string at fret 7 (F♯, the 3).",
-      "For Dm only the 3 moves: F♯ drops one fret to F on the B string at fret 6, under the second finger. Major to minor is that one fret.",
-      "For D's sus2, lay the first finger across the B and high E strings at fret 5 (E and A), then hammer the fourth finger onto B-string fret 7 to turn the 2 into the 3. In G (D, G and B at frets 7, 8 and 7), hammer the high E from fret 5 to fret 7.",
+      "D on the top three strings at the 7th fret: second finger on the G string at fret 7 (D, the root), third finger on the B string at fret 7 (F♯, the 3), first finger on the high E at fret 5 (A, the 5).",
+      "For Dm only the 3 moves: F♯ drops one fret to F on the B string at fret 6. The fingers regroup to fit: third finger on the G string, second on B-string fret 6, first still on the high E. Major to minor is that one fret.",
+      "For D's sus2, lay the first finger across the B and high E strings at fret 5 (E and A) with the second finger on the G string, then hammer the third finger onto B-string fret 7 to turn the 2 into the 3. For G's sus2 keep the second finger on the D, put the fourth on B-string fret 8 (G) and the first on the high E at fret 5 (A), then hammer the third finger onto the high E at fret 7 (B).",
     ],
     videoNeeded: ["legato"],
   },
@@ -200,8 +201,9 @@ export const TRIADS_LESSON: Lesson = {
   performance: {
     kind: "piece",
     pieceId: "piece-sunday-glide",
-    partId: "sunday-glide-rhythm",
-    instruction: "Play Sunday Glide's rhythm part: D and G as small shapes on the top three strings.",
+    partId: "sunday-glide-shapes",
+    instruction:
+      "Play Sunday Glide's sus2 shapes: D and G at the 7th fret, each made major by its hammer-on, over the second guitar's octave roots.",
   },
 };
 
@@ -302,7 +304,7 @@ export const INVERSIONS_LESSON: Lesson = {
     scoreId: inversionsD.id,
     handGuidance: [
       "D has three shapes on the top three strings, each with a different note on top: A–D–F♯ at the 2nd and 3rd frets (the open-D shape), D–F♯–A around the 7th, and F♯–A–D at the 10th and 11th.",
-      "From D at the 7th, the nearest G is D–G–B at the 7th and 8th frets: the D on the G string stays, and only two notes move. Barre the 7th fret with the first finger and put the second finger on B-string fret 8.",
+      "From D at the 7th, the nearest G is D–G–B at the 7th and 8th frets: the D on the G string stays under the second finger, and only two notes move. The third finger crosses from B-string fret 7 to the high E at fret 7, the fourth lands on B-string fret 8, and the first lifts.",
       "In the rhythm part the strumming hand moves down and up in sixteenths the whole time, touching only the top three strings where a chord is marked. Rest the fretting hand's spare fingers on the lower strings to keep them quiet.",
     ],
     videoNeeded: ["strumming hand"],
@@ -337,7 +339,7 @@ export const INVERSIONS_LESSON: Lesson = {
       id: "shift-lands-wrong",
       signal: "I land on the wrong fret after the shift.",
       repair:
-        "Look at the target fret before you move, slide the first finger along the high E as a guide, then place the others. Loop bar 1 slowly, then both bars.",
+        "Look at the target fret before you move and land the finger on the high E string first, then place the others around it. Loop bar 1 slowly, then both bars.",
       scoreId: inversionsD.id,
       from: 0,
       to: 192,
@@ -368,11 +370,20 @@ export const INVERSIONS_LESSON: Lesson = {
       instruction: "Change D to G and back beside the click alone, keeping the D on the G string down.",
     },
     {
-      id: "nearest-unaided",
+      id: "sixteenths-with-count",
+      phase: "practise",
+      cues: "count-only",
+      scoreId: sixteenthPart.id,
+      instruction:
+        "Play the rhythm part beside the click alone, the hand moving in sixteenths even where it misses the strings.",
+    },
+    {
+      id: "groove-unaided",
       phase: "try-unaided",
       cues: "none",
-      scoreId: nearestDG.id,
-      instruction: "Count in and change D to G and back with the tab hidden; name the note that stays.",
+      scoreId: sixteenthPart.id,
+      instruction:
+        "Count in and play the two bars of the rhythm part with the tab hidden; then name the note that stays when D changes to G.",
     },
   ],
   retrieval: {
@@ -401,17 +412,32 @@ export const INVERSIONS_LESSON: Lesson = {
 
 const waltz = { ...drafted, metre: "3/4" } as const;
 
-const waltzCAm = score({
+/** The three upper notes plucked together on counts 2 and 3, so the shared fingers can be felt staying. */
+const waltzBlocks = score({
   ...waltz,
-  id: "waltz-c-am",
-  title: "The waltz arpeggio: C to Am",
+  id: "waltz-blocks-c-am-f-g",
+  title: "Blocks first: the upper notes together",
   key: "C major",
-  bars: 2,
+  bars: 4,
   tempo: [60, 72, 84],
   voices: {
-    fingers: { label: "Fingers", text: `${waltzFingers("C")} | ${waltzFingers("Am")}` },
-    thumb: { label: "Thumb", text: `${waltzBass("C")} | ${waltzBass("Am")}` },
+    fingers: {
+      label: "Fingers",
+      text: (["C", "Am", "Fmaj7", "G"] as const)
+        .map((chord) => {
+          const { i, m, a } = WALTZ[chord];
+          return `q r q ${i}@i+${m}@m+${a}@a q ${i}@i+${m}@m+${a}@a`;
+        })
+        .join(" | "),
+    },
+    thumb: { label: "Thumb", text: (["C", "Am", "Fmaj7", "G"] as const).map(waltzBass).join(" | ") },
   },
+  harmony: [
+    [1, 1, "C", "I"],
+    [2, 1, "Am", "vi"],
+    [3, 1, "Fmaj7", "IVmaj7"],
+    [4, 1, "G", "V"],
+  ],
 });
 
 const waltzFull = score({
@@ -500,22 +526,23 @@ export const COMMON_TONES_LESSON: Lesson = {
       criterion: "Keep B-string fret 1 pressed from C through Am to Fmaj7 while the bass moves.",
     },
   ],
-  scores: [waltzFull, waltzCAm, waltzInG],
+  scores: [waltzFull, waltzBlocks, waltzInG],
   demonstration: {
     scoreId: waltzFull.id,
     handGuidance: [
       "Thumb (p) on the bass string on count 1; then index (i) on the G string, middle (m) on the B string, ring (a) on the high E, back to middle and index: six even eighths in a bar of three.",
-      "From C to Am to Fmaj7, the first finger never leaves B-string fret 1 (C), and the high E stays open. From Am to Fmaj7 the A on G-string fret 2 stays too; the bass moves to F on the D string at fret 3.",
+      "From C to Am to Fmaj7, the first finger never leaves B-string fret 1 (C), and the high E stays open. From Am to Fmaj7 the A on G-string fret 2 is shared too, though the second finger takes it over from the third; the bass moves to F on the D string at fret 3.",
       "G (320003) moves the whole hand; start moving on the last eighth of the Fmaj7 bar.",
     ],
     videoNeeded: ["fingerpicking hand"],
   },
   studies: [
     {
-      id: "c-am",
-      scoreId: waltzCAm.id,
-      title: "C to Am",
-      changes: "Two bars: the arpeggio over C, then over Am, with two of the three upper notes unchanged.",
+      id: "blocks",
+      scoreId: waltzBlocks.id,
+      title: "Blocks first",
+      changes:
+        "The thumb on 1 and the three upper notes plucked together on 2 and 3, so you feel which fingers stay at each change.",
     },
     {
       id: "four-chords",
@@ -558,11 +585,18 @@ export const COMMON_TONES_LESSON: Lesson = {
       instruction: "Hear the four bars and listen for the C that keeps sounding, then play along.",
     },
     {
-      id: "c-am-with-count",
+      id: "blocks-with-count",
       phase: "practise",
       cues: "count-only",
-      scoreId: waltzCAm.id,
-      instruction: "Play C to Am beside the click alone, keeping the first finger down.",
+      scoreId: waltzBlocks.id,
+      instruction: "Pluck the blocks beside the click alone, keeping the first finger down from C to Fmaj7.",
+    },
+    {
+      id: "arpeggio-with-count",
+      phase: "practise",
+      cues: "count-only",
+      scoreId: waltzFull.id,
+      instruction: "Now spread each block into the arpeggio beside the click alone.",
     },
     {
       id: "waltz-unaided",
@@ -582,7 +616,7 @@ export const COMMON_TONES_LESSON: Lesson = {
   transfer: {
     scoreId: waltzInG.id,
     instruction:
-      "Play the same arpeggio in three over G, Em, C and D. G and Em share the open G and B strings: listen for them staying.",
+      "Play the same arpeggio in three over G, Em, C and D. G and Em share the open G and B strings: listen for them staying. D is xx0232: first finger on G-string fret 2, third on B-string fret 3, second on high-E fret 2.",
     changed: ["key", "harmony"],
   },
   performance: {
@@ -657,10 +691,10 @@ const travisInC = score({
     fingers: {
       label: "Fingers",
       text: [
-        "e r e 3:0@i e r e 2:1@m e r e 3:0@i e r e 2:1@m",
-        "e r e 3:2@i e r e 2:1@m e r e 3:2@i e r e 2:1@m",
-        "e r e 2:1@i e r e 1:0@m e r e 2:1@i e r e 1:0@m",
-        "e r e 3:0@i e r e 2:0@m e r e 3:0@i e r e 2:0@m",
+        "e 1:0@m e 3:0@i e r e 2:1@m e r e 3:0@i e r e 2:1@m",
+        "e 1:0@m e 3:2@i e r e 2:1@m e r e 3:2@i e r e 2:1@m",
+        "e 1:0@m e 2:1@i e r e 1:0@m e r e 2:1@i e r e 1:0@m",
+        "e 1:3@m e 3:0@i e r e 2:0@m e r e 3:0@i e r e 2:0@m",
       ].join(" | "),
     },
     thumb: {
@@ -719,7 +753,7 @@ export const TRAVIS_LESSON: Lesson = {
   demonstration: {
     scoreId: travisPinches.id,
     handGuidance: [
-      "Thumb only first: root on counts 1 and 3, the second bass note on 2 and 4. G: low E fret 3 and the open D. Em: open low E and D-string fret 2. C: A-string fret 3 and D-string fret 2. D: the open D and G-string fret 2.",
+      "Thumb only first: root on counts 1 and 3, the second bass note on 2 and 4. G: low E fret 3 and the open D. Em: open low E and D-string fret 2. C: A-string fret 3 and D-string fret 2. D: the open D and G-string fret 2, in the D shape xx0232 (first finger on G-string fret 2, third on B-string fret 3, second on high-E fret 2).",
       "Then let the index and middle fingers answer between the thumb's notes, on every “and”: index on the G string, middle on the B string (for D, the B and high E strings).",
       "Last, the pinch: on count 1 the middle finger plays a high note together with the thumb.",
     ],
@@ -863,6 +897,29 @@ const sixthsInA = score({
   derivedFrom: { id: "sixths-land-d-g", version: 1, changed: ["key", "position"] },
 });
 
+/** The chords the sixths land in, held by the app's second guitar so each landing can be heard against them. */
+const sixthsChordsDG = score({
+  ...drafted,
+  id: "sixths-chords-d-g",
+  title: "D and G held",
+  key: "D major",
+  bars: 2,
+  tempo: [60, 72, 88],
+  voicings: { D: OPEN_G_C_D_EM.D, G: OPEN_G_C_D_EM.G },
+  voices: { chords: { label: "Second guitar", text: "h D:D h D:G | h D:D h D:G" } },
+});
+
+const sixthsChordsAD = score({
+  ...drafted,
+  id: "sixths-chords-a-d",
+  title: "A and D held",
+  key: "A major",
+  bars: 2,
+  tempo: [60, 72, 88],
+  voicings: { A: { symbol: "A", shape: "x02220", fingers: "x-123-" }, D: OPEN_G_C_D_EM.D },
+  voices: { chords: { label: "Second guitar", text: "h D:A h D:D | h D:A h D:D" } },
+});
+
 export const SIXTHS_LESSON: Lesson = {
   id: "lesson-unit-23-sixths",
   version: 1,
@@ -896,7 +953,12 @@ export const SIXTHS_LESSON: Lesson = {
       criterion: "Hear each sixth settle into its chord, and hear it clash if you play the D sixth over G.",
     },
   ],
-  scores: [sixthsLand, sixthsSlide, sixthsInA],
+  scores: [sixthsLand, sixthsSlide, sixthsInA, sixthsChordsDG, sixthsChordsAD],
+  accompaniment: {
+    [sixthsLand.id]: [sixthsChordsDG.id],
+    [sixthsSlide.id]: [sixthsChordsDG.id],
+    [sixthsInA.id]: [sixthsChordsAD.id],
+  },
   demonstration: {
     scoreId: sixthsLand.id,
     handGuidance: [
@@ -1016,6 +1078,15 @@ const lessonHarmony = score({
       text: ["G", "C", "D", "D", "Em", "C", "D"].map(lanternStrum).concat("w D:G").join(" | "),
     },
   },
+  harmony: [
+    [1, 1, "G", "I"],
+    [2, 1, "C", "IV"],
+    [3, 1, "D", "V"],
+    [5, 1, "Em", "vi"],
+    [6, 1, "C", "IV"],
+    [7, 1, "D", "V"],
+    [8, 1, "G", "I"],
+  ],
 });
 
 const { Em: _em, ...G_C_D } = OPEN_G_C_D_EM;
@@ -1049,13 +1120,19 @@ const porchTopLine = score({
 const porchHarmony = score({
   ...drafted,
   id: "harmonise-porch-chords",
-  title: "G, Em, C, D under the new tune",
+  title: "One answer: G, Em, C, D under the new tune",
   key: "G major",
   bars: 4,
   tempo: [60, 72, 88],
   voicings: OPEN_G_C_D_EM,
   voices: { chords: { label: "Chords", text: ["G", "Em", "C", "D"].map(lanternStrum).join(" | ") } },
-  derivedFrom: { id: "harmonise-lantern-chords", version: 1, changed: ["pitch", "rhythm"] },
+  harmony: [
+    [1, 1, "G", "I"],
+    [2, 1, "Em", "vi"],
+    [3, 1, "C", "IV"],
+    [4, 1, "D", "V"],
+  ],
+  derivedFrom: { id: "harmonise-lantern-chords", version: 1, changed: ["pitch", "harmony"] },
 });
 
 export const HARMONISE_LESSON: Lesson = {
@@ -1091,6 +1168,11 @@ export const HARMONISE_LESSON: Lesson = {
     },
   ],
   scores: [lessonHarmony, plainHarmony, lanternTune, porchHarmony, porchTopLine],
+  making: {
+    adds: "chords",
+    start: "Create opens with Lantern's tune. Add your own chords there, one per bar; this lesson waits for you.",
+    prompt: "Which chord did you choose under each landing note, and why?",
+  },
   accompaniment: {
     [lessonHarmony.id]: [lanternTune.id],
     [plainHarmony.id]: [lanternTune.id],
@@ -1180,8 +1262,8 @@ export const HARMONISE_LESSON: Lesson = {
   transfer: {
     scoreId: porchHarmony.id,
     instruction:
-      "Harmonise a new tune, Porch Light's top line, with G, Em, C and D: G and B over G, E and B over Em, E and C over C, F♯ and D over D.",
-    changed: ["pitch", "rhythm"],
+      "Harmonise a new tune, Porch Light's top line, while the app plays it. Its notes are G then B, E then B, E then C, F♯ then D, a bar each. Choose one of G, C, D and Em for each bar and strum it; after you report, show the notes to compare with one answer.",
+    changed: ["pitch", "harmony"],
   },
   performance: {
     kind: "piece",

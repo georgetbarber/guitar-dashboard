@@ -15,6 +15,7 @@ import {
   type Piece,
 } from "../pieces/format";
 import { PIECES } from "../pieces/library";
+import { newSketch } from "../repository";
 import { useV8Store } from "../store";
 import type { EvidenceOutcome } from "../types";
 import { ContentStatus } from "./ContentStatus";
@@ -217,7 +218,12 @@ function PieceBody({ piece, request, onClose, requestCloseRef }: Props & { piece
     }
     stop();
     onClose();
-    dispatch({ type: "createSketch" });
+    // The new sketch starts in the piece's key, metre and tempo, ready for the answer.
+    const sketch = newSketch(state.sketches.length, { key: lead.key.tonic, mode: lead.key.mode });
+    sketch.name = `${piece.title}: my answer`;
+    sketch.tempo = clamped;
+    if (lead.metre === "3/4" || lead.metre === "6/8") sketch.metre = lead.metre;
+    dispatch({ type: "createFromLesson", sketch, returnActivityId: null });
     history.pushState({}, "", "/create");
   };
 

@@ -218,7 +218,8 @@ export const HOME_LESSON: Lesson = {
     kind: "piece",
     pieceId: "piece-lantern",
     partId: "lantern-drone",
-    instruction: "Hold the open-G drone under Lantern while its melody leaves home and comes back.",
+    instruction:
+      "In Lantern you hold the drone yourself, on the open G string, while its melody leaves home and comes back.",
   },
 };
 
@@ -323,7 +324,7 @@ export const PENTATONIC_LESSON: Lesson = {
       id: "leaning",
       scoreId: leaningDegrees.id,
       title: "The 4 and the 7",
-      changes: "3–4–3 and 1–7–1: the two notes the shape leaves out, each leaning back home.",
+      changes: "3–4–3 and 1–7–1: the two notes the shape leaves out, each leaning to the note beside it.",
     },
   ],
   successCriteria: [
@@ -390,7 +391,8 @@ export const PENTATONIC_LESSON: Lesson = {
     kind: "piece",
     pieceId: "piece-lantern",
     partId: "lantern-melody",
-    instruction: "Play Lantern's melody: it is built from these five notes, with the 4 and the 7 added.",
+    instruction:
+      "Play Lantern's melody: it uses these same degrees, with the 4 and the 7 added, in open position on the top three strings.",
   },
 };
 
@@ -738,7 +740,7 @@ export const ENDINGS_LESSON: Lesson = {
     handGuidance: [
       "Phrase 1 stops on A (G-string fret 2), the 2 of G, over a D chord: it sounds like a question. Phrase 2 stops on G, the 1, over G: an answer.",
       "D is the course's first D chord: xx0232. First finger on the G string at fret 2, second on the high E at fret 2, third on the B string at fret 3. Strum only the top four strings.",
-      "Strum down, down-up, miss, up, and let the last up-strum ring while the hand moves to the next chord.",
+      "Strum down, down-up, miss, up: let that up-strum ring through count 4, and change chords at the very end of 4.",
     ],
     videoNeeded: [],
   },
@@ -812,15 +814,14 @@ export const ENDINGS_LESSON: Lesson = {
   },
   transfer: {
     scoreId: endingsInD.id,
-    instruction:
-      "In D, over D, G, A and D: F♯ E D, then B A G, then C♯ B A, then home to D on the B string. Then play it again ending on E instead, and hear it stay open.",
+    instruction: "In D, over D, G, A and D: F♯ E D, then B A G, then C♯ B A, then home to D on the B string.",
     changed: ["key", "pitch"],
   },
   performance: {
     kind: "piece",
     pieceId: "piece-lantern",
     partId: "lantern-melody",
-    instruction: "Play Lantern's melody with the second guitar: this is the Stage 3 capstone.",
+    instruction: "Play Lantern's melody while the second guitar strums its chords.",
   },
 };
 
@@ -850,7 +851,7 @@ const callE = score({
   key: "E minor",
   bars: 4,
   tempo: [60, 72, 90],
-  voices: { call: { label: "Call", text: "q r e 2:3 e 1:0 q 1:3 q 1:0 | h 2:0 h r | w r | w r" } },
+  voices: { call: { label: "Call", text: "q r e 2:3 e 1:0 q 1:3[b.5] q 1:0 | h 2:0 h r | w r | w r" } },
 });
 
 const answerE = score({
@@ -913,7 +914,7 @@ export const CALL_ANSWER_LESSON: Lesson = {
   title: "Call and answer",
   purpose: "Hear a short blues phrase and answer it in the same language without copying it.",
   destination:
-    "A two-bar call in E minor pentatonic answered by two bars of your own, with the G curled a little sharp.",
+    "A two-bar call in E minor pentatonic, its G curled a little sharp, answered by two bars of your own; and the curl in your own hands.",
   variable: "Who speaks: the call is given, the answer is yours.",
   capabilities: [
     {
@@ -1005,6 +1006,13 @@ export const CALL_ANSWER_LESSON: Lesson = {
       cues: "full",
       scoreId: pentatonicE.id,
       instruction: "Hear the scale from the low E, then play along naming each degree.",
+    },
+    {
+      id: "curl-with-count",
+      phase: "practise",
+      cues: "count-only",
+      scoreId: curl.id,
+      instruction: "Curl the G on the high E beside the click alone, letting it fall back before the open E.",
     },
     {
       id: "answer-with-count",

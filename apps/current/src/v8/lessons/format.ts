@@ -107,6 +107,21 @@ export interface Lesson {
    * never duplicate it, since in a check they keep sounding.
    */
   accompaniment?: Readonly<Record<string, readonly string[]>>;
+  /** Required for a making check (checkKind "creating"), absent otherwise. */
+  making?: MakingCheck;
+}
+
+/**
+ * What a making check asks the learner to make. The check's music opens in
+ * Create; the report waits until the learner has made something of their own.
+ */
+export interface MakingCheck {
+  /** What counts as made: chords added, the melody changed, or either. */
+  adds: "chords" | "melody" | "any";
+  /** Shown before the learner opens Create: what they will find and what to do there. */
+  start: string;
+  /** The question the observation answers. */
+  prompt: string;
 }
 
 /** The part of a lesson the app needs before its stage's content has loaded. */

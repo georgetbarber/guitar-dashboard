@@ -38,6 +38,15 @@ function Lines({ half }: { half: number }) {
 }
 
 function Rest({ symbol, half }: { symbol: StaffSymbol; half: number }) {
+  return (
+    <g>
+      <RestShape symbol={symbol} half={half} />
+      {symbol.dotted && <circle className="staff-ink" cx={HEAD_X + 7} cy={y(34, half) - half * 0.5} r={1.4} />}
+    </g>
+  );
+}
+
+function RestShape({ symbol, half }: { symbol: StaffSymbol; half: number }) {
   const mid = y(34, half);
   const x = HEAD_X;
   if (symbol.value === "whole") return <rect className="staff-ink" x={x - 4} y={y(36, half)} width={9} height={half} />;
@@ -197,7 +206,7 @@ export function StaffRow({
   return (
     <div className="score-row score-row--staff" style={style}>
       <span className="score-row__label">
-        <svg width="100%" height={height} role="presentation">
+        <svg width="100%" height={height} aria-hidden="true">
           <Lines half={half} />
           <text className="staff-text" x="1" y={y(30, half) + half * 1.2} fontSize={half * 8.6}>
             𝄞
@@ -220,7 +229,7 @@ export function StaffRow({
       </span>
       {cells.map((cell) => (
         <span key={cell.column} style={{ gridColumn: `${cell.column + 2} / span ${cell.span}` }}>
-          <svg width="100%" height={height} role="presentation">
+          <svg width="100%" height={height} aria-hidden="true">
             <Lines half={half} />
             {cell.symbols.map((symbol, index) => (
               <g

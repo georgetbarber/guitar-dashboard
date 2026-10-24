@@ -33,7 +33,7 @@ test("Stage 3: the Unit 16 lesson plays the tune under the learner's chords, tak
   await expect(page.getByRole("heading", { name: "Two endings" })).toBeVisible();
   await expect(page.getByText("Not yet checked on a guitar")).toBeVisible();
   await expect(
-    page.getByText(/the app plays The chords under the two phrases on a synthesised second guitar/),
+    page.getByText("While you play, a synthesised second guitar plays: The chords under the two phrases."),
   ).toBeVisible();
   await page.getByRole("button", { name: "Hear the exact music" }).click();
   await expect(page.getByText(/Count in: \d/)).toBeVisible();
@@ -89,7 +89,7 @@ test("the Stage 3 and Stage 4 capstones open from the course map and play", asyn
   await page.getByRole("button", { name: "Open the capstone" }).click();
   await expect(page.getByRole("heading", { name: "Lantern", level: 1 })).toBeVisible();
   await expect(page.getByText("Stage 3 capstone · Melody")).toBeVisible();
-  await expect(page.getByText(/write a two-bar phrase that answers Lantern's first phrase/)).toBeVisible();
+  await expect(page.getByText(/write two bars that answer Lantern's first two bars/)).toBeVisible();
   await page.getByRole("button", { name: "Play along with the second guitar" }).click();
   await expect(page.getByText(/Your part · bar \d+ of 8/)).toBeVisible({ timeout: 10_000 });
   await page.getByRole("button", { name: "Stop sound" }).click();

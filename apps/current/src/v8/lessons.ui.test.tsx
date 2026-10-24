@@ -64,6 +64,7 @@ function Probe() {
         attempts: state.lessonAttempts ?? [],
         evidence: state.evidence,
         sketches: state.sketches,
+        activeSketchId: state.activeSketchId,
         route: state.route,
       })}
     </output>
@@ -319,10 +320,14 @@ describe("the lesson player", () => {
       </V8StoreProvider>,
     );
     await screen.findByRole("heading", { name: "Where home is" });
-    expect(screen.getByText(/the app plays A low G held under you on a synthesised second guitar/)).toBeTruthy();
+    expect(screen.getByText("While you play, a synthesised second guitar plays: A low G held under you.")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Hear the exact music" }));
     const [lead, options] = vi.mocked(player.startScorePlayback).mock.calls[0];
     expect([lead.id, options.accompaniment?.map((item) => item.id)]).toEqual(["home-degrees-g", ["home-low-g-drone"]]);
+    // During a hidden check the accompaniment is not named, since its title could give the answer away.
+    await user.click(screen.getByRole("button", { name: "3 · Try unaided" }));
+    expect(screen.getByText("While you play, a synthesised second guitar plays along.")).toBeTruthy();
+    expect(screen.queryByText(/A low G held under you/)).toBeNull();
   });
 
   it("runs a making check: the tune stays visible, Create opens with it, and the report links what was made", async () => {
@@ -350,7 +355,11 @@ describe("the lesson player", () => {
     expect(sketch).toMatchObject({ name: "Chords under a tune: my version", chords: [], tempo: 72 });
     expect(sketch.melody.length).toBeGreaterThan(0);
     expect(probe().route).toBe("create");
-    expect(screen.getByText(/has nothing in it yet/)).toBeTruthy();
+    expect(screen.getByText(/has nothing of yours in it yet. Add your chords in Create/)).toBeTruthy();
+    // Opening it again reopens the same version, never a second copy.
+    await user.click(screen.getByRole("button", { name: "Open my version in Create again →" }));
+    expect(probe().sketches).toHaveLength(1);
+    expect(probe().activeSketchId).toBe(sketch.id);
 
     await user.click(screen.getByRole("button", { name: "Add a chord in Create" }));
     expect(
@@ -371,6 +380,13 @@ describe("the lesson player", () => {
         lessonAttempts: state.attempts,
       }),
     ).not.toThrow();
+    // A lesson attempt's link to what was made is validated like any other id.
+    expect(() =>
+      validateState({
+        ...DEFAULT_STATE,
+        lessonAttempts: state.attempts.map((attempt: object) => ({ ...attempt, artifactId: "sketch/elsewhere" })),
+      }),
+    ).toThrow(/artifactId/);
   });
 
   it("explains plainly when a lesson's files cannot load", async () => {

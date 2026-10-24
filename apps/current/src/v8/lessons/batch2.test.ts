@@ -187,6 +187,12 @@ describe("what each Stage 3 lesson says it plays", () => {
       [67, 0.5],
       [67, 0.5],
     ]);
+    // The call the app plays curls its G, as Front Step's first call does.
+    const callG = notes(scoreById(CALL_ANSWER_LESSON, "call-e-two-bars")).find(
+      (event) => event.notes[0].fret === 3 && event.notes[0].string === 1,
+    )!;
+    expect(callG.art?.bend?.semitones).toBe(0.5);
+    expect(CALL_ANSWER_LESSON.cueFading.map((step) => step.scoreId)).toContain("minor-third-curl");
     const callA = notes(scoreById(CALL_ANSWER_LESSON, "answer-a-two-bars"));
     expect(callA.at(-1)!.notes[0]).toEqual({ string: 5, fret: 0 });
   });
@@ -241,6 +247,12 @@ describe("what each Stage 4 lesson says it plays", () => {
     ]);
     expect(stack(hammer[3]).map((note) => degree(note, G))).toEqual(["5", "1", "2"]);
     expect(degree(positionMidi(hammer[4].notes[0]), G)).toBe("3");
+    // The second finger holds the D on the G string in both shapes, so it can stay down through D to G.
+    const shape = (symbol: string) =>
+      scoreById(INVERSIONS_LESSON, "d-g-sixteenths").voicings.find((voicing) => voicing.symbol === symbol)!;
+    expect([shape("D").fingers?.[3], shape("G").fingers?.[3], shape("D").frets[3], shape("G").frets[3]]).toEqual([
+      2, 2, 7, 7,
+    ]);
     const inE = chordsOf(scoreById(TRIADS_LESSON, "triad-e-em-top"));
     expect(inE.map(stack)).toEqual(
       chordsOf(scoreById(TRIADS_LESSON, "triad-d-dm-top")).map((event) => stack(event).map((note) => note + 2)),
@@ -259,6 +271,7 @@ describe("what each Stage 4 lesson says it plays", () => {
     expect(groove.events.filter((event) => event.kind === "strum" && event.at < BAR).map((event) => event.at)).toEqual([
       0, 36, 72, 96, 132,
     ]);
+    expect(INVERSIONS_LESSON.cueFading.at(-1)!.scoreId).toBe("d-g-sixteenths");
     const gShapes = chordsOf(scoreById(INVERSIONS_LESSON, "inversions-g-top")).slice(0, 3);
     for (const shape of gShapes) expect(pitchClasses(stack(shape))).toEqual([D, G, 11]);
     expect(gShapes.map((shape) => stack(shape).at(-1))).toEqual([67, 71, 74]);
@@ -291,8 +304,25 @@ describe("what each Stage 4 lesson says it plays", () => {
       );
     expect([0, 1, 2, 3].map((bar) => hasPosition(bar, 2, 1))).toEqual([true, true, true, false]);
     expect([0, 1, 2, 3].map((bar) => hasPosition(bar, 3, 2))).toEqual([false, true, true, false]);
+    // The blocks study plucks the same three upper notes together on counts 2 and 3.
+    const blocks = scoreById(COMMON_TONES_LESSON, "waltz-blocks-c-am-f-g");
+    const blockFingers = notes(blocks, "fingers");
+    expect(blockFingers.map((event) => [event.at % WALTZ_BAR, event.notes.length])).toEqual(
+      Array.from({ length: 4 }, () => [
+        [48, 3],
+        [96, 3],
+      ]).flat(),
+    );
+    for (let bar = 0; bar < 4; bar++) {
+      const upper = new Set(
+        fingers.filter((event) => barOf(event.at, WALTZ_BAR) === bar).map((event) => positionMidi(event.notes[0])),
+      );
+      expect(
+        new Set(blockFingers.find((event) => barOf(event.at, WALTZ_BAR) === bar)!.notes.map(positionMidi)),
+      ).toEqual(upper);
+    }
     // Every plucked note belongs to its bar's chord, in both keys.
-    for (const score of [waltz, scoreById(COMMON_TONES_LESSON, "waltz-g-em-c-d")])
+    for (const score of [waltz, blocks, scoreById(COMMON_TONES_LESSON, "waltz-g-em-c-d")])
       for (const event of notes(score))
         expect(CHORD_TONES[chordAt(score, barOf(event.at, WALTZ_BAR), WALTZ_BAR)]).toContain(
           positionMidi(event.notes[0]) % 12,
@@ -328,6 +358,13 @@ describe("what each Stage 4 lesson says it plays", () => {
     }
     const inC = scoreById(TRAVIS_LESSON, "travis-c-am-f-g");
     expect(thumbStrings(inC)[2]).toEqual([4, 3, 4, 3]);
+    for (let bar = 0; bar < 4; bar++)
+      expect(
+        notes(inC)
+          .filter((event) => event.at === bar * BAR)
+          .map((event) => event.voice)
+          .sort(),
+      ).toEqual(["fingers", "thumb"]);
     for (const score of [pinches, inC])
       for (const event of notes(score))
         expect(CHORD_TONES[chordAt(score, barOf(event.at))]).toContain(positionMidi(event.notes[0]) % 12);
@@ -341,6 +378,16 @@ describe("what each Stage 4 lesson says it plays", () => {
     ]);
     expect(degrees(land[0].notes.map(positionMidi), D)).toEqual(["5", "3"]);
     expect(degrees(land[1].notes.map(positionMidi), G)).toEqual(["3", "1"]);
+    // The second guitar holds each chord, and every note of each sixth belongs to the chord under it.
+    for (const [lead, chords] of Object.entries(SIXTHS_LESSON.accompaniment ?? {})) {
+      const held = scoreById(SIXTHS_LESSON, chords[0]);
+      for (const event of notes(scoreById(SIXTHS_LESSON, lead))) {
+        const strum = [...held.events].reverse().find((item) => item.kind === "strum" && item.at <= event.at)!;
+        if (strum.kind !== "strum") throw new Error("not a strum");
+        const tones = pitchClasses(strumPositions(strum, held).map(positionMidi));
+        for (const note of event.notes) expect(tones, `${lead} at ${event.at}`).toContain(positionMidi(note) % 12);
+      }
+    }
     const slides = notes(scoreById(SIXTHS_LESSON, "sixths-slide-d-g"));
     expect(slides.every((event) => event.art?.slideIn === "below")).toBe(true);
     expect(slides.map((event) => event.at % BAR)).toEqual([0, 96, 0, 96]);
@@ -371,6 +418,8 @@ describe("what each Stage 4 lesson says it plays", () => {
     expect(making.scoreId).toBe(tune.id);
     expect(scoreById(HARMONISE_LESSON, making.scoreId).voicings).toEqual([]);
     expect(HARMONISE_LESSON.accompaniment?.[tune.id]).toBeUndefined();
+    expect(HARMONISE_LESSON.transfer.changed).toEqual(["pitch", "harmony"]);
+    expect(HARMONISE_LESSON.transfer.instruction).not.toMatch(/over (G|Em|C|D)\b/);
     const porch = scoreById(HARMONISE_LESSON, "harmonise-porch-chords");
     const porchTune = scoreById(HARMONISE_LESSON, "harmonise-porch-tune");
     for (const event of notes(porchTune))
@@ -436,7 +485,7 @@ describe("the Batch 2 pieces", () => {
     expect(notes(melody).every((event) => event.notes[0].string <= 2)).toBe(true);
   });
 
-  it("Sunday Glide: octave roots D and G; hits on 1, a, &2, 3, a3; sixths slid in on 1 and re-plucked before 2", () => {
+  it("Sunday Glide: octave roots D and G; hits on 1, a, &2, 3, a3; sixths slid in on 1 and re-plucked on the a of 2", () => {
     const roots = notes(pieceScore(SUNDAY_GLIDE_PIECE, "sunday-glide-roots"));
     expect(roots.every((event) => span(event) === 12)).toBe(true);
     expect(roots.filter((event) => event.at % BAR === 0).map((event) => positionMidi(event.notes[0]) % 12)).toEqual([
@@ -445,6 +494,18 @@ describe("the Batch 2 pieces", () => {
       D,
       G,
     ]);
+    // Unit 19's part: each chord struck as a sus2 on 1, made major by a hammer-on on 2.
+    const shapes = notes(pieceScore(SUNDAY_GLIDE_PIECE, "sunday-glide-shapes"));
+    for (let bar = 0; bar < 4; bar++) {
+      const [sus2, hammer] = shapes.filter((event) => barOf(event.at) === bar);
+      const root = bar % 2 ? G : D;
+      expect(degrees(sus2.notes.map(positionMidi), root).sort()).toEqual(["1", "2", "5"]);
+      expect([hammer.at % BAR, hammer.art?.legato, degree(positionMidi(hammer.notes[0]), root)]).toEqual([
+        48,
+        "hammer-on",
+        "3",
+      ]);
+    }
     const rhythm = pieceScore(SUNDAY_GLIDE_PIECE, "sunday-glide-rhythm");
     for (let bar = 0; bar < 4; bar++)
       expect(

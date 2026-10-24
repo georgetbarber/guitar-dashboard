@@ -191,7 +191,6 @@ function pilotAttempt(value: unknown, path: string) {
   choice(v.outcome, ["successful", "partial", "retry"], `${path}.outcome`);
   number(v.tempo, `${path}.tempo`, 20, 400, true);
   str(v.observation, `${path}.observation`); if ((v.observation as string).length > 1000) fail(`${path}.observation length`);
-  if (v.artifactId !== undefined) id(v.artifactId, `${path}.artifactId`);
   date(v.occurredAt, `${path}.occurredAt`);
   if (v.localDate !== undefined) localDate(v.localDate, `${path}.localDate`);
 }
@@ -242,6 +241,7 @@ function lessonAttempt(value: unknown, path: string) {
   choice(v.outcome, ["successful", "partial", "retry"], `${path}.outcome`);
   number(v.tempo, `${path}.tempo`, 20, 400, true);
   str(v.observation, `${path}.observation`); if ((v.observation as string).length > 1000) fail(`${path}.observation length`);
+  if (v.artifactId !== undefined) id(v.artifactId, `${path}.artifactId`);
   date(v.occurredAt, `${path}.occurredAt`);
   localDate(v.localDate, `${path}.localDate`);
 }

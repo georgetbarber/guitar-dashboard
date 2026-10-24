@@ -457,7 +457,7 @@ export const THUMB_PULSE_LESSON: Lesson = {
   title: "A thumb that keeps time",
   purpose: "Give the music a floor: a steady thumb on the root of each chord that never hurries and never waits.",
   destination:
-    "Four bars of thumb roots under G, Em, C and D, the first layer of Porch Light (a later piece), with every change landing on count 1.",
+    "Four bars of thumb roots under G, Em, C and D, the first layer of Porch Light, with every change landing on count 1.",
   variable: "Where the steady thumb lands: one open string, then a new root each bar.",
   capabilities: [
     {
@@ -560,13 +560,15 @@ export const THUMB_PULSE_LESSON: Lesson = {
   transfer: {
     scoreId: waltzRoots.id,
     instruction:
-      "Keep the same thumb in three: C (A string fret 3) for a bar of three counts, then Am (open A), twice: the first two roots of Harbour Song (a later piece).",
+      "Keep the same thumb in three: C (A string fret 3) for a bar of three counts, then Am (open A), twice: the first two roots of Harbour Song.",
     changed: ["key", "rhythm"],
   },
   performance: {
-    kind: "create",
+    kind: "piece",
+    pieceId: "piece-porch-light",
+    partId: "porch-light-roots",
     instruction:
-      "Make a four-bar root line in Create: choose four roots you can reach and keep the thumb pulse through them.",
+      "Play Porch Light's thumb roots, G, E, C, D, G, E, D and a long G, a root on every count while the other guitar plays the tune.",
   },
 };
 

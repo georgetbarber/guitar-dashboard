@@ -121,7 +121,8 @@ export function differsIn(dimension: ChangedDimension, a: Score, b: Score): bool
 
 /** The chords a score names: its strummed voicings, then any chord marks (fingerpicked scores have only marks). */
 function harmonyOf(score: Score): string {
-  return [...score.voicings.map((v) => v.symbol), "|", ...(score.harmony ?? []).map((mark) => mark.symbol)].join();
+  const symbols = [...new Set(score.voicings.map((v) => v.symbol))].sort();
+  return [...symbols, "|", ...(score.harmony ?? []).map((mark) => mark.symbol)].join();
 }
 
 /** A study is distinct when its music differs, not merely its title. */
@@ -209,6 +210,16 @@ export function validateLesson(lesson: Lesson, pieces: PieceParts = new Map()): 
   const demonstration = need(lesson.demonstration.scoreId, "the demonstration");
   if (!lesson.demonstration.handGuidance.length || lesson.demonstration.handGuidance.some((line) => !enough(line)))
     add("the demonstration needs written hand guidance.");
+  if (lesson.checkKind === "creating") {
+    if (!lesson.making) add("a making check must say what the learner makes.");
+    else if (
+      !["chords", "melody", "any"].includes(lesson.making.adds) ||
+      !enough(lesson.making.start) ||
+      !enough(lesson.making.prompt)
+    )
+      add("a making check needs what counts as made, how to start and a question to answer.");
+  } else if (lesson.making) add("only a making check says what the learner makes.");
+
   // A score the app only plays as accompaniment is never in the learner's hands.
   const learnerScores = new Set([
     lesson.demonstration.scoreId,

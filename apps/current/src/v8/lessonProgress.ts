@@ -8,7 +8,7 @@
 import type { Score } from "../core/score/types";
 import { calendarDaysBetween, localDateAt } from "./dates";
 import { newId } from "./identity";
-import type { Lesson } from "./lessons/format";
+import type { Lesson, MakingCheck } from "./lessons/format";
 import { newSketch } from "./repository";
 import type { LessonAttempt, LessonCursor, Sketch, V8State } from "./types";
 
@@ -120,3 +120,25 @@ export function sketchFromScore(lesson: Lesson, score: Score, tempo: number, ind
   sketch.notes = `Started from the draft lesson “${lesson.title}” (${score.title}, score ${score.id} version ${score.version}). The lesson stays as it is in Learn; this is your copy to change.`;
   return sketch;
 }
+
+/** Whether a making check's sketch now holds something of the learner's own, by what the lesson asks for. */
+export function madeSomething(sketch: Sketch, making: MakingCheck): boolean {
+  const chords = sketch.chords.length > 0;
+  const changed = sketch.revisions.length > 0;
+  return making.adds === "chords" ? chords : making.adds === "melody" ? changed : chords || changed;
+}
+
+/** What the learner has made so far, in words: "3 chords", "1 change". */
+export function madeSummary(sketch: Sketch, making: MakingCheck): string {
+  const count = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  const chords = count(sketch.chords.length, "chord");
+  const changes = count(sketch.revisions.length, "change");
+  return making.adds === "chords" ? chords : making.adds === "melody" ? changes : `${chords} and ${changes}`;
+}
+
+/** What to do when the version holds nothing of the learner's yet. */
+export const NOTHING_YET: Readonly<Record<MakingCheck["adds"], string>> = {
+  chords: "Add your chords in Create, then come back.",
+  melody: "Change the melody in Create, then come back.",
+  any: "Add or change something in Create, then come back.",
+};

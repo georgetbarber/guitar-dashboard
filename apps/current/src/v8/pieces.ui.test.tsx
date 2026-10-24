@@ -39,7 +39,7 @@ function Probe() {
       {JSON.stringify({
         evidence: state.evidence,
         favourites: state.favoriteActivityIds ?? [],
-        sketches: state.sketches.length,
+        sketches: state.sketches.map(({ name, key, mode }) => ({ name, key, mode })),
         route: state.route,
       })}
     </output>
@@ -123,10 +123,13 @@ describe("the piece player", () => {
     expect(
       screen.getByText(/Report whether you played the melody with both endings and saved an answer of your own/),
     ).toBeTruthy();
-    expect(screen.getByText(/write a two-bar phrase that answers Lantern's first phrase/)).toBeTruthy();
+    expect(screen.getByText(/write two bars that answer Lantern's first two bars/)).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Open a new sketch in Create →" }));
     expect(onClose).toHaveBeenCalled();
-    expect(probe()).toMatchObject({ sketches: 1, route: "create" });
+    expect(probe()).toMatchObject({
+      sketches: [{ name: "Lantern: my answer", key: "G", mode: "major" }],
+      route: "create",
+    });
   });
 
   it("offers no self-report outside a capstone, and saves a piece as a familiar favourite", async () => {

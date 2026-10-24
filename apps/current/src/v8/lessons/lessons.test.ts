@@ -212,6 +212,26 @@ describe("the lesson validator", () => {
     expect([inC.voicings, inG.voicings]).toEqual([[], []]);
     expect(differsIn("harmony", inC, inG)).toBe(true);
     expect(differsIn("harmony", inC, { ...inG, harmony: inC.harmony })).toBe(false);
+    // The order chords are declared in is not harmony.
+    const strummed = THIRD_COLOUR_LESSON.scores[0];
+    const shapes = [
+      { id: "C", symbol: "C", frets: [null, 3, 2, 0, 1, 0] },
+      { id: "Am", symbol: "Am", frets: [null, 0, 2, 2, 1, 0] },
+    ];
+    expect(
+      differsIn("harmony", { ...strummed, voicings: shapes }, { ...strummed, voicings: [...shapes].reverse() }),
+    ).toBe(false);
+  });
+
+  it("asks a making check, and only a making check, to say what the learner makes", async () => {
+    const { HARMONISE_LESSON } = await import("./stage4");
+    const pieces = new Map(PIECES.map((piece) => [piece.id, new Set(piece.parts.map((part) => part.id))]));
+    expect(validateLesson(HARMONISE_LESSON, pieces)).toEqual([]);
+    const { making: _making, ...unsaid } = HARMONISE_LESSON;
+    expect(validateLesson(unsaid, pieces)).toContainEqual(expect.stringContaining("must say what the learner makes"));
+    expect(validateLesson({ ...THIRD_COLOUR_LESSON, making: HARMONISE_LESSON.making })).toContainEqual(
+      expect.stringContaining("only a making check"),
+    );
   });
 
   it("asks for no video for a part only the app plays, but does once the learner plays it", () => {

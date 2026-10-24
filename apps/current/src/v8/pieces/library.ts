@@ -490,7 +490,7 @@ export const LANTERN_MELODY_BARS = [
   "w 3:0",
 ];
 
-/** A down strum, then down-up, a missed beat 3 and an up strum that rings through 4 while the hand changes. */
+/** A down strum, then down-up, a missed beat 3 and an up strum that rings through 4; the hand changes at the very end of 4. */
 export const lanternStrum = (chord: string) => `q D:${chord} e D:${chord} e U:${chord} e r q. U:${chord}`;
 const LANTERN_CHORD_BARS = ["G", "C", "D", "D", "Em", "C", "D"].map(lanternStrum).concat("w D:G");
 
@@ -543,7 +543,7 @@ export const LANTERN_PIECE: Piece = {
       scoreId: lanternChords.id,
       accompanimentIds: [lanternMelody.id],
       instruction:
-        "Strum G, C, D, D, then Em, C, D and G under the melody: down, down-up, miss, up, letting the last up-strum ring while you change.",
+        "Strum G, C, D, D, then Em, C, D and G under the melody: down, down-up, miss, up, letting the up-strum ring through count 4 and changing at the very end of it.",
       unitIds: ["unit-16", "unit-24"],
     },
     {
@@ -569,7 +569,7 @@ export const LANTERN_PIECE: Piece = {
           "Play both phrases in time with the chords, the first stopping open on A and the second coming home to G, and save a two-bar answer of your own in Create.",
       },
       criterion: "I played the melody with both endings and saved an answer of my own.",
-      make: "Then make your answer: in a new sketch, write a two-bar phrase that answers Lantern's first phrase and ends on G, and save it. Come back here to report on both.",
+      make: "Then make your answer: in a new sketch, write two bars that answer Lantern's first two bars and end on G, and save it. Come back to this capstone from the course map to report on both.",
     },
   ],
 };
@@ -688,9 +688,9 @@ export const PORCH_LIGHT_PIECE: Piece = {
       layer: 1,
       title: "Thumb roots",
       scoreId: porchRoots.id,
-      accompanimentIds: [porchMelody.id],
+      accompanimentIds: [porchTune.id],
       instruction:
-        "Play each chord's root with your thumb on every count, G, E, C, D, G, E, D, then a long G, while the other guitar plays the whole arrangement.",
+        "Play each chord's root with your thumb on every count, G, E, C, D, G, E, D, then a long G, while the other guitar plays the tune.",
       unitIds: ["unit-03"],
     },
     {
@@ -877,8 +877,9 @@ const SUNDAY = {
 
 /** D in root position and G in second inversion on the top three strings at the 7th fret: I to IV by one or two frets. */
 export const TOP_STRING_D_G = {
-  D: { symbol: "D", shape: "xxx775", fingers: "xxx341" },
-  G: { symbol: "G", shape: "xxx787", fingers: "xxx121", inversion: "second" as const },
+  // The second finger keeps the D on the G string through the change (Units 19 and 20).
+  D: { symbol: "D", shape: "xxx775", fingers: "xxx231" },
+  G: { symbol: "G", shape: "xxx787", fingers: "xxx243", inversion: "second" as const },
 };
 
 /** Hits on 1, the "a" of 1, the "and" of 2, 3 and the "a" of 3; the hand keeps moving in sixteenths through the gaps. */
@@ -895,6 +896,24 @@ const sundayRoots = score({
       text: ["5:5+3:7", "6:3+4:5", "5:5+3:7", "6:3+4:5"]
         .map((octave) => Array.from({ length: 4 }, () => `q ${octave}`).join(" "))
         .join(" | "),
+    },
+  },
+});
+
+/** Unit 19's move in the piece: each chord starts as a sus2 and the hammer-on on count 2 makes it major. */
+const sundayShapes = score({
+  ...SUNDAY,
+  id: "sunday-glide-shapes",
+  title: "Sunday Glide: sus2 into the chord",
+  voices: {
+    triads: {
+      label: "Triads",
+      text: [
+        "q 3:7+2:5+1:5 q 2:7[h] h 3:7+2:7+1:5",
+        "q 3:7+2:8+1:5 q 1:7[h] h 3:7+2:8+1:7",
+        "q 3:7+2:5+1:5 q 2:7[h] h 3:7+2:7+1:5",
+        "q 3:7+2:8+1:5 q 1:7[h] h 3:7+2:8+1:7",
+      ].join(" | "),
     },
   },
 });
@@ -932,7 +951,7 @@ export const SUNDAY_GLIDE_PIECE: Piece = {
   styles: ["soul-funk"],
   description:
     "A soul vamp in D, I to IV: octave roots, small chords on the top strings in swung sixteenths, and sixths that slide into the chord.",
-  scores: [sundayRoots, sundayRhythm, sundaySixths],
+  scores: [sundayRoots, sundayShapes, sundayRhythm, sundaySixths],
   parts: [
     {
       id: "sunday-glide-roots",
@@ -945,6 +964,16 @@ export const SUNDAY_GLIDE_PIECE: Piece = {
       unitIds: ["unit-08"],
     },
     {
+      id: "sunday-glide-shapes",
+      layer: 2,
+      title: "Sus2 into the chord",
+      scoreId: sundayShapes.id,
+      accompanimentIds: [sundayRoots.id],
+      instruction:
+        "D and G as small shapes at the 7th fret, each struck as a sus2 on count 1 and turned major by a hammer-on on count 2, then held. The second guitar plays the octave roots.",
+      unitIds: ["unit-19"],
+    },
+    {
       id: "sunday-glide-rhythm",
       layer: 2,
       title: "The rhythm part",
@@ -952,7 +981,7 @@ export const SUNDAY_GLIDE_PIECE: Piece = {
       accompanimentIds: [sundayRoots.id],
       instruction:
         "Strum only the top three strings, D then G at the 7th fret. Keep the hand moving down-up in sixteenths and let it touch the strings on 1, the “a” of 1, the “and” of 2, 3 and the “a” of 3.",
-      unitIds: ["unit-19", "unit-20"],
+      unitIds: ["unit-20"],
     },
     {
       id: "sunday-glide-sixths",
@@ -961,7 +990,7 @@ export const SUNDAY_GLIDE_PIECE: Piece = {
       scoreId: sundaySixths.id,
       accompanimentIds: [sundayRhythm.id],
       instruction:
-        "Slide into each sixth from a fret below on count 1, then pluck it again just before count 2: A with F♯ over D, B with G over G.",
+        "Slide into each sixth from a fret below on count 1, then pluck it again on the “a” of 2, just before count 3: A with F♯ over D, B with G over G.",
       unitIds: ["unit-23"],
     },
   ],
