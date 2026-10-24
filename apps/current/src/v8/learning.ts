@@ -1,10 +1,12 @@
 import { ACTIVITIES, CURRICULUM, activityById, unitById } from "./curriculum";
-import { lessonForActivity } from "./lessons/catalog";
+import { LESSON_CATALOG, lessonForActivity } from "./lessons/catalog";
+import type { LessonEntry } from "./lessons/format";
 import { calendarDaysBetween, localDateAt } from "./dates";
 import { newId } from "./identity";
 import { COMPETENCY_STRANDS } from "./types";
 import type {
   Assistance,
+  CurriculumUnit,
   CompetencyStrand,
   CompetencyEvidence,
   EvidenceContext,
@@ -147,8 +149,59 @@ export function unitProgress(state: V8State, unitId: string): number {
   return Math.round((completed / unit.activities.length) * 100);
 }
 
+/** The unit placement starts from: earlier units are treated as not needed. */
+export function placementStartOrder(state: Pick<V8State, "settings">): number {
+  return state.settings.startingBaseline === "secure" ? 7 : state.settings.startingBaseline === "some" ? 3 : 1;
+}
+
+/**
+ * Prerequisites not yet met. A prerequisite is met when it is complete, or when
+ * it comes before the learner's placement starting unit (docs/CURRICULUM_MAP.md §5).
+ */
+export function unmetPrerequisites(state: V8State, unit: CurriculumUnit): CurriculumUnit[] {
+  const start = placementStartOrder(state);
+  return unit.prerequisiteIds
+    .map((id) => unitById(id))
+    .filter((before) => before.order >= start && unitProgress(state, before.id) < 100);
+}
+
+/** Whether anything has been done in a unit: a completed activity or any observation. */
+export function unitHasWork(state: V8State, unit: CurriculumUnit): boolean {
+  return (
+    unit.activities.some((activity) => state.completedActivityIds.includes(activity.id)) ||
+    state.evidence.some(
+      (item) => item.activityId.startsWith(`${unit.id}-`) || item.competencyId.endsWith(`:${unit.id}`),
+    )
+  );
+}
+
+/**
+ * A unit is open up to one past the current unit, whenever its prerequisites
+ * are met, and always once anything has been done in it, so started work is
+ * never folded away.
+ */
+export function unitLocked(state: V8State, unit: CurriculumUnit, current = nextUnit(state)): boolean {
+  if (unit.order <= current.order + 1) return false;
+  if (unitHasWork(state, unit)) return false;
+  return unmetPrerequisites(state, unit).length > 0;
+}
+
+/**
+ * Authored lessons whose activity was completed before the lesson existed, and
+ * which have not been opened for a check since. Their completion stands; the
+ * app only points out that a fuller lesson is now there (CURRICULUM_MAP.md §4).
+ */
+export function newLessonsAvailable(state: V8State): LessonEntry[] {
+  return LESSON_CATALOG.filter(
+    (entry) =>
+      state.completedActivityIds.includes(`${entry.unitId}-${entry.activityKind}`) &&
+      !(state.lessonAttempts ?? []).some((attempt) => attempt.lessonId === entry.id) &&
+      !(state.lessonCursors ?? []).some((cursor) => cursor.lessonId === entry.id),
+  );
+}
+
 export function nextUnit(state: V8State) {
-  const startingOrder = state.settings.startingBaseline === "secure" ? 7 : state.settings.startingBaseline === "some" ? 3 : 1;
+  const startingOrder = placementStartOrder(state);
   return CURRICULUM.find((unit) => unit.order >= startingOrder && unitProgress(state, unit.id) < 100) ?? CURRICULUM.at(-1)!;
 }
 

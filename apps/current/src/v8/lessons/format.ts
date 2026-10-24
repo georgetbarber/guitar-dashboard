@@ -58,7 +58,21 @@ export interface CueStep {
 }
 
 /** Techniques whose hand movement really needs seeing; a lesson using one must flag the missing video. */
-export type VisibleTechnique = "bends" | "vibrato" | "muting" | "fingerpicking hand" | "legato" | "strumming hand";
+export type VisibleTechnique =
+  | "bends"
+  | "vibrato"
+  | "muting"
+  | "fingerpicking hand"
+  | "legato"
+  | "strumming hand"
+  | "fretting hand";
+
+/**
+ * What the unaided check asks for. It must match the evidence the stand-in
+ * activity records: playing (performance or production), listening
+ * (recognition), creating (creation) or reflecting (reflection).
+ */
+export type CheckKind = "playing" | "listening" | "creating" | "reflecting";
 
 export interface Lesson {
   id: string;
@@ -67,6 +81,7 @@ export interface Lesson {
   unitId: string;
   stage: number;
   activityKind: ActivityKind;
+  checkKind: CheckKind;
   title: string;
   /** Why someone would want to play this, in a sentence. */
   purpose: string;

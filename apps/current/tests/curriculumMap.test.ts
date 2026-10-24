@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { CURRICULUM } from "../src/v8/curriculum";
+import { CURRICULUM, PREREQUISITES } from "../src/v8/curriculum";
+import { CAPSTONE_CAPABILITIES, UNIT_CAPABILITIES } from "../src/v8/lessons/capabilityCatalogue";
 import { PILOT_CAPABILITIES } from "../src/v8/capabilities";
 import { LESSON_CATALOG } from "../src/v8/lessons/catalog";
 import { LESSONS as STAGE_1 } from "../src/v8/lessons/stage1";
@@ -92,5 +93,25 @@ describe("curriculum map", () => {
       ),
     ];
     for (const capability of inUse) expect(all).toContainEqual(capability);
+  });
+
+  it("is the same graph and catalogue the code enforces", () => {
+    for (const row of unitRows) {
+      const cell = row.at(-1)!;
+      expect(cell === "—" ? [] : cell.split(",").map((value) => Number(value.trim()))).toEqual([
+        ...PREREQUISITES[Number(row[0])],
+      ]);
+    }
+    for (const [order, cell] of capabilityRows)
+      expect(
+        [...cell.matchAll(/`([a-z0-9.-]+)` (Lo|L|N|T|P)\b/g)].map((match) => ({
+          id: match[1],
+          action: ACTIONS[match[2]],
+        })),
+      ).toEqual(UNIT_CAPABILITIES[Number(order)]);
+    const capstoneLine = section("## 11. Capability catalogue").split("Capstones add one playing capability each:")[1];
+    expect([...capstoneLine.matchAll(/`(piece\.[a-z0-9.-]+)`/g)].map((match) => match[1])).toEqual([
+      ...CAPSTONE_CAPABILITIES,
+    ]);
   });
 });

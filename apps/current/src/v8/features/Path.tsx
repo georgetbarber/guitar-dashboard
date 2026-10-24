@@ -1,5 +1,5 @@
 import { CURRICULUM, STAGES } from "../curriculum";
-import { buildSession, nextUnit, unitProgress } from "../learning";
+import { buildSession, newLessonsAvailable, nextUnit, unitLocked, unitProgress, unmetPrerequisites } from "../learning";
 import { useV8Store } from "../store";
 import type { ActivityKind, CurriculumUnit } from "../types";
 import { OfflineLessonStatus } from "../components/OfflineLessonStatus";
@@ -26,11 +26,12 @@ export function Path() {
   const openPiece = useOpenPiece();
   const active = CURRICULUM.find((unit) => unit.id === state.activeUnitId) ?? CURRICULUM[0];
   const current = nextUnit(state);
-  const isLocked = (unit: CurriculumUnit) => unit.order > current.order + 1
-    && unit.prerequisiteIds.some((id) => unitProgress(state, id) < 100);
-  const blockerFor = (unit: CurriculumUnit) => unit.prerequisiteIds
-    .map((id) => CURRICULUM.find((candidate) => candidate.id === id))
-    .find((candidate) => candidate && unitProgress(state, candidate.id) < 100);
+  const newLessonIds = new Set(newLessonsAvailable(state).map((entry) => entry.id));
+  const isLocked = (unit: CurriculumUnit) => unitLocked(state, unit, current);
+  const blockerFor = (unit: CurriculumUnit) => {
+    const unmet = unmetPrerequisites(state, unit);
+    return unmet.length ? { title: unmet.map((item) => item.title).join("” and “") } : undefined;
+  };
   const activeLocked = isLocked(active);
   const activeBlocker = blockerFor(active);
   const chooseStart = (startingBaseline: typeof state.settings.startingBaseline) => {
@@ -82,7 +83,7 @@ export function Path() {
                 <ol className="activity-list">{active.activities.map((activity) => {
                   const complete = state.completedActivityIds.includes(activity.id);
                   const label = ACTIVITY_LABELS[activity.kind];
-                  return <li className={complete ? "is-complete" : ""} key={activity.id}><button onClick={() => dispatch({ type: "openActivity", activityId: activity.id })}><span>{complete ? `✓ ${label}` : label}</span><div><strong>{activity.title}</strong><small>{activity.minutes} min{lessonForActivity(activity.id) ? " · full lesson" : ""}</small></div><b>Open</b></button></li>;
+                  return <li className={complete ? "is-complete" : ""} key={activity.id}><button onClick={() => dispatch({ type: "openActivity", activityId: activity.id })}><span>{complete ? `✓ ${label}` : label}</span><div><strong>{activity.title}</strong><small>{activity.minutes} min{lessonForActivity(activity.id) ? (newLessonIds.has(lessonForActivity(activity.id)!.id) ? " · full lesson · new" : " · full lesson") : ""}</small></div><b>Open</b></button></li>;
                 })}</ol>
               </section>}
         </section>

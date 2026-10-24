@@ -154,6 +154,48 @@ describe("the lesson validator", () => {
     expect(bent).toContainEqual(expect.stringContaining("bends, so it must show"));
   });
 
+  it("holds capabilities to the unit's catalogue and the check to the kind of evidence its stand-in records", () => {
+    expect(
+      broken((l) => ({
+        ...l,
+        capabilities: [{ ...l.capabilities[0], id: "ear.made-up.skill" }, ...l.capabilities.slice(1)],
+      })),
+    ).toContainEqual(expect.stringContaining("not in Unit 10's catalogue"));
+    expect(
+      broken((l) => ({
+        ...l,
+        capabilities: [{ ...l.capabilities[0], action: "playing" }, ...l.capabilities.slice(1)],
+      })),
+    ).toContainEqual(expect.stringContaining("is a listening capability in the catalogue, not playing"));
+    // A playing check standing in for a listening activity would be stored as recognition evidence.
+    expect(broken((l) => ({ ...l, activityKind: "listen-compare" }))).toContainEqual(
+      expect.stringContaining("playing check would be recorded as recognition evidence"),
+    );
+    expect(broken((l) => ({ ...l, checkKind: "listening" }))).toContainEqual(
+      expect.stringContaining("listening check would be recorded as performance evidence"),
+    );
+  });
+
+  it("asks for a fretting-hand video wherever a barre chord is strummed", () => {
+    // C is strummed in the C-to-Am lesson; give its shape a barre and the lesson must say a video is needed.
+    const strummed = validateLesson({
+      ...COMMON_TONE_LESSON,
+      scores: COMMON_TONE_LESSON.scores.map((score, index) =>
+        index === 0
+          ? {
+              ...score,
+              voicings: score.voicings.map((voicing) =>
+                voicing.id === "C"
+                  ? { ...voicing, barre: { fret: 1, from: 1 as const, to: 2 as const, finger: 1 as const } }
+                  : voicing,
+              ),
+            }
+          : score,
+      ),
+    });
+    expect(strummed).toContainEqual(expect.stringContaining("fretting hand, so it must show"));
+  });
+
   it("compares scores in the dimension a transfer claims", () => {
     const [demo, reversed, fromF] = THIRD_COLOUR_LESSON.scores;
     expect(differsIn("key", demo, fromF)).toBe(true);

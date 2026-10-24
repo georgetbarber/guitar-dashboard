@@ -87,6 +87,7 @@ export const THIRD_COLOUR_LESSON: Lesson = {
   unitId: "unit-10",
   stage: 2,
   activityKind: "technique",
+  checkKind: "playing",
   title: "One fret changes the third",
   purpose:
     "Hear why one fret turns a sad sound bright, and find it under your finger instead of reading it from a chart.",

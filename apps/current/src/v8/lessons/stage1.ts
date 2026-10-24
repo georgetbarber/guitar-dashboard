@@ -63,6 +63,7 @@ export const COMMON_TONE_LESSON: Lesson = {
   unitId: "unit-06",
   stage: 1,
   activityKind: "rhythm",
+  checkKind: "playing",
   title: "Keep what stays: C to Am",
   purpose: "Change chords without the music stopping, by noticing that most of your hand can stay exactly where it is.",
   destination:

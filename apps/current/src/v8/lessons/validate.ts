@@ -13,7 +13,8 @@ import type { ChangedDimension, Provenance, Score } from "../../core/score/types
 import { positionMidi, scoreErrors, strumPositions, totalTicks } from "../../core/score/validate";
 import { metreInfo } from "../../core/score/time";
 import { CURRICULUM } from "../curriculum";
-import type { CueLevel, CuePhase, Lesson, VisibleTechnique } from "./format";
+import { UNIT_CAPABILITIES } from "./capabilityCatalogue";
+import type { CheckKind, CueLevel, CuePhase, Lesson, VisibleTechnique } from "./format";
 
 const PHASE_ORDER: Record<CuePhase, number> = { learn: 0, practise: 1, "try-unaided": 2 };
 const SUPPORT: Record<CueLevel, number> = { full: 2, "count-only": 1, none: 0 };
@@ -53,6 +54,8 @@ export function visibleTechniques(score: Score): VisibleTechnique[] {
     if (art.legato) found.add("legato");
     if (event.kind === "note" && event.notes.some((note) => note.pluck)) found.add("fingerpicking hand");
     if (event.kind === "strum" && event.dur < metreInfo(score.metre).beatTicks / 2) found.add("strumming hand");
+    if (event.kind === "strum" && score.voicings.find((voicing) => voicing.id === event.chord)?.barre)
+      found.add("fretting hand");
   }
   return [...found];
 }
@@ -119,6 +122,14 @@ function musicOf(score: Score): string {
   return `${score.key.tonic} ${score.key.mode}|${score.metre}|${score.feel}|${pitches(score)}|${onsets(score)}|${articulations(score)}`;
 }
 
+/** The evidence each kind of check produces, matched to the stand-in activity's source (map §4). */
+const CHECK_SOURCES: Readonly<Record<CheckKind, readonly string[]>> = {
+  playing: ["performance", "production"],
+  listening: ["recognition"],
+  creating: ["creation"],
+  reflecting: ["reflection"],
+};
+
 export function validateLesson(lesson: Lesson, pieceIds: ReadonlySet<string> = new Set()): string[] {
   const errors: string[] = [];
   const add = (message: string) => errors.push(`${lesson.id}: ${message}`);
@@ -131,8 +142,19 @@ export function validateLesson(lesson: Lesson, pieceIds: ReadonlySet<string> = n
   if (!unit) add(`unknown unit ${lesson.unitId}.`);
   else {
     if (unit.stage !== lesson.stage) add(`${lesson.unitId} is in stage ${unit.stage}, not ${lesson.stage}.`);
-    if (!unit.activities.some((activity) => activity.kind === lesson.activityKind))
-      add(`${lesson.unitId} has no ${lesson.activityKind} activity to stand in for.`);
+    const standIn = unit.activities.find((activity) => activity.kind === lesson.activityKind);
+    if (!standIn) add(`${lesson.unitId} has no ${lesson.activityKind} activity to stand in for.`);
+    else if (!CHECK_SOURCES[lesson.checkKind]?.includes(standIn.source))
+      add(
+        `its ${lesson.checkKind} check would be recorded as ${standIn.source} evidence; stand in for an activity of the same kind.`,
+      );
+    const catalogue = UNIT_CAPABILITIES[unit.order] ?? [];
+    for (const capability of lesson.capabilities) {
+      const listed = catalogue.find((entry) => entry.id === capability.id);
+      if (!listed) add(`capability ${capability.id} is not in Unit ${unit.order}'s catalogue (CURRICULUM_MAP.md §11).`);
+      else if (listed.action !== capability.action)
+        add(`capability ${capability.id} is a ${listed.action} capability in the catalogue, not ${capability.action}.`);
+    }
   }
 
   for (const [field, text] of [
