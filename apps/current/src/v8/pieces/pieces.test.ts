@@ -41,12 +41,18 @@ describe("the repertoire", () => {
     expect(PIECE_CATALOG).toEqual(PIECES.map((piece) => pieceEntryOf(piece, firstStage(piece))));
   });
 
-  it("gives Stages 1 to 4 their capstones, as the curriculum map plans", () => {
-    expect(PIECES.flatMap((piece) => piece.capstones.map((capstone) => [capstone.stage, piece.id]))).toEqual([
+  it("gives Stages 1 to 6 their capstones, as the curriculum map plans", () => {
+    expect(
+      PIECES.flatMap((piece) => piece.capstones.map((capstone) => [capstone.stage, piece.id] as const)).sort(
+        (a, b) => a[0] - b[0],
+      ),
+    ).toEqual([
       [1, "piece-front-step"],
       [2, "piece-low-road"],
       [3, "piece-lantern"],
       [4, "piece-porch-light"],
+      [5, "piece-night-market"],
+      [6, "piece-front-step"],
     ]);
   });
 });
