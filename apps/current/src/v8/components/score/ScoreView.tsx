@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import "../../../styles/score.css";
 import { FEELS, metreInfo } from "../../../core/score/time";
 import type { Score, StringNumber, StrumEvent } from "../../../core/score/types";
@@ -12,6 +12,7 @@ import {
 } from "../../../core/score/views";
 import { ChordDiagram } from "./ChordDiagram";
 import { ScoreFretboard } from "./ScoreFretboard";
+import { StaffRow } from "./StaffRow";
 
 const STRING_LABELS: Record<StringNumber, string> = { 1: "e", 2: "B", 3: "G", 4: "D", 5: "A", 6: "E" };
 
@@ -49,6 +50,24 @@ const MARK_MEANING: Record<TechniqueMark, string> = {
 
 const BEND_TEXT: Record<number, string> = { 0.5: "¼", 1: "½", 1.5: "¾", 2: "full" };
 
+const STAFF_KEY = "interval.score.staff";
+
+function readStaff(): boolean {
+  try {
+    return localStorage.getItem(STAFF_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeStaff(value: boolean) {
+  try {
+    localStorage.setItem(STAFF_KEY, value ? "1" : "0");
+  } catch {
+    /* A private window keeps the choice for this view only. */
+  }
+}
+
 function markLabel(cell: TabCell): string {
   return cell.marks
     .map((mark) =>
@@ -79,6 +98,8 @@ export function ScoreView({
   large = false,
   eyebrow,
 }: ScoreViewProps) {
+  const [staff, setStaff] = useState(readStaff);
+  const showStaff = staff && !conceal;
   const info = metreInfo(score.metre);
   const firstBar = range ? Math.floor(range.from / info.ticksPerBar) + 1 : 1;
   const lastBar = range ? Math.ceil(range.to / info.ticksPerBar) : score.bars;
@@ -108,6 +129,19 @@ export function ScoreView({
           {conceal ? "Key hidden" : `${score.key.tonic} ${score.key.mode}`} · {score.metre} · {FEELS[score.feel].label}{" "}
           · {score.tempo.minimum}–{score.tempo.maximum} BPM
         </small>
+        {!conceal && (
+          <label className="score-view__staff-toggle">
+            <input
+              type="checkbox"
+              checked={staff}
+              onChange={(event) => {
+                setStaff(event.target.checked);
+                writeStaff(event.target.checked);
+              }}
+            />{" "}
+            Show staff notation (optional)
+          </label>
+        )}
       </figcaption>
       {score.voicings.length > 0 &&
         (conceal ? (
@@ -184,6 +218,7 @@ export function ScoreView({
                     ))}
                   </div>
                 ))}
+                {showStaff && <StaffRow score={score} grid={grid} style={style} sounding={sounding} large={large} />}
                 <div className="score-row score-row--marks" style={style}>
                   <span className="score-row__label" />
                   {[...new Set(cells.map((cell) => cell.column))].map((index) => {

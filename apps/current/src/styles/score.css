@@ -347,3 +347,63 @@
     padding: var(--space-4) var(--space-3);
   }
 }
+
+/* Optional staff notation: treble clef, an octave above sounding pitch. Never required. */
+.score-view__staff-toggle {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  color: var(--muted);
+  font: var(--font-meta);
+}
+
+.score-row--staff {
+  align-items: stretch;
+}
+
+.score-row--staff > span {
+  display: block;
+  min-width: 0;
+  overflow: visible;
+}
+
+.score-row--staff svg {
+  display: block;
+  overflow: visible;
+}
+
+.score-row--staff .staff-line {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.score-row--staff .staff-ink {
+  fill: var(--ink);
+}
+
+.score-row--staff .staff-hollow {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.4;
+}
+
+.score-row--staff .staff-stroke {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.3;
+}
+
+.score-row--staff .staff-text {
+  fill: var(--ink);
+  font-family: "Noto Music", "Bravura Text", "Apple Symbols", "Segoe UI Symbol", serif;
+}
+
+.score-row--staff .is-sounding .staff-ink,
+.score-row--staff .is-sounding .staff-text {
+  fill: var(--rel-tonic);
+}
+
+.score-row--staff .is-sounding .staff-hollow,
+.score-row--staff .is-sounding .staff-stroke {
+  stroke: var(--rel-tonic);
+}
