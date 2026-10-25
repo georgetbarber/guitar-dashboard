@@ -8,7 +8,7 @@ Tick them in the app under **Settings › Things to check**, where the same list
 keeps your ticks on this device and in sync. Leave a “Something's wrong here”
 note if a check fails.
 
-31 items, most valuable first within each group.
+32 items, most valuable first within each group.
 
 ## On the laptop
 
@@ -52,7 +52,7 @@ note if a check fails.
 
 - **Status:** needs George
 - **Do:** Open the full lessons in Units 30 (three feels) and 34 (modes) and go to “Try unaided”. Hear each example, choose an answer, and read the explanation.
-- **Pass:** You can tell the feels and the modes apart by ear rather than by guessing, the synthesised swing and shuffle sound like the styles they name, and nothing on screen gives an answer away before you choose.
+- **Pass:** You can tell the feels and the modes apart by ear rather than by guessing; in particular, say whether swung sixteenths can be told from straight ones (the app's swing is light), and whether the synthesised shuffle sounds like a shuffle. Nothing on screen gives an answer away before you choose, and “Try the set again” comes back in a new order, marked as practice.
 - **Where:** Learn › Course map · Units 30 and 34 · Try unaided
 - **Why:** Batch 3 (Package 7): the first exact-answer listening checks (decision A19).
 - **Added:** 2026-10-24 · Package 7 · `laptop-listening-checks`
@@ -152,7 +152,7 @@ note if a check fails.
 ### Play the Stage 5 capstone, Night Market
 
 - **Status:** needs George
-- **Do:** In the Course map, open Stage 5 and choose “Open the capstone”. Start at 60 BPM with the second guitar: Em7 (xx2433) and A7 (first finger across fret 2) on the top four strings, the hand moving in sixteenths, chords on 1, the “a” of 1 and the “and” of 2, ghosted scratches between, then the break where the band stops.
+- **Do:** In the Course map, open Stage 5 and choose “Open the capstone”. Start at 60 BPM with the second guitar: Em7 (xx2433) and A7 (first finger across fret 2) on the top four strings, the hand moving in sixteenths, chords on 1, the “a” of 1 and the “and” of 2, ghosted scratches between, then the break, where the second guitar hits only the stabs with you.
 - **Pass:** Your hand never stops, the accents sit on 1 and the “and” of 2, the A7 barre rings on all four strings, and the break feels like space rather than a mistake. Note the tempo where the groove starts to stiffen.
 - **Where:** Learn › Course map · Stage 5 capstone · Night Market
 - **Why:** Batch 3 (Package 7): Stage 5 capstone and the course's first sixteenth funk groove, agent-drafted.
@@ -161,16 +161,25 @@ note if a check fails.
 ### Play the Stage 6 capstone, Front Step in full
 
 - **Status:** needs George
-- **Do:** In the Course map, open Stage 6 and choose “Open the capstone”. Play the three parts in turn with the second guitar: E7, A7 and B7 in shuffle; the calls and answers; the solo chorus. Try the boogie part too, with B as root and fifth if the stretch to fret 6 is too far.
+- **Do:** In the Course map, open Stage 6 and choose “Open the capstone”. Play the three shuffle choruses in turn with the second guitar's boogie: E7, A7 and B7; the calls and answers, now in shuffle; the solo chorus, whose long notes are fretted so they can be shaken (B at G-string fret 4, E at B-string fret 5). Try the boogie part too, with B as root and fifth if the stretch to fret 6 is too far.
 - **Pass:** The shuffle feels long-short without effort, every bend in the solo reaches its note (play the target fret first if unsure), and you keep your place through the quick change and the turnaround. Leave a note on any bend that falls short.
 - **Where:** Learn › Course map · Stage 6 capstone · Front Step
 - **Why:** Batch 3 (Package 7): Stage 6 capstone with bends, vibrato and the boogie stretch, agent-drafted.
 - **Added:** 2026-10-24 · Package 7 · `guitar-front-step-full`
 
+### Bend to the note: Unit 27
+
+- **Status:** needs George
+- **Do:** Open the full lesson in Unit 27. Play the bends at the 7th fret first (D up to E on the G string, C up a half step to C♯ on the high E), then the same bends near the nut (A up to B at G-string fret 2, G up to G♯ at high-E fret 3), then the phrase with vibrato on the fretted B.
+- **Pass:** Each bent note matches the fretted target you played first, the open-position bends reach their notes without straining, and the vibrato on B is even. Leave a note on any bend that falls short, and whether bending at fret 2 needs to wait for later in the course.
+- **Where:** Learn › Course map · Unit 27 · Learn it
+- **Why:** Batch 3 (Package 7), after review: bends taught at the 7th fret first, vibrato only on fretted notes.
+- **Added:** 2026-10-25 · Package 7 · `guitar-batch-3-bends`
+
 ### Try the barres and the small F
 
 - **Status:** needs George
-- **Do:** Open the full lessons in Units 32 and 35. Build G at the 3rd fret from the power chord, play C and D as A-shape barres, then F (xx3211) and Fm (xx3111) and the jump from Em at the 7th fret down to F.
+- **Do:** Open the full lessons in Units 32 and 35. Build G at the 3rd fret from the power chord, play C and D as A-shape barres, the minor barres Am (5th fret) and Em (x79987), then F (xx3211) and Fm (xx3111) and the jump from Em at the 7th fret down to F.
 - **Pass:** Each barre rings on every string it should within a minute of trying, and the jump from Em to F lands by count 1 at the slowest tempo. Leave a note naming any shape that will not ring, and how long it took.
 - **Where:** Learn › Course map · Units 32 and 35 · Learn it
 - **Why:** Batch 3 (Package 7): the course's first barre chords, agent-drafted.

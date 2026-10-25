@@ -491,15 +491,64 @@ Phase 2B and Phase 7.
 
 ---
 
+## Completion brief Package 7 — Batch 3, Units 25–36 (24 October 2026)
+
+**Status: implemented (24 October), independently reviewed and revised (25 October); PR #13 open, stacked on #12, for George to merge after it (decision R3).** Brief §6 Packages 5–8 (third batch); `docs/CURRICULUM_MAP.md` §3, §6, §7.
+
+| | |
+| --- | --- |
+| **Findings** | D03, D05, D08 for Units 25–36; D11 (several kinds of episode: the first listening checks, alongside playing and making); none closed until reviewed on a guitar |
+| **Engine** | An **exact-answer listening check** for lessons whose check is listening (Units 30 and 34). The examples play with no notes shown; the learner chooses an answer and sees at once whether it was right and why. When the set ends, every answer is recorded together as exact-answer evidence against the unit's activity, which the set completes only if every answer was right; the set is one lesson attempt the app marked (all right is a success, at least half partial), kept to values older builds accept (A19). Each run shuffles the examples and choices, and a run after the answers were shown that day is practice with help. Hearing the lesson's version again marks later answers as hinted. Answer keys travel in the shell catalogue so validation checks recorded answers on any device, and question versions start at 2 so builds that predate lesson questions accept them without a sync error (A19). The validator requires at least three questions with two different right answers, refuses vibrato on an open string, keeps the examples out of sight before the check, and refuses questions on other lessons |
+| **Content** | Twelve draft lessons, Units 25–36 (`stage5.ts`, `stage6.ts`): Low Road's riff as single notes with a pull-off and hammer-on, locked to the power chords; Night Market's sixteenth groove; bends to a fretted target, at the 7th fret first, with vibrato on a fretted note; developing a riff one dimension at a time; the boogie shuffle and improvising with three notes; three feels, one motif (listening); bass walks between I, IV and V; E- and A-shape barres, major and minor, and the soul loop; blues sevenths with major and minor pentatonic; major, Mixolydian, natural minor or Dorian (listening); the borrowed iv; slide-ins and chromatic passing notes. Pieces: *Night Market* (Em7 bounce and stabs, the sixteenth groove where A7 turns E minor into E Dorian, a riff that answers the chords, a break, slide-ins; the Stage 5 capstone), *Two Rivers* (A Mixolydian and A Dorian, with melodies that lean on ♭7 and on the natural 6), *Glasshouse* (A-shape barres and F to Fm), and new layers for *Low Road* (single-note riff, A A A′ B), *Front Step* (boogie, E7/A7/B7 in shuffle, the calls in shuffle, a solo chorus; the Stage 6 capstone of three shuffle choruses), *Porch Light* (bass walks) and *Sunday Glide* (slide-ins and ghosts) |
+| **Budgets** | Guest entry 418.6 KiB (420 KiB): the answer keys and twelve catalogue entries cost about 6 KiB. Offline shell 1297.1 KiB with Firebase-length configuration (1300 KiB, A16). Lesson packs: stages 1–6 between 144 and 159 KiB each. Batch 4 cannot fit both budgets without either moving shell-side data or revisiting the thresholds with evidence (Next package) |
+| **Migration impact** | Additive. Exact-answer evidence for lesson questions uses fields the evidence format and rules already allow; versions from 2 keep older builds quiet (A19). A listening set's lesson attempt keeps `method: "self-reported"` and adds an optional `checkedAnswers`, which older builds ignore; the Batch 2 build and the live site were run against the new records and accept them. No rules change |
+
+**Verification (local, before review).** 605 unit/interface tests across 70 files; lint; format against `origin/main`; production build; budgets. New tests: every Batch 3 lesson's and piece's verbal claims against its notes (accents and kicks by tick, legato direction, the groove's hit positions and the notes Em7 and A7 share, bend targets, development one dimension at a time, the boogie's intervals, the three-note answers and the empty fourth bars, the feels, the walks, the barre built from G5, the licks' degrees, each mode example's characteristic note, the F-to-Fm move, slide-ins and the passing note, the riff in the groove's gap, the break, the shuffle form and the solo's bends); the listening check, its evidence and its compatibility with builds that predate it. Browser: 124 desktop/phone checks passed (4 production-only skipped), including new journeys for the Unit 30 listening check at 320px, the Unit 33 lesson ending in *Front Step*, both capstones from the course map, and axe WCAG 2.2 A/AA scans of the listening check, *Night Market* and *Glasshouse* in both themes. Both production offline journeys passed against a Firebase-configured build. **Not verified:** anything on a guitar or by ear, Firebase rules (unchanged; CI), real phones.
+
+**Independent review (24–25 October).** A fresh-context reviewer dumped every new or changed score with the repository's builder, compared them with every claim, read the engine, and ran the Batch 2 build's and the live site's validators against listening records ([record](reviews/2026-10-25-batch-3-review.md)). There were four blocking findings:
+
+- vibrato written on open strings;
+- Unit 30's straight and swung examples differing only in four hammered notes the synth barely marks;
+- a retry straight after the answers were shown being recorded as unaided evidence;
+- the *Night Market* riff placed on the wrong count.
+
+There were thirteen should-fix findings:
+
+- one right answer completed a listening activity;
+- the set's attempt used a method older builds refuse, so a rollback would have left a workspace unreadable;
+- Unit 34's examples were answerable from the third and the root motion, with no natural minor;
+- the Stage 6 capstone mixed a straight part with shuffle parts;
+- the break's riff, the A-minor bend, the bends taught first near the nut, one slide where two were promised, "one fret higher", unexplained walk fingerings, the unrouted Unit 4 wording and untaught minor barres.
+
+All were fixed, and so were twelve minor findings. Units 5 and 12 keep their capstone endings; the parts list them as practice. After the fixes: 610 unit/interface tests across 70 files; lint; format against `origin/main`; build; budgets (guest 418.6 KiB, shell 1297.1 KiB); the full browser suite (124 passed, 4 production-only skipped); both production offline journeys against a Firebase-configured build; the reviewer's mixed-version script against both older builds. **Mutation checks**, each failing only its own tests:
+
+- vibrato allowed on an open string;
+- set completion ignored;
+- no reshuffle on retry;
+- a retry not marked as helped;
+- today's answers ignored after a reload;
+- answers recorded one at a time;
+- the attempt's method set to `exact-answer`;
+- `checkedAnswers` unchecked;
+- the riff restored to the break;
+- one slide per bar.
+
+CI on the PR runs the rules suite.
+
+---
+
 ## Next package
 
-**First, George:** merge the open pull requests in order, each only once its CI is green: #6 (Package 0), #7 (Package 1), #8 (Package 2), #9 (Package 3), #10 (Package 4), #11 (Batch 1), then #12 (Batch 2). Merging publishes (decision R3). After #6 merges, the three `codex/*` branches can be deleted (decision A1).
+**First, George:** merge the open pull requests in order, each only once its CI is green: #6 (Package 0), #7 (Package 1), #8 (Package 2), #9 (Package 3), #10 (Package 4), #11 (Batch 1), #12 (Batch 2), then #13 (Batch 3). Merging publishes (decision R3). After #6 merges, the three `codex/*` branches can be deleted (decision A1).
 
-**Next agent package: Package 7 — Batch 3, Units 25–36 (Stages 5–6),** on a new branch `phase6/batch-3-units-25-36` stacked on #12. Per map §3, §6 and §7:
+**Next agent package: Package 8 — Batch 4, Units 37–48 (Stages 7–8),** on a new branch `phase6/batch-4-units-37-48` stacked on #13. Per map §3, §6 and §7:
 
-- **Engine first: an exact-answer listening check** for the two `listen-compare` units (30 "which feel is this?", 34 "which mode is this?"). The lesson type already has `checkKind: "listening"`, and the lesson player needs it built. Questions play a concealed example and offer choices. Each answer is recorded as `exact-answer` evidence against the stand-in activity, as concept checks already are. **Compatibility trap:** builds before this one (including the live site) reject `exact-answer` evidence whose `checkId` they do not know when its `contentVersion` is 1 (`validation.ts`, the "checked answer" rule), and an un-updated device would then show a sync error. So give lesson questions content versions that older builds accept (from 2), and add a small shell registry so new builds can validate them like concept checks. Test this mixed-version case explicitly, as Batch 1 did for capstones. Firestore rules already accept exact answers whose context mode is major, minor, dorian, mixolydian or blues.
-- **Pieces:** *Night Market* (new; L1 for Units 4–5, L2 sixteenth funk with Em7/A7 partials for Unit 26, L3 the answering riff for Unit 28, L4 slide-ins and a break for Unit 36; the Stage 5 capstone), *Two Rivers* (new; A Mixolydian and A Dorian for Unit 34; Unit 12 can gain its A5–G5 pulse), *Glasshouse* (new; barres and C–Em–F–Fm for Units 32 and 35), and new layers for *Low Road* (single-note riff and A A A′ B development, Units 25 and 28), *Front Step* (boogie shuffle, dominant sevenths and the solo chorus, Units 27, 29 and 33; the Stage 6 capstone of three choruses), *Porch Light* (bass walks, Unit 31) and *Sunday Glide* (slide-ins and ghosted scratches, Unit 36).
-- **Budget:** the offline shell is at 1287.7 KiB against 1300 KiB. Keep shell-side additions (catalogue entries, checklist items) lean, or revisit A16 with evidence before Batch 4.
-- **Then** twelve lessons per map §3, their claim and correspondence tests, browser journeys (one episode per stage, both capstones, a listening check), accessibility scans, budgets, the independent review and the batch review record.
+- **Budget first.** Guest entry 418.6 of 420 KiB; offline shell 1297.1 of 1300 KiB (A16). Batches 2 and 3 added about 18 KiB to the shell between them, more than A16's estimate of 15 KiB for Batches 2–4, so twelve more catalogue entries, two pieces' entries, a few checklist items and a reflection check will not fit as things stand. Measure what grows in the guest entry and the shell (the source map explorer, or a by-module size dump of the build). Then either move descriptive text the course map does not show before a lesson opens out of the shell catalogues, or record a decision that revises A16 and the guest budget with the measured cost of a slow first download. Do not push the checklist or catalogue into lesson packs (A16's alternatives).
+- **Engine:** a **reflection check** for the `reflection` units (46 "revise with intention", 48 "design your next path"): the learner compares a before and an after (two recordings or two sketches) and names one change, with evidence that links both artifacts and stays a self-report. Stage 7's capstone *Tide Table* and Stage 8's *Your Own Tune* are **made in Create** (A18's capstone making step, extended to a given A section the learner adds a B section to, and to a sketch with two or more sections, an intro and an ending). Unit 43 (transcribe a fingerprint) is an exact-answer listening check over an agent-authored original phrase until *Bring your own music* exists (Package 10). Its questions are rhythm first, then contour, then notes, and start at version 2 (A19).
+- **Pieces:** *Tide Table* (new; the given A section: fingerpicked D with Dsus2 and Dsus4 hammer-ons and pull-offs), *Your Own Tune* (the learner's; seeded from Unit 44's transformation), and new layers for *Harbour Song* (harmonic rhythm, Unit 37; the descending bass with F as 1x3211, Unit 41), *Porch Light* (the bridge, hammer-ons and let-ring left over from Batch 3, Unit 38), *Lantern* (the motif family and two reharmonisations, Units 39 and 45), *Glasshouse* (two guitar parts, Unit 42) and *Two Rivers*' A/B form as Unit 40's worked example. The Stage 8 capstone's three-piece set plays three favourites in turn.
+- **Carried over from the Batch 3 review:** Unit 14's exact-answer degree check (the listening check now exists for it), and Unit 29's improvising over the whole 12-bar, if either fits without crowding Batch 4; otherwise Package 9.
+- **Then** twelve lessons per map §3, their claim and correspondence tests, browser journeys (one episode per stage, both capstones, the reflection check), accessibility scans, budgets, the independent review and the batch review record.
+
+**After Batch 4: Package 8A, easy practice** (added to the brief by George on 25 October): one-tap Practice with a length choice, "Just play" for low-energy days, an optional comfortable / about right / a stretch read that adjusts pacing and is never evidence, and Free Play learning from what he plays and skips. It has its own branch, PR and release before Package 9, and may start earlier if a session finishes a batch with time to spare. Its done-when list also requires the shell and guest budgets to hold, which is one more reason to settle the budget step at the start of Batch 4.
 
 Known test fragility, not caused by these packages: two Phase 5 tests (`pilotProgress.test.ts`, `capabilities.test.ts`) fail when run in time zones far from UTC (Auckland, Los Angeles); CI and London pass. Worth fixing in Package 9, along with a React hooks lint rule (the lesson player's hook-order defect in Batch 1 would have been caught by one).

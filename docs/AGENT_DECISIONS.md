@@ -380,8 +380,15 @@ first, so it is not buried.
 - **Decision:** a lesson whose check is listening (`checkKind: "listening"`,
   Units 30 and 34) asks concealed questions with one right answer each. The app
   marks every answer and records it as `exact-answer` evidence against the
-  unit's stand-in activity, named `lesson:<lesson id>:<question id>`. The set
-  becomes one lesson attempt with method `exact-answer`. Lesson questions carry
+  unit's stand-in activity, named `lesson:<lesson id>:<question id>`. A set's
+  answers are recorded together when it ends, with one time, and complete the
+  activity only if every answer was right. The set becomes one lesson attempt
+  that keeps `method: "self-reported"`, the only value earlier builds accept,
+  and says the app marked it in `checkedAnswers` (revised 25 October after the
+  Batch 3 review: `exact-answer` there made the workspace unreadable to the
+  Batch 2 build and anything earlier). Each run shuffles the examples and
+  choices; a run after the answers were shown that day is recorded as hinted,
+  the strongest help earlier builds accept on an answer. Lesson questions carry
   content versions from **2**, and their answer keys travel in the shell's
   lesson catalogue, so any build that knows a question validates its answers as
   strictly as concept checks.
@@ -401,5 +408,24 @@ first, so it is not buried.
   questions.
 - **Where:** `src/v8/lessons/format.ts` (`ListeningCheck`, `lessonCheckId`,
   `LessonEntry.answers`), `src/v8/lessonAnswers.ts`, `src/v8/validation.ts`,
-  `src/v8/lessonProgress.ts` (`recordLessonAnswer`),
+  `src/v8/lessonProgress.ts` (`recordLessonAnswer`, `shuffleListeningSet`,
+  `answersSeenToday`), `src/v8/learning.ts` (set completion),
   `src/v8/components/ListeningCheck.tsx`.
+
+### A20 · 2026-10-25 · Package 7 · A piece's version rises when parts are added
+
+- **Decision:** adding parts or layers to a piece raises the piece's version,
+  as for any change to it, even when the existing parts are unchanged. Review
+  marks and feedback (A5) attach to a piece version, so marks on unchanged
+  parts are not carried forward.
+- **Why:** one version per piece keeps the catalogue, review marks and the
+  draft label simple and honest: George reviews the piece as it now stands.
+  Every piece is still an unreleased agent draft with no review marks, so
+  nothing is lost now. *Front Step* (3), *Low Road*, *Porch Light* and *Sunday
+  Glide* (2) rose this way in Batches 2 and 3.
+- **Alternatives:** per-part versions (more bookkeeping in the catalogue,
+  feedback and the checklist, for a benefit that only exists after release);
+  not bumping (a mark would then vouch for parts its reviewer never saw).
+- **Reversible:** yes. Package 9 can move to per-part marks before release if
+  re-reviewing whole pieces proves costly.
+- **Where:** `src/v8/pieces/library.ts`, `src/v8/pieces/catalog.ts`.
