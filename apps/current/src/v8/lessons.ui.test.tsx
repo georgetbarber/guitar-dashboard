@@ -14,6 +14,8 @@ import { FEELS_LESSON } from "./lessons/stage5";
 import { scoreById } from "./lessons/format";
 import { validateState } from "./validation";
 import { localDateAt } from "./dates";
+import { activityById } from "./curriculum";
+import { recordLessonAnswer } from "./lessonProgress";
 import type { V8State } from "./types";
 
 vi.mock("./repository", async (original) => ({
@@ -64,6 +66,7 @@ function Probe() {
         cursors: state.lessonCursors ?? [],
         attempts: state.lessonAttempts ?? [],
         evidence: state.evidence,
+        completed: state.completedActivityIds,
         sketches: state.sketches,
         activeSketchId: state.activeSketchId,
         route: state.route,
@@ -390,8 +393,10 @@ describe("the lesson player", () => {
     ).toThrow(/artifactId/);
   });
 
-  it("runs a listening check: hidden examples, each answer marked at once and recorded as an exact answer", async () => {
+  it("runs a listening check: hidden examples in a shuffled order, marked at once, recorded together when the set ends", async () => {
     const user = userEvent.setup();
+    // 0.999 keeps the first run in authored order; 0 reorders the second run.
+    const random = vi.spyOn(Math, "random").mockReturnValue(0.999);
     render(
       <V8StoreProvider>
         <LessonPlayer entry={entry("lesson-unit-30-feels")} />
@@ -400,40 +405,84 @@ describe("the lesson player", () => {
     );
     await screen.findByRole("heading", { name: "Three feels, one motif" });
     await user.click(screen.getByRole("button", { name: "3 · Try unaided" }));
+    expect(screen.getByRole("heading", { name: "Name what you hear" })).toBeTruthy();
     expect(screen.queryByRole("figure", { name: /^Score/ })).toBeNull();
     expect(screen.queryByRole("button", { name: "I played it without the app sound" })).toBeNull();
     const questions = FEELS_LESSON.listening!.questions;
-    const answers = [
-      questions[0].answer,
-      questions[1].choices.find((item) => item !== questions[1].answer)!,
-      questions[2].answer,
-      questions[3].answer,
-    ];
-    for (const [index, question] of questions.entries()) {
-      expect(screen.getByText(`Example ${index + 1} of 4`)).toBeTruthy();
-      await user.click(screen.getByRole("radio", { name: answers[index] }));
-      expect((screen.getByRole("button", { name: "Check my answer" }) as HTMLButtonElement).disabled).toBe(true);
-      await user.click(screen.getByRole("button", { name: `Hear example ${index + 1}` }));
-      const [played, options] = vi.mocked(player.startScorePlayback).mock.calls.at(-1)!;
-      expect([played.id, options.mode, options.tempo]).toEqual([question.scoreId, "reference", 72]);
-      await user.click(screen.getByRole("button", { name: "Check my answer" }));
-      expect(
-        screen.getByText(answers[index] === question.answer ? "Right." : `Not this time: it was ${question.answer}.`),
-      ).toBeTruthy();
-      expect(screen.getByText(question.explanation, { exact: false })).toBeTruthy();
-      if (index < 3) await user.click(screen.getByRole("button", { name: "Next example →" }));
-    }
-    expect(screen.getByText(/You named 3 of 4 correctly/)).toBeTruthy();
-    const state = probe();
+    const unit30 = (item: { activityId: string }) => item.activityId === "unit-30-listen-compare";
+
+    /** Answer one run; `wrong` names the shown positions to answer wrongly. Returns the order heard. */
+    const answerRun = async (wrong: number[]) => {
+      const heard: string[] = [];
+      const before = probe().evidence.filter(unit30).length;
+      for (let index = 0; index < questions.length; index++) {
+        expect(screen.getByText(`Example ${index + 1} of 4`)).toBeTruthy();
+        const check = screen.getByRole("button", { name: "Check my answer" }) as HTMLButtonElement;
+        expect(check.disabled).toBe(true);
+        expect(check.getAttribute("aria-describedby")).toBeTruthy();
+        await user.click(screen.getByRole("button", { name: `Hear example ${index + 1}` }));
+        const [played, options] = vi.mocked(player.startScorePlayback).mock.calls.at(-1)!;
+        const question = questions.find((item) => item.scoreId === played.id)!;
+        expect([options.mode, options.tempo]).toEqual(["reference", 60]);
+        heard.push(question.id);
+        const response = wrong.includes(index)
+          ? question.choices.find((item) => item !== question.answer)!
+          : question.answer;
+        await user.click(screen.getByRole("radio", { name: response }));
+        await user.click(screen.getByRole("button", { name: "Check my answer" }));
+        expect(
+          screen.getByText(response === question.answer ? "Right." : `Not this time: it was ${question.answer}.`),
+        ).toBeTruthy();
+        expect(screen.getByText(question.explanation, { exact: false })).toBeTruthy();
+        if (index < 3) {
+          // Nothing is recorded until the set is finished.
+          expect(probe().evidence.filter(unit30)).toHaveLength(before);
+          await user.click(screen.getByRole("button", { name: "Next example →" }));
+        }
+      }
+      return heard;
+    };
+
+    const first = await answerRun([1]);
+    expect(first).toEqual(questions.map((question) => question.id));
+    expect(screen.getByText(/You named 3 of 4 correctly\. The app marked each answer/)).toBeTruthy();
+    let state = probe();
     expect(state.attempts).toEqual([
-      expect.objectContaining({ kind: "first-check", method: "exact-answer", outcome: "partial", assistance: "none" }),
+      expect.objectContaining({
+        kind: "first-check",
+        method: "self-reported",
+        checkedAnswers: { right: 3, total: 4 },
+        outcome: "partial",
+        assistance: "none",
+        tempo: 60,
+      }),
     ]);
-    const answered = state.evidence.filter(
-      (item: { activityId: string }) => item.activityId === "unit-30-listen-compare",
-    );
+    let answered = state.evidence.filter(unit30);
     expect(new Set(answered.map((item: { checkId: string }) => item.checkId)).size).toBe(4);
-    expect(answered.every((item: { method: string }) => item.method === "exact-answer")).toBe(true);
-    expect(answered.filter((item: { outcome: string }) => item.outcome === "retry").length).toBeGreaterThan(0);
+    expect(new Set(answered.map((item: { occurredAt: string }) => item.occurredAt)).size).toBe(1);
+    expect(
+      answered.every(
+        (item: { method: string; assistance: string }) => item.method === "exact-answer" && item.assistance === "none",
+      ),
+    ).toBe(true);
+    const firstCount = answered.length;
+    // Three right answers in a partial set do not complete the activity.
+    expect(state.completed).not.toContain("unit-30-listen-compare");
+
+    // A second run after the answers were shown is practice with help, in a new order.
+    random.mockReturnValue(0);
+    await user.click(screen.getByRole("button", { name: "Try the set again (in a new order, as practice)" }));
+    expect(screen.getByText(/You have seen these answers today/)).toBeTruthy();
+    const second = await answerRun([]);
+    expect(second).not.toEqual(first);
+    expect(screen.getByText(/having seen the answers earlier today.*recorded as practice with help/)).toBeTruthy();
+    state = probe();
+    expect(state.attempts.at(-1)).toEqual(
+      expect.objectContaining({ outcome: "successful", assistance: "hint", checkedAnswers: { right: 4, total: 4 } }),
+    );
+    answered = state.evidence.filter(unit30);
+    expect(answered.slice(firstCount).every((item: { assistance: string }) => item.assistance === "hint")).toBe(true);
+    expect(state.completed).toContain("unit-30-listen-compare");
     expect(() =>
       validateState({
         ...DEFAULT_STATE,
@@ -442,6 +491,31 @@ describe("the lesson player", () => {
         lessonAttempts: state.attempts,
       }),
     ).not.toThrow();
+    random.mockRestore();
+  });
+
+  it("starts a listening check reloaded after today's answers as practice with help", async () => {
+    const user = userEvent.setup();
+    const question = FEELS_LESSON.listening!.questions[0];
+    const seen = recordLessonAnswer(
+      FEELS_LESSON,
+      question,
+      question.answer,
+      false,
+      activityById("unit-30-listen-compare")!,
+    );
+    vi.mocked(repository.loadWorkspace).mockResolvedValue({
+      status: "ok",
+      state: { ...structuredClone(DEFAULT_STATE), evidence: seen },
+    });
+    render(
+      <V8StoreProvider>
+        <LessonPlayer entry={entry("lesson-unit-30-feels")} />
+      </V8StoreProvider>,
+    );
+    await screen.findByRole("heading", { name: "Three feels, one motif" });
+    await user.click(screen.getByRole("button", { name: "3 · Try unaided" }));
+    expect(screen.getByText(/You have seen these answers today/)).toBeTruthy();
   });
 
   it("explains plainly when a lesson's files cannot load", async () => {

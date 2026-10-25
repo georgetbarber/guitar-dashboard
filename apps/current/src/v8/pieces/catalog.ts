@@ -74,7 +74,7 @@ export const PIECE_CATALOG: readonly PieceEntry[] = [
     title: "Night Market",
     styles: ["soul-funk"],
     description:
-      "A funk vamp in E: an Em7 bounce and stabs, then a sixteenth groove where A7 turns E minor into E Dorian, a riff that answers the chords, and a break where the band stops.",
+      "A funk vamp in E: an Em7 bounce and stabs, then a sixteenth groove where A7 turns E minor into E Dorian, a riff that answers the chords, and a break of stabs played together.",
     firstStage: 1,
     capstoneStages: [5],
   },

@@ -150,6 +150,7 @@ export const WALKS_LESSON: Lesson = {
       "I, IV and V in G are G, C and D: home, away, and the chord that wants to come home. The thumb plays each root on count 1.",
       "Walking up to IV: after G and D on counts 1 and 2, the thumb plays A (open A string) and B (A string fret 2) on 3 and 4 and arrives on C at fret 3. Walking home from V: D, then C, B and A on the A string, arriving on G.",
       "The fingers keep their off-beats through the walks: index on the G string, middle on the B string (for D, the B and high E strings).",
+      "Which finger walks: in the G bar, B at A-string fret 2 is already under the G shape's first finger. In the D bar the fingers pick only the B and high E strings, so the first finger is free: the fourth finger takes C at A-string fret 3, the first finger B at fret 2, then the A string rings open.",
     ],
     videoNeeded: ["fingerpicking hand"],
   },
@@ -177,10 +178,10 @@ export const WALKS_LESSON: Lesson = {
       id: "walk-rushes",
       signal: "The walk rushes into the next chord.",
       repair:
-        "Play the thumb alone and say the counts, “3, 4, ONE”, landing on C exactly on ONE. Loop bar 1, then all four.",
+        "Play the thumb alone and say the counts, “3, 4, ONE”, landing on C exactly on ONE. Loop bar 1 into the C, then all four.",
       scoreId: walksThumb.id,
       from: 0,
-      to: 192,
+      to: 240,
     },
     {
       id: "fingers-stop",
@@ -224,7 +225,7 @@ export const WALKS_LESSON: Lesson = {
   transfer: {
     scoreId: walksA.id,
     instruction:
-      "In A: A (x02220), D (xx0232) and E (022100), the course's first open A and E. The thumb walks A, E, B, C♯ up to D, and E, D, C♯, B down home to A.",
+      "In A: A (x02220), D (xx0232) and E (022100), the course's first open A and E. The thumb walks A, E, B, C♯ up to D, and E, D, C♯, B down home to A. Fret A with the first finger flat across the D, G and B strings at fret 2; after the open A on 1, let it lie across the A string too, so it frets the walk's B, and reach C♯ at fret 4 with the third finger while the fingers keep picking under the barre. Under E, B at A-string fret 2 is already under the second finger, and the fourth finger takes C♯ at fret 4.",
     changed: ["key", "position"],
   },
   performance: {
@@ -311,6 +312,27 @@ const buildA = score({
   },
 });
 
+/** Each barre and its minor form: one note lowered, so one finger changes. */
+const minorShapes = score({
+  ...drafted,
+  id: "barre-minor-shapes",
+  title: "Major barres, then minor",
+  key: "A minor",
+  bars: 4,
+  tempo: [56, 66, 80],
+  voicings: {
+    A: { symbol: "A", shape: "577655", fingers: "134211", barre: [5, 1, 6, 1] as const },
+    Am: { symbol: "Am", shape: "577555", fingers: "134111", barre: [5, 1, 6, 1] as const },
+    E: { symbol: "E", shape: "x79997", fingers: "x12341", barre: [7, 1, 5, 1] as const },
+    Em: { symbol: "Em", shape: "x79987", fingers: "x13421", barre: [7, 1, 5, 1] as const },
+  },
+  voices: { chords: { label: "Chords", text: "w D:A | w D:Am | w D:E | w D:Em" } },
+  sections: [
+    ["e-shape", "E-shape: A, then Am", 1, 2],
+    ["a-shape", "A-shape: E, then Em", 3, 4],
+  ],
+});
+
 const loopA = score({
   ...drafted,
   id: "loop-a-fsm-d-e",
@@ -368,12 +390,13 @@ export const BARRES_LESSON: Lesson = {
       criterion: "Hear whether a loop starts at home (I) or away (vi) and where it arrives.",
     },
   ],
-  scores: [loopG, buildE, buildA, loopRotated, loopA],
+  scores: [loopG, buildE, buildA, minorShapes, loopRotated, loopA],
   demonstration: {
     scoreId: loopG.id,
     handGuidance: [
       "The E-shape: the Unit 9 power chord (G5, low E fret 3 and A string fret 5), plus its octave (D string fret 5), plus its third (G string fret 4). Lay the first finger across all six strings at fret 3 and you have G: the open E chord moved up.",
       "The A-shape: open A (x02220) moved up with the first finger as the nut. C is x35553 at the 3rd fret, D is x57775 at the 5th. The low E string stays silent under the tip of the first finger.",
+      "Each barre has a minor form with its third lowered a fret. E-shape: lift the second finger off the G string and the barre plays the minor third (A to Am at the 5th fret, and F♯m at the 2nd). A-shape: the open Am shape moved up, the first finger barring (E to Em at the 7th fret, x79987).",
       "I–vi–IV–V starts at home and leaves; vi–IV–V–I is the same four chords starting away and arriving home. Listen for where the loop seems to begin.",
     ],
     videoNeeded: ["fretting hand"],
@@ -390,6 +413,13 @@ export const BARRES_LESSON: Lesson = {
       scoreId: buildA.id,
       title: "Move the A shape",
       changes: "Open A, then the same shape three frets up as C, with the first finger barring.",
+    },
+    {
+      id: "minor-shapes",
+      scoreId: minorShapes.id,
+      title: "Minor barres",
+      changes:
+        "A, then Am (E-shape, 5th fret); E, then Em (A-shape, 7th fret): each minor chord is its major with the third lowered.",
     },
     {
       id: "rotated",
@@ -463,7 +493,7 @@ export const BARRES_LESSON: Lesson = {
     pieceId: "piece-glasshouse",
     partId: "glasshouse-chords",
     instruction:
-      "Play Glasshouse's chords: C and Em are this unit's A-shape barres; F and Fm are small shapes you can read from the tab, explained in Unit 35.",
+      "Play Glasshouse's chords: C is this unit's A-shape barre and Em its minor form at the 7th fret, from the minor-barres study; F and Fm are small shapes you can read from the tab, explained in Unit 35.",
   },
 };
 
@@ -655,7 +685,7 @@ export const SEVENTHS_LESSON: Lesson = {
       id: "licks-same",
       signal: "The major and minor licks sound the same to me.",
       repair:
-        "Play only G♯ over E7, then only G over A7, and hear the third change colour. Loop bars 1 and 2, then all four.",
+        "Play only G♯ over E7, then only G over A7: E's major third, then its blues third, which A7 makes sound at home as its own ♭7. Loop bars 1 and 2, then all four.",
       scoreId: majorMinorLicks.id,
       from: 0,
       to: 384,
@@ -742,13 +772,22 @@ const OPEN = {
   D: { symbol: "D", shape: "xx0232", fingers: "xx-132" },
   C: { symbol: "C", shape: "x32010", fingers: "x32-1-" },
   Em: { symbol: "Em", shape: "022000", fingers: "-23---" },
+  Am: { symbol: "Am", shape: "x02210", fingers: "x-231-" },
   A: RIVERS_CHORDS.A,
+  E: { symbol: "E", shape: "022100", fingers: "-231--" },
   G: RIVERS_CHORDS.G,
-  F: GLASS_CHORDS.F,
   Dm: { symbol: "Dm", shape: "xx0231", fingers: "xx-231" },
 };
-type ModeKey = "D mixolydian" | "E dorian" | "G mixolydian" | "D dorian" | "C major";
-/** A listening example: a melody that leans on the mode's own note, and two chords a bar each under it. */
+type ModeKey = "D mixolydian" | "D major" | "E dorian" | "E minor" | "G major" | "G mixolydian";
+/** Two chords a bar each, twice: the home chord, then the chord that holds the mode's own note. */
+const twoChords = (chords: readonly [keyof typeof OPEN, keyof typeof OPEN]) =>
+  [chords[0], chords[1], chords[0], chords[1]].map((chord) => `h D:${chord} h D:${chord}`).join(" | ");
+/**
+ * A listening example: a melody that leans on the mode's own note over the
+ * second chord, which holds that note too. The examples come in pairs on one
+ * home chord that differ only in that note (C or C♯ over D; C♯ or C over E;
+ * F♯ or F over G), so the third and the root motion never give the answer.
+ */
 const modeExample = (
   number: number,
   key: ModeKey,
@@ -772,36 +811,137 @@ const modeExample = (
     bars: 4,
     tempo: [66, 76, 92],
     voicings: { [chords[0]]: OPEN[chords[0]], [chords[1]]: OPEN[chords[1]] },
-    voices: {
-      chords: {
-        label: "Chords",
-        text: [chords[0], chords[1], chords[0], chords[1]].map((chord) => `h D:${chord} h D:${chord}`).join(" | "),
-      },
-    },
+    voices: { chords: { label: "Chords", text: twoChords(chords) } },
   });
   return { example, backing };
 };
 
+const ON_D = "q 2:3 e 1:2 e 1:0 h 2:3";
+const ON_E = "q 1:0 e 1:3 e 1:2 h 1:0";
+const ON_G = "q 1:3 e 2:3 e 2:0 h 1:3";
 const modePairs = [
-  modeExample(1, "D mixolydian", ["D", "C"], ["q 1:2 e 1:3 e 1:5 h 1:2", "q 2:1 e 2:3 e 1:0 h 2:1"]),
-  modeExample(2, "E dorian", ["Em", "A"], ["q 1:0 e 2:3 e 2:0 h 1:0", "q 2:2 e 2:3 e 1:0 h 2:2"]),
-  modeExample(3, "G mixolydian", ["G", "F"], ["q 2:0 e 2:1 e 2:3 h 2:0", "q 1:1 e 1:3 e 1:5 h 1:1"]),
-  modeExample(4, "D dorian", ["Dm", "G"], ["q 1:1 e 1:0 e 2:3 h 1:1", "q 2:0 e 2:1 e 2:3 h 2:0"]),
-  modeExample(5, "C major", ["C", "G"], ["q 2:1 e 2:0 e 2:1 h 2:0", "q 2:3 e 2:0 e 2:3 h 1:3"]),
+  modeExample(1, "D mixolydian", ["D", "Am"], [ON_D, "q 2:1 e 1:0 e 2:3 h 2:1"]),
+  modeExample(2, "E dorian", ["Em", "A"], [ON_E, "q 2:2 e 2:3 e 1:0 h 2:2"]),
+  modeExample(3, "G major", ["G", "D"], [ON_G, "q 1:2 e 1:0 e 2:3 h 1:2"]),
+  modeExample(4, "E minor", ["Em", "Am"], [ON_E, "q 2:1 e 2:3 e 1:0 h 2:1"]),
+  modeExample(5, "D major", ["D", "A"], [ON_D, "q 2:2 e 1:0 e 2:3 h 2:2"]),
+  modeExample(6, "G mixolydian", ["G", "Dm"], [ON_G, "q 1:1 e 1:0 e 2:3 h 1:1"]),
 ];
 const modeExamples = modePairs.map((pair) => pair.example);
 const MODES = [
-  "Mixolydian: major 3rd, flat 7th",
-  "Dorian: minor 3rd, natural 6th",
   "Major: major 3rd, major 7th",
+  "Mixolydian: major 3rd, flat 7th",
+  "Natural minor: minor 3rd, flat 6th",
+  "Dorian: minor 3rd, natural 6th",
 ] as const;
 const MODE_ANSWERS = [
-  [MODES[0], "C natural over the C chord is D's flat 7th, with F♯, a major 3rd, in the D chord: D Mixolydian."],
-  [MODES[1], "C♯ in the A chord is E's natural 6th over a minor E chord: E Dorian, like Night Market."],
-  [MODES[0], "F natural in the F chord is G's flat 7th, with B, a major 3rd, in the G chord: G Mixolydian."],
-  [MODES[1], "B natural in the G chord is D's natural 6th over a minor D chord: D Dorian."],
-  [MODES[2], "B against the C chord is a major 7th, and the 3rd is major: plain C major."],
+  [
+    MODES[1],
+    "C natural, over Am, is D's flat 7th, and the D chord's F♯ is a major 3rd: D Mixolydian. With C♯ there instead it would be D major.",
+  ],
+  [
+    MODES[3],
+    "C♯, over the A chord, is E's natural 6th over a minor E chord: E Dorian, like Night Market. With C there instead it would be E natural minor.",
+  ],
+  [
+    MODES[0],
+    "F♯, over the D chord, is G's major 7th, and the G chord's B is a major 3rd: plain G major. With F there instead it would be G Mixolydian.",
+  ],
+  [
+    MODES[2],
+    "C natural, over Am, is E's flat 6th over a minor E chord: E natural minor. With C♯ there instead it would be E Dorian.",
+  ],
+  [
+    MODES[0],
+    "C♯, over the A chord, is D's major 7th, and the D chord's F♯ is a major 3rd: plain D major. With C there instead it would be D Mixolydian.",
+  ],
+  [
+    MODES[1],
+    "F natural, over Dm, is G's flat 7th, and the G chord's B is a major 3rd: G Mixolydian. With F♯ there instead it would be G major.",
+  ],
 ] as const;
+
+/*
+ * Guided comparison before the check: each pair differs in one note only. In A
+ * over A then E or Em (G♯ or G, the 7th), and over Am then D or Dm (F♯ or F,
+ * the 6th).
+ */
+const contrastMajor = score({
+  ...drafted,
+  id: "modes-contrast-major",
+  title: "Major or Mixolydian: G♯, then G",
+  key: "A major",
+  bars: 4,
+  tempo: [66, 76, 92],
+  voices: {
+    melody: {
+      label: "Your part",
+      text: [
+        "q 1:0 e 2:2 e 2:0 h 1:0",
+        "q 1:4 e 1:2 e 1:0 h 1:4",
+        "q 1:0 e 2:2 e 2:0 h 1:0",
+        "q 1:3{G} e 1:2 e 1:0 h 1:3{G}",
+      ].join(" | "),
+    },
+  },
+  sections: [
+    ["major", "Major: G♯ over E", 1, 2],
+    ["mixolydian", "Mixolydian: G over Em", 3, 4],
+  ],
+});
+const contrastMajorChords = score({
+  ...drafted,
+  id: "modes-contrast-major-chords",
+  title: "A, E, A, Em",
+  key: "A major",
+  bars: 4,
+  tempo: [66, 76, 92],
+  voicings: { A: OPEN.A, E: OPEN.E, Em: OPEN.Em },
+  voices: {
+    chords: {
+      label: "Second guitar",
+      text: ["A", "E", "A", "Em"].map((chord) => `h D:${chord} h D:${chord}`).join(" | "),
+    },
+  },
+});
+const contrastMinor = score({
+  ...drafted,
+  id: "modes-contrast-minor",
+  title: "Dorian or natural minor: F♯, then F",
+  key: "A minor",
+  bars: 4,
+  tempo: [66, 76, 92],
+  voices: {
+    melody: {
+      label: "Your part",
+      text: [
+        "q 1:0 e 1:3 e 1:5 h 1:0",
+        "q 1:2{F#} e 1:0 e 2:3 h 1:2{F#}",
+        "q 1:0 e 1:3 e 1:5 h 1:0",
+        "q 1:1 e 1:0 e 2:3 h 1:1",
+      ].join(" | "),
+    },
+  },
+  sections: [
+    ["dorian", "Dorian: F♯ over D", 1, 2],
+    ["minor", "Natural minor: F over Dm", 3, 4],
+  ],
+});
+const contrastMinorChords = score({
+  ...drafted,
+  id: "modes-contrast-minor-chords",
+  title: "Am, D, Am, Dm",
+  key: "A minor",
+  bars: 4,
+  tempo: [66, 76, 92],
+  voicings: { Am: OPEN.Am, D: OPEN.D, Dm: OPEN.Dm },
+  voices: {
+    chords: {
+      label: "Second guitar",
+      text: ["Am", "D", "Am", "Dm"].map((chord) => `h D:${chord} h D:${chord}`).join(" | "),
+    },
+  },
+});
 
 const mixoInD = score({
   ...drafted,
@@ -831,21 +971,23 @@ export const MODES_LESSON: Lesson = {
   checkKind: "listening",
   title: "One root, two lights",
   purpose:
-    "Hear how one changed note gives the same root a different light: the flat 7 of Mixolydian, the natural 6 of Dorian.",
+    "Hear how one changed note gives the same root a different light: the flat 7 that turns major into Mixolydian, the natural 6 that turns natural minor into Dorian.",
   destination: "Two Rivers' two melodies from A, and the ear to name a mode from its one characteristic note.",
-  variable: "The mode's characteristic note: the ♭7 in Mixolydian, the natural 6 in Dorian.",
+  variable:
+    "The mode's characteristic note: over a major home, the 7th (major or flat); over a minor home, the 6th (flat or natural).",
   capabilities: [
     {
       id: "ear.mode.characteristic",
       action: "listening",
       title: "Hear the mode",
-      criterion: "Hear an example and say whether it is Mixolydian, Dorian or major.",
+      criterion: "Hear an example and say whether it is major, Mixolydian, natural minor or Dorian.",
     },
     {
       id: "mode.degree.name",
       action: "naming",
       title: "Name the changed note",
-      criterion: "Name the note that makes each mode: G in A Mixolydian, F♯ in A Dorian, C♯ in E Dorian.",
+      criterion:
+        "Name the note that makes each mode: G in A Mixolydian against G♯ in A major, F♯ in A Dorian against F in A minor.",
     },
     {
       id: "play.modal-vamp",
@@ -859,19 +1001,26 @@ export const MODES_LESSON: Lesson = {
     modesDorianMelody,
     modesMixoChords,
     modesDorianChords,
+    contrastMajor,
+    contrastMajorChords,
+    contrastMinor,
+    contrastMinorChords,
     ...modePairs.flatMap((pair) => [pair.example, pair.backing]),
     mixoInD,
   ],
   accompaniment: {
     [modesMixoMelody.id]: [modesMixoChords.id],
     [modesDorianMelody.id]: [modesDorianChords.id],
+    [contrastMajor.id]: [contrastMajorChords.id],
+    [contrastMinor.id]: [contrastMinorChords.id],
     ...Object.fromEntries(modePairs.map((pair) => [pair.example.id, [pair.backing.id]])),
   },
   demonstration: {
     scoreId: modesMixoMelody.id,
     handGuidance: [
-      "Both melodies start from A on the B and high E strings in open position. Mixolydian is A major with its 7th lowered to G: the chords are A and G. Dorian is A minor with its 6th raised to F♯: the chords are Am7 and D.",
+      "Both melodies are built on A, on the B and high E strings in open position. Mixolydian is A major with its 7th lowered to G: the chords are A and G. Dorian is A minor with its 6th raised to F♯: the chords are Am7 and D.",
       "Each melody leans on the mode's own note: G (high E fret 3) over the G chord, F♯ (high E fret 2) over the D chord. Sing that note when it comes round.",
+      "To name a mode, first hear whether the home chord is major or minor. Over a major home, listen to the 7th: a half step below the root is major, a whole step is Mixolydian. Over a minor home, listen to the 6th: a whole step above the 5th is Dorian, a half step is natural minor.",
       "Night Market has been Dorian since A7 arrived: E minor with C♯, the natural 6, sounding inside the A7 chord.",
     ],
     videoNeeded: [],
@@ -888,6 +1037,18 @@ export const MODES_LESSON: Lesson = {
       scoreId: modesDorianMelody.id,
       title: "Dorian",
       changes: "A minor's notes with F♯ instead of F, over Am7 and D, in swung sixteenths.",
+    },
+    {
+      id: "major-or-mixolydian",
+      scoreId: contrastMajor.id,
+      title: "Major or Mixolydian",
+      changes: "One note changes: G♯ over E (major), then G over Em (Mixolydian). Everything else stays.",
+    },
+    {
+      id: "dorian-or-minor",
+      scoreId: contrastMinor.id,
+      title: "Dorian or natural minor",
+      changes: "One note changes: F♯ over D (Dorian), then F over Dm (natural minor). Everything else stays.",
     },
   ],
   successCriteria: [
@@ -943,7 +1104,8 @@ export const MODES_LESSON: Lesson = {
       id: `example-${index + 1}`,
       version: 2,
       scoreId: example.id,
-      prompt: "Which mode is this? Listen for the note the melody leans on over the second chord.",
+      prompt:
+        "Which mode is this? Hear whether the home chord is major or minor, then listen for the note the melody leans on over the second chord.",
       choices: MODES,
       answer: MODE_ANSWERS[index][0],
       explanation: MODE_ANSWERS[index][1],
@@ -1210,7 +1372,7 @@ const passingTones = score({
   bars: 2,
   tempo: [60, 72, 96],
   voices: {
-    line: { label: "Your part", text: "q 6:0 e 6:2 e 6:3 q 5:0 e 5:1{A#} e 5:2 | q 5:2 e 5:1{A#} e 5:0 h 6:3" },
+    line: { label: "Your part", text: "q 6:0 e 6:2 e 6:3 q 5:0 e 5:1{A#} e 5:2 | q 5:2 e 5:1{Bb} e 5:0 h 6:3" },
   },
 });
 
@@ -1260,7 +1422,8 @@ export const APPROACH_LESSON: Lesson = {
       id: "phrase.passing-tone",
       action: "playing",
       title: "Play the passing note",
-      criterion: "Play A♯ between A and B in the blues line, on the way and never landing on it.",
+      criterion:
+        "Play the half step between A and B in the blues line, A♯ going up and B♭ coming down, on the way and never landing on it.",
     },
   ],
   scores: [approachSlides, slideShapes, passingTones, approachNight, approachRoots],
@@ -1269,7 +1432,7 @@ export const APPROACH_LESSON: Lesson = {
     scoreId: approachSlides.id,
     handGuidance: [
       "A slide-in starts the whole small shape one fret low and slides it up into place as you strike, so the outside notes pass in an instant and the chord lands on the beat.",
-      "Chromatic passing notes fill a whole step with the half step between: A, A♯, B on the A string. They sound right because they are on the way somewhere.",
+      "Chromatic passing notes fill a whole step with the half step between: A, A♯, B on the A string going up, and B, B♭, A coming down. It is the same fret as Unit 29's blue note, B♭; it is spelled by the way it moves, and it sounds right because it is on the way somewhere.",
       "Keep the ghosted scratches light so the slid accents stand out.",
     ],
     videoNeeded: ["strumming hand", "muting", "fretting hand"],
@@ -1285,12 +1448,12 @@ export const APPROACH_LESSON: Lesson = {
       id: "passing",
       scoreId: passingTones.id,
       title: "Passing notes",
-      changes: "A blues line in E that passes through A♯ on the way up to B and back down.",
+      changes: "A blues line in E that passes through A♯ on the way up to B, and through B♭ on the way back down.",
     },
   ],
   successCriteria: [
     "Slide each shape in so the chord lands on its count.",
-    "Play the passing A♯ quickly and move on.",
+    "Play the passing note quickly and move on.",
     "Play two bars of the rhythm part with slid accents and light ghosts.",
   ],
   likelyErrors: [
@@ -1306,7 +1469,8 @@ export const APPROACH_LESSON: Lesson = {
     {
       id: "passing-lands",
       signal: "The passing note sounds like a mistake.",
-      repair: "Make A♯ short and keep moving to B; never stop on it. Loop bar 1, then both.",
+      repair:
+        "Make the passing note short and keep moving to the next whole-step note; never stop on it. Loop bar 1, then both.",
       scoreId: passingTones.id,
       from: 0,
       to: 192,

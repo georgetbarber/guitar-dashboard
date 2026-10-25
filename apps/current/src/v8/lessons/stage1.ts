@@ -636,7 +636,7 @@ export const CONSTANT_MOTION_LESSON: Lesson = {
   purpose:
     "Feel the eighths inside every beat by keeping the strumming hand swinging down and up all the time, whether it hits the strings or not.",
   destination:
-    "Two bars of Em7 with a bounce: down, down-up, miss, up, down-up. The first layer of Night Market (a later piece).",
+    "Two bars of Em7 with a bounce: down, down-up, miss, up, down-up. It is the first half of Night Market's first layer, which Unit 5's stabs complete.",
   variable: "Which of the hand's eighth-note strokes actually touch the strings.",
   capabilities: [
     {

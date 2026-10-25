@@ -122,16 +122,29 @@ describe("what each Stage 5 lesson says it plays", () => {
     expect(shape(inA, "D7").map((fret) => (fret === null ? null : fret - 5))).toEqual(a7);
   });
 
-  it("Unit 27: each bend reaches the fretted target played before it; the phrase ends on B with vibrato", () => {
-    for (const id of ["bend-targets", "bend-targets-a"]) {
+  it("Unit 27: bends taught at the 7th fret first; each reaches its fretted target; vibrato only on fretted notes", () => {
+    const tonic = { "bend-targets": 9, "bend-targets-open": 4 } as const;
+    for (const id of ["bend-targets", "bend-targets-open"] as const) {
       const targets = notes(scoreById(BENDS_LESSON, id));
       for (let pair = 0; pair < targets.length; pair += 2) {
         const [target, bend] = [targets[pair], targets[pair + 1]];
         expect(low(bend) + bend.art!.bend!.semitones, id).toBe(low(target));
       }
+      // The half-step bend is ♭3 up to 3 in both keys; the whole step is 4 up to 5.
+      expect(
+        targets.filter((event) => event.art?.bend).map((event) => pc(low(event) - tonic[id])),
+        id,
+      ).toEqual([5, 3]);
     }
+    const frets = (id: string) => notes(scoreById(BENDS_LESSON, id)).flatMap((event) => event.notes.map((n) => n.fret));
+    expect(Math.min(...frets("bend-targets"))).toBeGreaterThanOrEqual(7);
+    expect(Math.max(...frets("bend-targets-open"))).toBeLessThanOrEqual(4);
+    expect(BENDS_LESSON.studies.map((study) => study.scoreId).slice(1)).toEqual(["bend-targets", "bend-targets-open"]);
     const phrase = notes(scoreById(BENDS_LESSON, "bend-phrase"));
-    expect(phrase.filter((event) => event.art?.vibrato).every((event) => pc(low(event)) === 11)).toBe(true);
+    const held = phrase.filter((event) => event.art?.vibrato);
+    expect(held.every((event) => pc(low(event)) === 11 && event.notes[0].fret > 0)).toBe(true);
+    const phraseA = notes(scoreById(BENDS_LESSON, "bend-phrase-a"));
+    expect(phraseA.filter((event) => event.art?.vibrato).every((event) => pc(low(event)) === 4)).toBe(true);
     const touch = notes(scoreById(BENDS_LESSON, "phrase-touch"));
     expect(inBar(touch, 2).every((event) => event.art?.staccato)).toBe(true);
     expect(inBar(touch, 0).some((event) => event.art?.staccato)).toBe(false);
@@ -183,8 +196,13 @@ describe("what each Stage 5 lesson says it plays", () => {
     for (const id of ["feel-shuffle", "feel-swung-sixteenths"])
       expect(motif(scoreById(FEELS_LESSON, id))).toEqual(motif(straight));
     const examples = FEELS_LESSON.listening!.questions.map((question) => scoreById(FEELS_LESSON, question.scoreId));
-    for (const example of examples) expect(motif(example)).toEqual(motif(straight).map(([at, midi]) => [at, midi + 5]));
+    // The examples share one motif, every note picked (a hammer-on has no attack to hear), with six sixteenth pairs.
+    for (const example of examples) expect(motif(example)).toEqual(motif(examples[0]));
+    expect(notes(examples[0]).some((event) => event.art?.legato)).toBe(false);
+    const sixteenths = notes(examples[0]).filter((event) => event.dur === 12);
+    expect(sixteenths.filter((event) => event.at % 24 === 0)).toHaveLength(6);
     expect(new Set(examples.map((example) => example.feel))).toEqual(new Set(["straight", "shuffle-8", "swing-16"]));
+    expect(examples.every((example) => example.tempo.default === 60)).toBe(true);
     for (const [index, question] of FEELS_LESSON.listening!.questions.entries())
       expect(question.answer).toBe(
         { straight: question.choices[0], "shuffle-8": question.choices[1], "swing-16": question.choices[2] }[
@@ -233,13 +251,39 @@ describe("what each Stage 6 lesson says it plays", () => {
       const example = scoreById(MODES_LESSON, question.scoreId);
       const tonic = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"].indexOf(example.key.tonic);
       const degrees = new Set(notes(example).map((event) => pc(low(event) - tonic)));
-      // Mixolydian holds the ♭7 and never the 7; Dorian the 6 and never the ♭6; major the 7 and never the ♭7.
+      // Mixolydian holds the ♭7 and never the 7; major the reverse; Dorian the 6 and never the ♭6; natural minor the reverse.
       const [has, lacks] = question.answer.startsWith("Mixolydian")
         ? [10, 11]
-        : question.answer.startsWith("Dorian")
-          ? [9, 8]
-          : [11, 10];
+        : question.answer.startsWith("Major")
+          ? [11, 10]
+          : question.answer.startsWith("Dorian")
+            ? [9, 8]
+            : [8, 9];
       expect([degrees.has(has), degrees.has(lacks)], question.id).toEqual([true, false]);
+      // The second chord carries that note too, and the home chord's third matches the mode.
+      const backing = scoreById(MODES_LESSON, `${question.scoreId}-chords`);
+      const [home, second] = [0, 1].map((bar) =>
+        sounding(backing, inBar(strums(backing), bar)[0]).map((midi) => pc(midi - tonic)),
+      );
+      expect(second, question.id).toContain(has);
+      expect(home, question.id).toContain(/Major|Mixolydian/.test(question.answer) ? 4 : 3);
+    }
+    expect(MODES_LESSON.listening!.questions[0].choices).toHaveLength(4);
+    // Examples come in pairs on one home that differ in that one note only.
+    const melody = (id: string) => notes(scoreById(MODES_LESSON, id)).map((event) => low(event));
+    for (const [a, b] of [
+      ["mode-example-1", "mode-example-5"],
+      ["mode-example-2", "mode-example-4"],
+      ["mode-example-3", "mode-example-6"],
+    ]) {
+      const differ = new Set(
+        melody(a).flatMap((midi, index) => (midi === melody(b)[index] ? [] : [`${midi}/${melody(b)[index]}`])),
+      );
+      expect(differ.size, `${a} ${b}`).toBeLessThanOrEqual(2);
+      for (const pair of differ) {
+        const [x, y] = pair.split("/").map(Number);
+        expect(Math.abs(x - y)).toBe(1);
+      }
     }
   });
 
@@ -260,6 +304,16 @@ describe("what each Stage 6 lesson says it plays", () => {
     const passing = notes(scoreById(APPROACH_LESSON, "approach-passing-tones")).map((event) => low(event));
     const sharp = passing.indexOf(46);
     expect([passing[sharp - 1], passing[sharp], passing[sharp + 1]]).toEqual([45, 46, 47]);
+    const flat = passing.lastIndexOf(46);
+    expect([passing[flat - 1], passing[flat], passing[flat + 1]]).toEqual([47, 46, 45]);
+    // Night Market's version slides both accents of each bar, on 1 and the "and" of 2.
+    const night = notes(scoreById(APPROACH_LESSON, "approach-night-slides"));
+    for (const bar of [0, 1])
+      expect(
+        inBar(night, bar)
+          .filter((event) => event.art?.slideIn)
+          .map((event) => event.at - bar * BAR),
+      ).toEqual([0, 72]);
   });
 });
 
@@ -281,8 +335,10 @@ describe("the Batch 3 pieces", () => {
 
   it("Night Market: the break stops the band but for its stabs, and the capstone is groove, break and ending", () => {
     const band = pieceScore(NIGHT_MARKET_PIECE, "night-market-whole-band");
-    expect(inBar(notes(band, "riff"), 4)).toEqual([]);
-    expect(inBar(notes(band, "bass"), 4).every((event) => event.art?.staccato)).toBe(true);
+    for (const bar of [4, 5]) {
+      expect(inBar(notes(band, "riff"), bar)).toEqual([]);
+      expect(inBar(notes(band, "bass"), bar).every((event) => event.art?.staccato)).toBe(true);
+    }
     expect(NIGHT_MARKET_PIECE.capstones.map((capstone) => [capstone.stage, capstone.partIds])).toEqual([
       [5, ["night-market-whole"]],
     ]);
@@ -309,9 +365,23 @@ describe("the Batch 3 pieces", () => {
     expect(bends.map((event) => pc(low(event) + event.art!.bend!.semitones))).toEqual([11, 4, 11]);
     expect(FRONT_STEP_PIECE.capstones.find((capstone) => capstone.stage === 6)!.partIds).toEqual([
       "front-step-sevenths",
-      "front-step-calls",
+      "front-step-calls-shuffle",
       "front-step-solo",
     ]);
+    // The capstone's three choruses are one shuffle on one form: the calls are Unit 17's, in shuffle.
+    const capstone = ["front-step-sevenths", "front-step-calls-shuffle", "front-step-solo"].map((id) =>
+      pieceScore(FRONT_STEP_PIECE, id),
+    );
+    expect(capstone.map((score) => [score.feel, score.bars])).toEqual(Array(3).fill(["shuffle-8", 14]));
+    const callsOf = (id: string) =>
+      notes(pieceScore(FRONT_STEP_PIECE, id))
+        .filter((event) => event.at < 12 * BAR)
+        .map((event) => [event.at, low(event)]);
+    expect(callsOf("front-step-calls-shuffle")).toEqual(callsOf("front-step-calls"));
+    const solo = notes(pieceScore(FRONT_STEP_PIECE, "front-step-solo"));
+    expect(solo.filter((event) => event.art?.vibrato).every((event) => event.notes.every((n) => n.fret > 0))).toBe(
+      true,
+    );
   });
 
   it("Low Road: the single notes lock to the power-chord riff's accents", () => {

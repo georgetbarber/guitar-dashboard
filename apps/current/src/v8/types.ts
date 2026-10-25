@@ -201,8 +201,14 @@ export interface LessonAttempt {
   scoreVersion: number;
   kind: "first-check" | "transfer-check" | "later-check";
   assistance: Assistance;
-  /** Exact-answer for a listening check, which the app marks; self-reported for everything played or made. */
-  method: "self-reported" | "exact-answer";
+  /**
+   * Always "self-reported", the only value builds before Batch 3 accept (A19).
+   * A listening set the app marked says so in `checkedAnswers` instead, and
+   * its answers are exact-answer evidence.
+   */
+  method: "self-reported";
+  /** For a listening check: how many examples the app marked right, of how many. */
+  checkedAnswers?: { right: number; total: number };
   tempo: number;
   outcome: EvidenceOutcome;
   /** The learner's observation, or for a listening check the app's summary of the answers. */

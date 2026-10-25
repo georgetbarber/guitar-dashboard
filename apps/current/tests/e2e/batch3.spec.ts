@@ -32,6 +32,7 @@ test("Stage 5: the Unit 30 listening check plays hidden examples, marks each ans
   await openLesson(page, "Hear and compare your attempts");
   await expect(page.getByRole("heading", { name: "Three feels, one motif" })).toBeVisible();
   await page.getByRole("button", { name: "3 · Try unaided" }).click();
+  await expect(page.getByRole("heading", { name: "Name what you hear" })).toBeVisible();
   await expect(page.getByRole("figure", { name: /^Score/ })).toHaveCount(0);
   for (let example = 1; example <= 4; example++) {
     await expect(page.getByText(`Example ${example} of 4`)).toBeVisible();
@@ -43,6 +44,9 @@ test("Stage 5: the Unit 30 listening check plays hidden examples, marks each ans
     if (example < 4) await page.getByRole("button", { name: "Next example →" }).click();
   }
   await expect(page.getByText(/You named \d of 4 correctly/)).toBeVisible();
+  // A second run, after every answer was shown, is practice with help.
+  await page.getByRole("button", { name: "Try the set again (in a new order, as practice)" }).click();
+  await expect(page.getByText(/You have seen these answers today/)).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
   await expect(page.locator('.save-indicator[data-status="saved"]:visible')).toBeVisible();
 });
@@ -72,7 +76,7 @@ test("the Stage 5 and Stage 6 capstones open from the course map and play", asyn
   await page.getByRole("button", { name: "Open the capstone" }).click();
   await expect(page.getByRole("heading", { name: "Night Market", level: 1 })).toBeVisible();
   await expect(page.getByText("Stage 5 capstone · Soul and funk")).toBeVisible();
-  await expect(page.getByRole("list", { name: "Form" })).toContainText("Break · the band stops");
+  await expect(page.getByRole("list", { name: "Form" })).toContainText("Break · stabs together");
   await page.getByRole("button", { name: "Play along with the second guitar" }).click();
   await expect(page.getByText(/Your part · bar \d+ of 8/)).toBeVisible({ timeout: 10_000 });
   await page.getByRole("button", { name: "Stop sound" }).click();

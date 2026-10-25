@@ -241,8 +241,13 @@ function lessonAttempt(value: unknown, path: string) {
   number(v.scoreVersion, `${path}.scoreVersion`, 1, 1000, true);
   choice(v.kind, ["first-check", "transfer-check", "later-check"], `${path}.kind`);
   choice(v.assistance, ["none", "hint", "reveal", "guided"], `${path}.assistance`);
-  // A listening check's attempt is marked by the app: an exact answer, never a self-report.
-  choice(v.method, ["self-reported", "exact-answer"], `${path}.method`);
+  // Kept to the value older builds accept; a set the app marked carries checkedAnswers (A19).
+  choice(v.method, ["self-reported"], `${path}.method`);
+  if (v.checkedAnswers !== undefined) {
+    const checked = object(v.checkedAnswers, `${path}.checkedAnswers`);
+    number(checked.total, `${path}.checkedAnswers.total`, 1, 20, true);
+    number(checked.right, `${path}.checkedAnswers.right`, 0, checked.total as number, true);
+  }
   choice(v.outcome, ["successful", "partial", "retry"], `${path}.outcome`);
   number(v.tempo, `${path}.tempo`, 20, 400, true);
   str(v.observation, `${path}.observation`); if ((v.observation as string).length > 1000) fail(`${path}.observation length`);

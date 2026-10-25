@@ -50,9 +50,23 @@ export function retractObservations(observations: CompetencyEvidence[], occurred
  * action at least once. Retry and partial evidence remains valuable practice
  * history, but must not advance the guided path.
  */
+/** A lesson listening set's answers share their lesson and the moment the set was finished. */
+function listeningSetKey(item: CompetencyEvidence): string | null {
+  if (item.method !== "exact-answer" || !item.checkId?.startsWith("lesson:")) return null;
+  return `${item.checkId.slice(0, item.checkId.lastIndexOf(":"))}|${item.occurredAt}`;
+}
+
 export function completedActivityIdsFromEvidence(evidence: CompetencyEvidence[]): string[] {
-  return [...new Set(liveObservations(evidence)
+  const live = liveObservations(evidence);
+  // A listening set completes its activity only when every answer in it was right:
+  // one lucky guess in a set of four is not the check.
+  const missedSets = new Set(live
+    .filter((item) => item.outcome !== "successful")
+    .map(listeningSetKey)
+    .filter((key): key is string => key !== null));
+  return [...new Set(live
     .filter((item) => item.outcome === "successful")
+    .filter((item) => { const key = listeningSetKey(item); return key === null || !missedSets.has(key); })
     .map((item) => item.activityId))];
 }
 

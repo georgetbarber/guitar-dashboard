@@ -144,8 +144,39 @@ export const NOTHING_YET: Readonly<Record<MakingCheck["adds"], string>> = {
 };
 
 /**
+ * A listening set in a fresh order, each question's choices shuffled too, so
+ * a second run never repeats the first run's sequence. `random` is injectable
+ * for tests; Math.random is enough here, since nothing secret rides on it.
+ */
+export function shuffleListeningSet(
+  questions: readonly ListeningQuestion[],
+  random: () => number = Math.random,
+): ListeningQuestion[] {
+  const shuffle = <T>(items: readonly T[]): T[] => {
+    const out = [...items];
+    for (let i = out.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(random() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  };
+  return shuffle(questions).map((question) => ({ ...question, choices: shuffle(question.choices) }));
+}
+
+/** Whether this workspace already holds checked answers to this lesson's questions from today. */
+export function answersSeenToday(lesson: Lesson, evidence: readonly CompetencyEvidence[], now = new Date()): boolean {
+  const prefix = lessonCheckId(lesson.id, "");
+  const today = localDateAt(now);
+  return evidence.some(
+    (item) => item.method === "exact-answer" && item.checkId?.startsWith(prefix) && item.localDate === today,
+  );
+}
+
+/**
  * One answer to a listening question, as exact-answer evidence against the
  * lesson's stand-in activity: one record per capability the activity builds.
+ * A set's answers are recorded together, with one time, when the set is
+ * finished; completion then follows the whole set (learning.ts).
  */
 export function recordLessonAnswer(
   lesson: Lesson,

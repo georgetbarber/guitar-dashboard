@@ -398,6 +398,8 @@ function eventProblems(
     add("articulation", `${event.id}: there is no room to slide in from ${art.slideIn}.`);
   if (art.bend && (note.notes.length !== 1 || note.notes[0].fret < 1))
     add("articulation", `${event.id}: bends are written on one fretted note.`);
+  if (art.vibrato && note.notes.some((position) => position.fret < 1))
+    add("articulation", `${event.id}: vibrato needs a fretted note; an open string cannot be shaken.`);
   return problems;
 }
 

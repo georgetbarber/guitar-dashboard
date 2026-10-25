@@ -493,10 +493,29 @@ const touch = score({
   ],
 });
 
+/*
+ * Bends are taught first at the 7th fret, where the string gives easily and
+ * three fingers fit behind the bending one, then brought down to open
+ * position for Front Step's solo. Vibrato always sits on a fretted note.
+ */
 const bendTargets = score({
   ...drafted,
   id: "bend-targets",
   title: "Hear the target, then bend to it",
+  key: "A minor",
+  bars: 2,
+  tempo: [56, 66, 84],
+  voices: { line: { label: "Your part", text: "h 3:9 h 3:7[b2] | h 1:9{C#} h 1:8[b1]" } },
+  sections: [
+    ["whole", "Whole step: D to E", 1, 1],
+    ["half", "Half step: C to C♯", 2, 2],
+  ],
+});
+
+const bendTargetsOpen = score({
+  ...drafted,
+  id: "bend-targets-open",
+  title: "The same bends in open position, in E minor",
   key: "E minor",
   bars: 2,
   tempo: [56, 66, 84],
@@ -505,6 +524,7 @@ const bendTargets = score({
     ["whole", "Whole step: A to B", 1, 1],
     ["half", "Half step: G to G♯", 2, 2],
   ],
+  derivedFrom: { id: "bend-targets", version: 1, changed: ["key", "position"] },
 });
 
 const bendPhrase = score({
@@ -514,18 +534,18 @@ const bendPhrase = score({
   key: "E minor",
   bars: 2,
   tempo: [60, 72, 92],
-  voices: { line: { label: "Your part", text: "q r e 3:0 e 3:2 q 3:2[b2] q 2:0[~] | h 2:0[~] h r" } },
+  voices: { line: { label: "Your part", text: "q r e 3:0 e 3:2 q 3:2[b2] q 3:4[~] | h 3:4[~] h r" } },
 });
 
-const bendTargetsA = score({
+const bendPhraseA = score({
   ...drafted,
-  id: "bend-targets-a",
-  title: "The same bends at the 7th fret, in A minor",
+  id: "bend-phrase-a",
+  title: "The same phrase in A minor, at the 5th to 7th frets",
   key: "A minor",
   bars: 2,
-  tempo: [56, 66, 84],
-  voices: { line: { label: "Your part", text: "h 3:9 h 3:7[b2] | h 2:9{G#} h 2:8[b1]" } },
-  derivedFrom: { id: "bend-targets", version: 1, changed: ["key", "position"] },
+  tempo: [60, 72, 92],
+  voices: { line: { label: "Your part", text: "q r e 3:5 e 3:7 q 3:7[b2] q 2:5[~] | h 2:5[~] h r" } },
+  derivedFrom: { id: "bend-phrase", version: 1, changed: ["key", "position"] },
 });
 
 export const BENDS_LESSON: Lesson = {
@@ -540,14 +560,14 @@ export const BENDS_LESSON: Lesson = {
   purpose:
     "Give one phrase different meanings with touch alone: connected or clipped, bent up to its note, left to sing.",
   destination:
-    "The opening of Front Step's solo: G and A, A bent up a whole step to B, then B held with an even vibrato.",
+    "The opening of Front Step's solo: G and A, A bent up a whole step to B, then B fretted and held with an even vibrato.",
   variable: "How the notes are shaped: their length, their bend, their vibrato.",
   capabilities: [
     {
       id: "play.bend.to-target",
       action: "playing",
       title: "Bend to a pitch",
-      criterion: "Bend A up to B and G up to G♯ so each bent note matches the fretted target you played first.",
+      criterion: "Bend a whole step and a half step so each bent note matches the fretted target you played first.",
     },
     {
       id: "ear.bend.in-tune",
@@ -568,13 +588,14 @@ export const BENDS_LESSON: Lesson = {
       criterion: "Play the same phrase connected and then clipped, so the difference is plain to hear.",
     },
   ],
-  scores: [bendPhrase, touch, bendTargets, bendTargetsA],
+  scores: [bendPhrase, touch, bendTargets, bendTargetsOpen, bendPhraseA],
   demonstration: {
     scoreId: bendPhrase.id,
     handGuidance: [
       "Connected: hold each note until the next one starts. Clipped: lift the fretting finger just after each attack so a little silence follows. The notes are the same; the meaning is not.",
-      "To bend, put the third finger on the note with the second and first fingers behind it on the same string, and push the string toward the ceiling with all three, turning from the wrist. Play the target first (B at G-string fret 4), then bend A at fret 2 until it matches.",
-      "Vibrato: on the held B, rock the string a little up and back in even pulses, from the wrist rather than the finger.",
+      "Start at the 7th fret, where the string gives most easily: put the third finger on D (G-string fret 7) with the second and first fingers behind it on the same string, and push the string toward the ceiling with all three, turning from the wrist. Play the target first (E at fret 9), then bend until it matches.",
+      "Near the nut the string is stiffer and there is room for only one finger behind: bend A at G-string fret 2 with the second finger, the first finger behind it at fret 1, and push a little harder. Check against B at fret 4 first.",
+      "Vibrato needs a fretted note: after the bend, put the third finger on B at G-string fret 4 and rock the string a little up and back in even pulses, from the wrist rather than the finger. An open string cannot be shaken.",
     ],
     videoNeeded: ["bends", "vibrato"],
   },
@@ -589,20 +610,28 @@ export const BENDS_LESSON: Lesson = {
       id: "targets",
       scoreId: bendTargets.id,
       title: "Bend to the target",
-      changes: "Each target note fretted first, then reached by bending: A to B (a whole step), G to G♯ (a half step).",
+      changes:
+        "At the 7th fret, each target fretted first, then reached by bending: D to E (a whole step), C to C♯ (a half step).",
+    },
+    {
+      id: "targets-open",
+      scoreId: bendTargetsOpen.id,
+      title: "The same bends near the nut",
+      changes:
+        "The same two bends brought down to open position in E minor, where the string is stiffer: A to B, then G to G♯. The relationships are the same: a whole step up to 5, and ♭3 up to 3.",
     },
   ],
   successCriteria: [
     "Play the phrase connected, then clipped, and hear the difference.",
-    "Bend A to B and G to G♯ so each bent note matches its target.",
-    "Hold the last B with an even vibrato in time.",
+    "Bend a whole step and a half step, at the 7th fret and in open position, so each bent note matches its target.",
+    "Hold the last B, fretted, with an even vibrato in time.",
   ],
   likelyErrors: [
     {
       id: "bend-short",
       signal: "My bend falls short of the note.",
       repair:
-        "Play the fretted B, sing it, then bend A slowly until the bent note matches what you sang; push with all three fingers. Loop the first bar of the targets study, then both.",
+        "Play the fretted target, sing it, then bend slowly until the bent note matches what you sang; push with all three fingers. Loop the first bar of the 7th-fret targets, then both bars, before going back near the nut.",
       scoreId: bendTargets.id,
       from: 0,
       to: 192,
@@ -611,7 +640,7 @@ export const BENDS_LESSON: Lesson = {
       id: "vibrato-uneven",
       signal: "My vibrato wobbles unevenly.",
       repair:
-        "Make the vibrato in eighths with the click: up on each count, back on each “and”, small and slow. Loop the held B, then the phrase.",
+        "Make the vibrato in eighths with the click: up on each count, back on each “and”, small and slow, on the B fretted at G-string fret 4. Loop the held B, then the phrase.",
       scoreId: bendPhrase.id,
       from: 192,
       to: 384,
@@ -647,9 +676,9 @@ export const BENDS_LESSON: Lesson = {
     instruction: "On another day, play the phrase from memory and check the bend against the fretted B first.",
   },
   transfer: {
-    scoreId: bendTargetsA.id,
+    scoreId: bendPhraseA.id,
     instruction:
-      "In A minor at the 7th fret: bend D (G-string fret 7) up to E, checking against fret 9, and G (B-string fret 8) up a half step to G♯, checking against fret 9.",
+      "Play the same phrase in A minor at the 5th to 7th frets: C and D on the G string, D bent up to E, then E fretted at B-string fret 5 with vibrato. The bend and the landing note keep their degrees: 4 up to 5, held.",
     changed: ["key", "position"],
   },
   performance: {
@@ -980,7 +1009,7 @@ export const IMPROVISE_LESSON: Lesson = {
     "Make up music on the spot without freezing: hold a shuffle, then say something with very few notes and plenty of space.",
   destination:
     "Front Step's boogie shuffle in your hands, then your own answers over it using only E, G and A, with a bar of space in every four.",
-  variable: "How many notes you allow yourself: three, then five, then the blue note.",
+  variable: "How many notes you allow yourself: three to start, then the blue note, B♭, between A and B.",
   capabilities: [
     {
       id: "rhythm.shuffle.triplet",
@@ -1004,7 +1033,7 @@ export const IMPROVISE_LESSON: Lesson = {
       id: "play.boogie.shuffle",
       action: "playing",
       title: "Play the boogie",
-      criterion: "Play the boogie on E and A, root and fifth then root and sixth on every beat, in shuffle.",
+      criterion: "Play the boogie on E and A in shuffle: root and fifth for a beat, then root and sixth, beat by beat.",
     },
   ],
   scores: [boogieLine, boogieLine3, improvThree, improvBlues, boogieInA],
@@ -1013,7 +1042,7 @@ export const IMPROVISE_LESSON: Lesson = {
     scoreId: boogieLine.id,
     handGuidance: [
       "Shuffle: each beat splits long-short, like a triplet with the first two notes joined: “ONE-a TWO-a”.",
-      "The boogie: first finger on the fifth (A string fret 2) with the open low E, then the third finger reaching to the sixth (fret 4), twice each per beat. For A, the same on the A and D strings. For B, keep root and fifth only until the fourth-finger stretch to fret 6 is comfortable.",
+      "The boogie: first finger on the fifth (A string fret 2) with the open low E, then the third finger reaching to the sixth (fret 4): two eighths on each, a beat each. For A, the same on the A and D strings. For B, keep root and fifth only until the fourth-finger stretch to fret 6 is comfortable.",
       "To improvise, start with only E (D string fret 2), G (open G string) and A (G string fret 2); leave the fourth bar of every line empty. Then add B and D, then B♭ at G-string fret 3, the blue note.",
     ],
     videoNeeded: [],
@@ -1023,7 +1052,7 @@ export const IMPROVISE_LESSON: Lesson = {
       id: "boogie",
       scoreId: boogieLine.id,
       title: "The boogie, line 1",
-      changes: "E, A, E, E: the quick change in bar 2, root and fifth then root and sixth on every beat.",
+      changes: "E, A, E, E: the quick change in bar 2, root and fifth for a beat, then root and sixth, beat by beat.",
     },
     {
       id: "line-3",
@@ -1063,7 +1092,7 @@ export const IMPROVISE_LESSON: Lesson = {
       id: "no-space",
       signal: "I fill every bar.",
       repair:
-        "Play your phrase, then mute the strings with the fretting hand for the whole fourth bar while the band plays on. Loop bars 3 and 4, then all four.",
+        "Play your phrase, then mute the strings with the fretting hand for the whole fourth bar while the second guitar plays on. Loop bars 3 and 4, then all four.",
       scoreId: improvThree.id,
       from: 384,
       to: 768,
@@ -1124,7 +1153,15 @@ export const IMPROVISE_LESSON: Lesson = {
  * in eighths even when the sixteenths lean.
  */
 const MOTIF_E = "e 4:2 e 3:0 s 3:0 s 3:2[h] s 2:0 s 2:3[h] q 2:0 q r | e 2:0 e 3:2 s 3:0 s 3:2[h] s 3:0 s 3:2[h] h 4:2";
-const MOTIF_A = "e 3:2 e 2:1 s 2:1 s 2:3[h] s 1:0 s 1:3[h] q 1:0 q r | e 1:0 e 2:3 s 2:1 s 2:3[h] s 2:1 s 2:3[h] h 3:2";
+/*
+ * The examples the learner names are heard, not played, so every note is
+ * picked: a hammer-on only bends the ringing string, and the swing of a
+ * sixteenth pair has to be heard on a fresh attack. Six sixteenth pairs and
+ * three eighth pairs give each feel something to change, and the default of
+ * 60 BPM leaves the swung pairs as wide as they get.
+ */
+const MOTIF_A =
+  "e 3:2 e 2:1 s 2:1 s 2:3 s 2:1 s 2:3 e 1:0 e 2:3 s 2:1 s 2:3 s 2:1 s 3:2 | e 3:0 e 3:2 s 2:1 s 2:3 s 2:1 s 3:2 h 3:2";
 
 const feelScore = (
   id: string,
@@ -1132,17 +1169,36 @@ const feelScore = (
   feel: "straight" | "shuffle-8" | "swing-16",
   key: "E minor" | "A minor",
   text: string,
+  heardOnly = false,
 ) =>
-  score({ ...drafted, id, title, key, feel, bars: 2, tempo: [60, 72, 88], voices: { line: { label: "Motif", text } } });
+  score({
+    ...drafted,
+    id,
+    title,
+    key,
+    feel,
+    bars: 2,
+    tempo: heardOnly ? [50, 60, 76] : [60, 72, 88],
+    voices: { line: { label: "Motif", text } },
+    exceptions: heardOnly
+      ? [
+          {
+            rule: "tempo-ceiling",
+            reason:
+              "Heard, never played: the listening check's examples are hidden from the learner and played by the app at 60 BPM. Every note is picked so each swung or shuffled pair has an attack to hear; the motif the learner plays is in the studies, with each sixteenth pair hammered.",
+          },
+        ]
+      : undefined,
+  });
 
 const feelStraight = feelScore("feel-straight", "Straight eighths, as in rock", "straight", "E minor", MOTIF_E);
 const feelShuffle = feelScore("feel-shuffle", "Shuffle, as in blues", "shuffle-8", "E minor", MOTIF_E);
 const feelSwung = feelScore("feel-swung-sixteenths", "Swung sixteenths, as in soul", "swing-16", "E minor", MOTIF_E);
 const feelQuestions = [
-  feelScore("feel-example-1", "Example 1", "shuffle-8", "A minor", MOTIF_A),
-  feelScore("feel-example-2", "Example 2", "swing-16", "A minor", MOTIF_A),
-  feelScore("feel-example-3", "Example 3", "straight", "A minor", MOTIF_A),
-  feelScore("feel-example-4", "Example 4", "swing-16", "A minor", MOTIF_A),
+  feelScore("feel-example-1", "Example 1", "shuffle-8", "A minor", MOTIF_A, true),
+  feelScore("feel-example-2", "Example 2", "swing-16", "A minor", MOTIF_A, true),
+  feelScore("feel-example-3", "Example 3", "straight", "A minor", MOTIF_A, true),
+  feelScore("feel-example-4", "Example 4", "swing-16", "A minor", MOTIF_A, true),
 ];
 const feelNew = score({
   ...drafted,
@@ -1236,7 +1292,7 @@ export const FEELS_LESSON: Lesson = {
       id: "shuffle-or-swung",
       signal: "Shuffle and swung sixteenths sound the same to me.",
       repair:
-        "Listen to beat 1 only: in the shuffle its two eighths are uneven; in swung sixteenths they are even and only beat 2's sixteenths lean. Loop the first beat of the swung study, then the shuffle's.",
+        "Listen to the first two beats only: in the shuffle beat 1's two eighths are uneven; in swung sixteenths they are even and only beat 2's sixteenths lean. Loop the first two beats of the swung study, then the shuffle's.",
       scoreId: feelSwung.id,
       from: 0,
       to: 96,

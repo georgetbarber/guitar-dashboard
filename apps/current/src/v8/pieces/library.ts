@@ -137,6 +137,22 @@ const frontStepBand = score({
   harmony: FORM_HARMONY,
 });
 
+/** The twelve bars of calls and answers, shared by the straight part (Unit 17) and the shuffle chorus (Stage 6). */
+const CALL_BARS = [
+  "q r e 2:3{D} e 1:0 q 1:3{G}[b.5] q 1:0",
+  "h 2:0 h r",
+  "q r e 3:2 e 3:0{G} q 2:0 q 3:2",
+  "h 4:2 h r",
+  "q r e 2:3{D} e 1:0 q 2:3{D} q 2:0",
+  "h 3:2 h r",
+  "q r e 2:0 e 2:3{D} q 1:0 q 2:3{D}",
+  "h 1:0 h r",
+  "q r e 2:3{D} e 2:0 q 3:2 q 3:0{G}",
+  "h 3:2 h r",
+  "q r e 1:3{G}[b.5] e 1:0 q 2:0 q 4:2",
+  "h 2:0 h r",
+] as const;
+
 /*
  * Layer 3 (Unit 17): two-bar calls and two-bar answers in E minor
  * pentatonic, open position, over the same 12-bar; the ♭3 (G on the high E,
@@ -151,24 +167,7 @@ const frontStepCalls = score({
   voices: {
     lead: {
       label: "Calls and answers",
-      text: [
-        "q r e 2:3{D} e 1:0 q 1:3{G}[b.5] q 1:0",
-        "h 2:0 h r",
-        "q r e 3:2 e 3:0{G} q 2:0 q 3:2",
-        "h 4:2 h r",
-        "q r e 2:3{D} e 1:0 q 2:3{D} q 2:0",
-        "h 3:2 h r",
-        "q r e 2:0 e 2:3{D} q 1:0 q 2:3{D}",
-        "h 1:0 h r",
-        "q r e 2:3{D} e 2:0 q 3:2 q 3:0{G}",
-        "h 3:2 h r",
-        "q r e 1:3{G}[b.5] e 1:0 q 2:0 q 4:2",
-        "h 2:0 h r",
-        QUESTION,
-        ANSWER,
-        "q 6:0+5:2[st] q r q 6:0+5:2[st] q r",
-        "w 6:0+5:2",
-      ].join(" | "),
+      text: [...CALL_BARS, QUESTION, ANSWER, "q 6:0+5:2[st] q r q 6:0+5:2[st] q r", "w 6:0+5:2"].join(" | "),
     },
   },
   sections: [
@@ -203,7 +202,7 @@ const SHUFFLE_SECTIONS = [
 ] as const;
 export const STOP_TIME = ["q 6:0+5:2[st] q r q 6:0+5:2[st] q r", "w 6:0+5:2"];
 
-/** The boogie: root and fifth twice, root and sixth twice, on every beat pair. */
+/** The boogie: root and fifth for one beat, root and sixth for the next, beat by beat. */
 export const BOOGIE = {
   E7: "e 6:0+5:2 e 6:0+5:2 e 6:0+5:4 e 6:0+5:4 e 6:0+5:2 e 6:0+5:2 e 6:0+5:4 e 6:0+5:4",
   A7: "e 5:0+4:2 e 5:0+4:2 e 5:0+4:4 e 5:0+4:4 e 5:0+4:2 e 5:0+4:2 e 5:0+4:4 e 5:0+4:4",
@@ -256,19 +255,20 @@ const frontStepSevenths = score({
 /*
  * Layer 4 (Units 27 and 29): a solo chorus in E minor pentatonic, open
  * position, with a bar of space in every four, whole-step bends that must reach
- * their note, vibrato on the long notes, one slide-in, the ♭3-to-3 move in bar
- * 11, and the stop-time ending.
+ * their note, vibrato on the long notes (fretted, so they can be shaken: B at
+ * G-string fret 4, E at B-string fret 5), one slide-in, the 3-to-♭3 move in
+ * bar 11, and the stop-time ending.
  */
 export const FRONT_STEP_SOLO_BARS = [
-  "q r e 3:0 e 3:2 q 3:2[b2] q 2:0[~]",
-  "h 2:0[~] h r",
+  "q r e 3:0 e 3:2 q 3:2[b2] q 3:4[~]",
+  "h 3:4[~] h r",
   "q r e 2:3 e 2:0 q 3:2 q 3:0",
   "h 4:2[~] h r",
   "q 3:2[si] e 3:2 e 3:0 h 4:2",
-  "q r q 2:3[b2] h 2:0[~]",
-  "h 1:0[~] h r",
+  "q r q 2:3[b2] h 2:5[~]",
+  "h 2:5[~] h r",
   "w r",
-  "q r q 3:2[b2] h 2:0[~]",
+  "q r q 3:2[b2] h 3:4[~]",
   "q 2:0 q 3:2 h 3:0",
   "q 4:2 e 3:1{G#} e 3:0 h 4:2[~]",
   "q 5:2 q 4:1{D#} q 5:2 q r",
@@ -281,6 +281,21 @@ const frontStepSolo = score({
   title: "Front Step: a solo chorus",
   tempo: [60, 76, 100],
   voices: { lead: { label: "Solo", text: [...FRONT_STEP_SOLO_BARS, ...STOP_TIME].join(" | ") } },
+  sections: SHUFFLE_SECTIONS,
+  harmony: SHUFFLE_HARMONY,
+});
+
+/*
+ * The calls and answers again, in shuffle on the quick-change form, so the
+ * Stage 6 performance is one shuffle: chords, calls, solo, then stop together.
+ */
+const frontStepCallsShuffle = score({
+  ...SHUFFLE,
+  key: "E blues",
+  id: "front-step-calls-shuffle",
+  title: "Front Step: calls and answers in shuffle",
+  tempo: [60, 76, 100],
+  voices: { lead: { label: "Calls and answers", text: [...CALL_BARS, ...STOP_TIME].join(" | ") } },
   sections: SHUFFLE_SECTIONS,
   harmony: SHUFFLE_HARMONY,
 });
@@ -301,6 +316,7 @@ export const FRONT_STEP_PIECE: Piece = {
     frontStepBoogie,
     frontStepSevenths,
     frontStepSolo,
+    frontStepCallsShuffle,
   ],
   parts: [
     {
@@ -340,7 +356,7 @@ export const FRONT_STEP_PIECE: Piece = {
       scoreId: frontStepBoogie.id,
       accompanimentIds: [frontStepSevenths.id],
       instruction:
-        "Root and fifth twice, root and sixth twice, on every beat, in a long-short shuffle: E on the low E and A strings, A on the A and D strings, B one fret higher with the fourth finger stretching for the sixth. The quick change puts A in bar 2; the turnaround puts B in bar 12.",
+        "Root and fifth for a beat, root and sixth for the next, beat by beat, in a long-short shuffle: E on the low E and A strings, A on the A and D strings, B two frets higher with the fourth finger stretching for the sixth. The quick change puts A in bar 2; the turnaround puts B in bar 12.",
       unitIds: ["unit-29"],
     },
     {
@@ -360,8 +376,18 @@ export const FRONT_STEP_PIECE: Piece = {
       scoreId: frontStepSolo.id,
       accompanimentIds: [frontStepBoogie.id],
       instruction:
-        "Twelve bars over the boogie in E minor pentatonic, open position, with space in every line: bend the A on the G string and the D on the B string a whole step until they reach B and E, shake the long notes, slide into A in bar 5, move from G♯ to G in bar 11, then stop with the band.",
+        "Twelve bars over the boogie in E minor pentatonic, open position, with space in every line: bend the A on the G string and the D on the B string a whole step until they reach B and E, then shake the long notes, fretted where you can rock them: B at the G string's 4th fret, E at the B string's 5th. Slide into A in bar 5, move from G♯ to G in bar 11, then stop with the second guitar.",
       unitIds: ["unit-27", "unit-29"],
+    },
+    {
+      id: "front-step-calls-shuffle",
+      layer: 4,
+      title: "Calls and answers in shuffle",
+      scoreId: frontStepCallsShuffle.id,
+      accompanimentIds: [frontStepBoogie.id],
+      instruction:
+        "The calls and answers from Unit 17, now long-short over the boogie on the quick-change form: A7 arrives in bar 2, so the second answer's B sits over it as a ninth. No break this time; finish on the stop-time hits.",
+      unitIds: ["unit-17", "unit-29"],
     },
   ],
   capstones: [
@@ -380,13 +406,13 @@ export const FRONT_STEP_PIECE: Piece = {
     },
     {
       stage: 6,
-      partIds: ["front-step-sevenths", "front-step-calls", "front-step-solo"],
+      partIds: ["front-step-sevenths", "front-step-calls-shuffle", "front-step-solo"],
       capability: {
         id: "piece.front-step.full",
         action: "playing",
         title: "Play Front Step in full",
         criterion:
-          "Play three choruses in turn, the shuffle chords, the calls and answers, and the solo, with every bend reaching its note.",
+          "Play three shuffle choruses in turn over the boogie, the sevenths, the calls and answers, and the solo, with every bend reaching its note.",
       },
       criterion: "I played three choruses: rhythm, calls and answers, solo, and the bends reached their notes.",
     },
@@ -1388,7 +1414,7 @@ export const nightGroove = (chord: "Em7" | "A7") =>
     "s x[gh]",
   ].join(" ");
 
-/** The riff answers in the gap: four notes from the "and" of 3, the last one accented. */
+/** The riff answers in the gap: four notes from count 3, the last one, on 4, accented. */
 export const NIGHT_RIFF = {
   Em7: "e r e r e r e r s 6:0 s 6:3[h] s 5:0 s r s 5:2[>] s r e r",
   A7: "e r e r e r e r s 5:0 s 5:4[h] s 4:2 s r s 4:5[>] s r e r",
@@ -1468,7 +1494,7 @@ const nightGrooveBand = score({
   harmony: NIGHT_HARMONY(VAMP),
 });
 
-/** Bars 5 and 6 are the break: two stabs, then one, with the band silent and the hand still moving. */
+/** Bars 5 and 6 are the break: two stabs, then one, with the second guitar's riff silent, its low line hitting only the stabs, and the hand still moving. */
 const BREAK_FORM = ["Em7", "A7", "Em7", "A7", "Em7", "Em7", "Em7", "Em7"] as const;
 const nightWhole = score({
   ...nightSwing,
@@ -1491,7 +1517,7 @@ const nightWhole = score({
   },
   sections: [
     ["groove", "Groove", 1, 4],
-    ["break", "Break · the band stops", 5, 6],
+    ["break", "Break · stabs together", 5, 6],
     ["return", "Groove and last hit", 7, 8],
   ],
   harmony: NIGHT_HARMONY(BREAK_FORM),
@@ -1506,7 +1532,7 @@ const nightWholeBand = score({
   voices: {
     riff: {
       label: "Second guitar, riff",
-      text: [...VAMP.map((chord) => NIGHT_RIFF[chord]), "w r", NIGHT_RIFF.Em7, NIGHT_RIFF.Em7, "w r"].join(" | "),
+      text: [...VAMP.map((chord) => NIGHT_RIFF[chord]), "w r", "w r", NIGHT_RIFF.Em7, "w r"].join(" | "),
     },
     bass: {
       label: "Second guitar, low line",
@@ -1522,10 +1548,10 @@ const nightWholeBand = score({
   harmony: NIGHT_HARMONY(BREAK_FORM),
 });
 
-/** Unit 36: each accented hit slides into its shape from a fret below; the scratches stay ghosted. */
+/** Unit 36: both accented hits, on 1 and the "and" of 2, slide into their shape from a fret below; the scratches stay ghosted. */
 export const nightSlideBar = (chord: "Em7" | "A7") => {
   const shape = chord === "Em7" ? "4:2+3:4+2:3+1:3" : "4:2+3:2+2:2+1:3";
-  return nightGroove(chord).replace(`s D:${chord}[>]`, `s ${shape}[si,>]`);
+  return nightGroove(chord).split(`s D:${chord}[>]`).join(`s ${shape}[si,>]`);
 };
 const nightSlides = score({
   ...nightSwing,
@@ -1545,7 +1571,7 @@ export const NIGHT_MARKET_PIECE: Piece = {
   title: "Night Market",
   styles: ["soul-funk"],
   description:
-    "A funk vamp in E: an Em7 bounce and stabs, then a sixteenth groove where A7 turns E minor into E Dorian, a riff that answers the chords, and a break where the band stops.",
+    "A funk vamp in E: an Em7 bounce and stabs, then a sixteenth groove where A7 turns E minor into E Dorian, a riff that answers the chords, and a break of stabs played together.",
   scores: [
     nightScratch,
     nightLowStraight,
@@ -1585,7 +1611,7 @@ export const NIGHT_MARKET_PIECE: Piece = {
       scoreId: nightRiff.id,
       accompanimentIds: [nightGrooveBand.id],
       instruction:
-        "Wait through the chords, then answer them from the “and” of 3: E, a hammer to G, A and an accented B over Em7; A, a hammer to C♯, E and an accented G over A7.",
+        "Wait through the chords, then answer them from count 3: E, a hammer to G, A, and an accented B on 4 over Em7; A, a hammer to C♯, E, and an accented G on 4 over A7.",
       unitIds: ["unit-28"],
     },
     {
@@ -1595,7 +1621,7 @@ export const NIGHT_MARKET_PIECE: Piece = {
       scoreId: nightWhole.id,
       accompanimentIds: [nightWholeBand.id],
       instruction:
-        "Four bars of groove, then the break: two stabs, then one, while the band stops and your hand keeps moving above the strings. Back into the groove for a bar, then one last hit.",
+        "Four bars of groove, then the break: two stabs, then one, which the second guitar hits with you and otherwise leaves silent, while your hand keeps moving above the strings. Back into the groove for a bar, then one last hit.",
       unitIds: ["unit-05", "unit-26"],
     },
     {
@@ -1605,7 +1631,7 @@ export const NIGHT_MARKET_PIECE: Piece = {
       scoreId: nightSlides.id,
       accompanimentIds: [nightLow.id],
       instruction:
-        "The same groove, but the accented hit on 1 slides into its shape from one fret below: the outside note arriving on the beat.",
+        "The same groove, but both accented hits, on 1 and the “and” of 2, slide into their shape from one fret below: the outside notes pass in an instant and the chord lands on time.",
       unitIds: ["unit-36"],
     },
   ],

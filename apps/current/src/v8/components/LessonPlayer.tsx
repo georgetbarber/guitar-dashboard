@@ -18,6 +18,7 @@ import {
   lessonCursor,
   lessonLaterSuccess,
   lessonRecallDue,
+  answersSeenToday,
   listeningOutcome,
   madeSomething,
   madeSummary,
@@ -29,14 +30,14 @@ import {
 } from "../lessonProgress";
 import { loadLesson } from "../lessons/load";
 import { discardBrokenPackFiles } from "../lessonPacks";
-import { scoreById, type Lesson, type LessonEntry, type ListeningQuestion } from "../lessons/format";
+import { scoreById, type Lesson, type LessonEntry } from "../lessons/format";
 import { PIECE_CATALOG } from "../pieces/catalog";
 import { useOpenPiece } from "../pieceOverlay";
 import { useV8Store } from "../store";
 import type { EvidenceOutcome, LessonAttempt, LessonCursor, LessonStep } from "../types";
 import { ContentStatus } from "./ContentStatus";
 import { RecordSaveStatus } from "./SaveStatus";
-import { ListeningCheck } from "./ListeningCheck";
+import { ListeningCheck, type ListeningAnswer, type ListeningHelp } from "./ListeningCheck";
 import { ScoreView } from "./score/ScoreView";
 import { useUpdateHold } from "./UpdateNotice";
 
@@ -381,20 +382,29 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
     void play("reference", example, example.tempo.default);
   };
 
-  /** Each answer to a first check is recorded at once, as exact-answer evidence for the unit's activity. */
-  const answerQuestion = (question: ListeningQuestion, response: string, usedHint: boolean) => {
-    if (step !== "try") return;
-    const target = activityById(activityId);
-    if (!target) return;
-    const evidence = recordLessonAnswer(lesson, question, response, usedHint, target);
-    dispatch({ type: "recordActivity", activityId: target.id, evidence });
-    setEvidenceIds((ids) => [...ids, ...evidence.map((item) => item.id)]);
-  };
-
-  /** The whole set becomes one lesson attempt, marked by the app. */
-  const finishListening = (right: number, total: number, usedHint: boolean) => {
-    if (!cursor.attemptId) return;
+  /**
+   * The whole set is recorded together when it is finished: for a first check,
+   * every answer as exact-answer evidence for the unit's activity, sharing one
+   * time so completion follows the whole set; and one lesson attempt the app
+   * marked. Help of any kind (a hint, or answers seen earlier today) marks the
+   * answers as hinted, the strongest help older builds accept on an answer.
+   */
+  const finishListening = (answers: ListeningAnswer[], help: ListeningHelp) => {
+    if (!cursor.attemptId || !answers.length) return;
     const now = new Date();
+    const right = answers.filter((item) => item.response === item.question.answer).length;
+    const total = answers.length;
+    const assisted = help !== "none";
+    const target = step === "try" ? activityById(activityId) : null;
+    if (target) {
+      const evidence = answers.flatMap((item) =>
+        recordLessonAnswer(lesson, item.question, item.response, assisted, target, now),
+      );
+      dispatch({ type: "recordActivity", activityId: target.id, evidence });
+      setEvidenceIds(evidence.map((item) => item.id));
+    }
+    // The attempt names the first example heard, at the tempo the examples play.
+    const first = scoreById(lesson, answers[0].question.scoreId);
     dispatch({
       type: "recordLessonAttempt",
       attempt: {
@@ -402,14 +412,21 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
         cursorId: cursor.id,
         lessonId: lesson.id,
         lessonVersion: lesson.version,
-        scoreId: score.id,
-        scoreVersion: score.version,
+        scoreId: first.id,
+        scoreVersion: first.version,
         kind: step === "try" ? "first-check" : "later-check",
-        assistance: usedHint ? "hint" : "none",
-        method: "exact-answer",
-        tempo,
+        assistance: assisted ? "hint" : "none",
+        method: "self-reported",
+        checkedAnswers: { right, total },
+        tempo: first.tempo.default,
         outcome: listeningOutcome(right, total),
-        observation: `Named ${right} of ${total} examples correctly${usedHint ? " after hearing the lesson's version again" : ""}.`,
+        observation: `The app marked ${right} of ${total} examples right${
+          help === "hint"
+            ? ", after the lesson's version was heard again"
+            : help === "seen"
+              ? ", with the answers seen earlier today"
+              : ""
+        }.`,
         occurredAt: now.toISOString(),
         localDate: localDateAt(now),
       },
@@ -509,12 +526,16 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
           ? repair.signal
           : "Play beside the count"
         : step === "try"
-          ? "Play it without the answer in front of you"
+          ? listening
+            ? "Name what you hear"
+            : "Play it without the answer in front of you"
           : step === "transfer"
             ? "Take it somewhere new"
             : step === "create"
               ? "Make it yours"
-              : "Can you still play it on another day?";
+              : listening
+                ? "Can you still hear it on another day?"
+                : "Can you still play it on another day?";
   const instruction =
     repair?.repair ??
     cue?.instruction ??
@@ -780,9 +801,9 @@ function LessonBody({ lesson, onClose, requestCloseRef }: PlayerProps & { lesson
                 <ListeningCheck
                   key={step}
                   questions={lesson.listening.questions}
+                  answersSeen={step === "try" && answersSeenToday(lesson, state.evidence)}
                   onHear={(question) => hearScore(question.scoreId)}
                   onHint={() => hearScore(lesson.demonstration.scoreId)}
-                  onAnswer={answerQuestion}
                   onFinish={finishListening}
                 />
               ) : (

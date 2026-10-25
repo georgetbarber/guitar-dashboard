@@ -124,6 +124,9 @@ describe("score validation", () => {
     expect(codes(line("q 2:1 q -[>] h r"))).toContain("tie");
     expect(codes(line("q 2:1 q 2:3[st,lr] h r"))).toContain("articulation");
     expect(codes(line("q 2:1+3:2[b1] q r h r"))).toContain("articulation");
+    // A fretting hand cannot shake an open string.
+    expect(codes(line("q 2:1 q 2:0[~] h r"))).toContain("articulation");
+    expect(codes(line("q 2:1 q 2:3[~] h r"))).not.toContain("articulation");
   });
 
   it("refuses two voices on one string at once, events across a bar line, swing in compound time and mixed tuplets", () => {
