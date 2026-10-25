@@ -43,6 +43,7 @@ The finished state:
 4. **Musical direction:** "Expressive, rhythm-led, rootsy guitar playing, combining folk fingerpicking, blues-rock, and soulful, funky rhythm guitar." Section 4 turns this into authoring rules.
 5. **AI explainer: build it, off by default.** It uses George's own Claude API key, stored only on his device. Section 5.4 has the constraints.
 6. **Do not ask George questions.** Decide, record the decision (section 3.2) and move on. The only stopping conditions are in section 7.4.
+7. **Added 25 October 2026: easy practice comes before release.** George's most important daily use is: pick up the guitar, tap Practice, say how long he has, and play, with the session adjusting to how it is going and a light option for low-energy days. That is Package 8A, built before Package 9. He does not want "too hard" or "boring" boxes; he wants something adaptive with room for quick feedback during practice.
 
 ---
 
@@ -226,6 +227,42 @@ For each batch:
 - Add the batch's few most valuable "with guitar" checks to George's checklist.
 - **Release after each batch.**
 
+### Package 8A: Easy practice (added 25 October 2026)
+
+Build after Batch 4 and before Package 9; it may start earlier if a session finishes a batch with time to spare, since it does not depend on Batch 4's content. It gets its own branch, PR and **release**. Package 9's documentation, `START_HERE.md` and full-suite run must then cover it.
+
+**Why.** Today the Practice minutes live only in Settings (10–90), so changing them means Settings, then "Plan a new session". The only in-practice feedback is the outcome report, which can trigger `repairFor` help and rank weak activities higher next time: it eases off when things go badly but never steps up when they go well. Free Play's level comes only from course position (`freePlayAbilityLevel`), and its played/skipped taps are counted for the end screen and discarded. Nothing responds to a session that felt easy or heavy.
+
+**1. One obvious way in.**
+
+- A single **Practice** action is the first thing on Today (and reachable from the nav/home on a phone). Tapping it asks one question: how long, as large choices (10, 15, 25, 40 minutes, plus "Other"), preselected to the last choice and to `settings.dailyMinutes` the first time. Choosing starts the first part immediately. No other setup.
+- On the same sheet, one alternative: **"Just play"**, for low-bandwidth days. It builds a session from pieces George has played or favourited, Free Play flavours he has leaned towards (point 3) and familiar, already-completed material, with no new concepts and no checks. It respects the chosen length and is labelled honestly ("nothing new today, nothing recorded as progress").
+- The chosen length overrides the Settings default for that session only; Settings keeps the default. Keep `buildSession`'s exact-minutes and no-padding rules, and keep the return-session offer after time away.
+- Nothing about this should add steps for George on a normal day: guitar in hand to first note should be two taps.
+
+**2. Adapting during and between sessions.**
+
+- After each part, alongside (not instead of) the existing outcome report, offer one optional, one-tap read of how it sat: three choices worded along the lines of *comfortable · about right · a stretch*. Never force it, never nag, and let George skip it entirely. Settle the exact wording with the `design:ux-copy` skill's principles and the app's existing calm tone.
+- Use it for **support and pacing only**, never as evidence of capability. Record it as its own small record type (or a field), clearly separate from `CompetencyEvidence`, and never let it raise mastery, complete an activity or unlock anything. Treat schema, sync, rules, backup, validation and mixed-version compatibility exactly as Package 1's new collections were treated, and record the decision.
+- Inside the session: "comfortable" moves the next part, where the material allows, one step up (target tempo rather than practice tempo, the next layer of the piece, removing a support, or the transfer variant); "a stretch" moves it one step down (slower tempo, the repair, a smaller section, support restored). Changes stay inside the authored lesson's range and its validator rules; never invent music that has not been validated.
+- Between sessions: a recent run of "comfortable" on an activity nudges the planner toward the next unfinished material or a harder layer; a run of "a stretch" nudges it toward consolidation and Strengthen. The current weakest-link ranking stays; this is a modest adjustment on top, documented and unit-tested.
+- Show George, briefly, what changed and why ("Up to 84 BPM, since the last part felt comfortable"), with a one-tap undo.
+
+**3. Free Play learns what George enjoys.**
+
+- Keep played/skipped per flavour (and per piece) over a rolling window, synced and backed up like other per-learner settings. Weight the mixed flow toward what he plays and away from what he keeps skipping, while still including an occasional other flavour so it never collapses to one.
+- Add a "comfortable / stretch" tap there too, nudging the prompt level up or down by one step around `freePlayAbilityLevel`, never beyond what he has met.
+- Let a chosen length set the number of prompts instead of the fixed eight-minute flow.
+
+**Done when.**
+
+- Unit tests for the length choice, "Just play" assembly (no new material, no evidence written), the in-session step up/down within lesson ranges, the planner nudges, Free Play weighting (including the never-collapses rule) and that pacing reads never write capability evidence.
+- Mixed-version and sync tests for the new record(s); `test:rules` passes.
+- Browser journeys at phone and desktop widths: Today → Practice → 15 minutes → first part playing in two taps; "Just play" → a piece; a "comfortable" tap visibly raising the next part with undo; axe checks on the new sheet and prompt.
+- Offline-shell and guest-bundle budgets hold.
+- Independent review as in Package 4, with a short record in `docs/reviews/`.
+- George's checklist gains: "Start a 15-minute practice from the phone with the guitar already in hand", "Use Just play on a tired evening", "Tap comfortable twice and check the step up feels right on the guitar".
+
 ### Package 9: Phase 7 consolidation and release readiness
 
 - **B27:** prove which old UI is unreachable (runtime imports, type-only imports, tests, tooling, scripts). Move genuinely obsolete code to `apps/history` with the proof recorded. Keep shared theory, audio and instrument code and meaningful tests in the active app.
@@ -345,6 +382,7 @@ Update this table as packages finish.
 | 6 Batch 2 · Units 13–24 | PR open, reviewed | PR #12 · awaiting George's merge after #11 | Optional staff view, making check (Unit 24), lesson accompaniment, capstone making step (A18); 12 draft lessons, *Lantern*, *Porch Light*, *Harbour Song*, *Sunday Glide* and *Front Step*'s calls with the Stage 3–4 capstones; independent review fixed 2 blocking and 8 should-fix findings ([record](reviews/2026-10-24-batch-2-review.md)) |
 | 7 Batch 3 · Units 25–36 | pending | | |
 | 8 Batch 4 · Units 37–48 | pending | | |
+| 8A Easy practice (added 25 Oct) | pending | | Before Package 9 |
 | 9 Phase 7 consolidation and release | pending | | |
 | 10 Phase 8 extensions (hands-free, no-guitar, own music, AI) | pending | | |
 | 11 Finish line | pending | | |
