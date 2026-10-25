@@ -1,0 +1,454 @@
+{
+  "version": 1,
+  "groups": [
+    {
+      "id": "laptop",
+      "label": "On the laptop"
+    },
+    {
+      "id": "guitar",
+      "label": "With guitar"
+    },
+    {
+      "id": "pixel",
+      "label": "On the Pixel"
+    },
+    {
+      "id": "days",
+      "label": "After a few days"
+    }
+  ],
+  "items": [
+    {
+      "id": "laptop-backup-first",
+      "group": "laptop",
+      "title": "Keep a backup of your current data",
+      "do": "Open Settings and choose “Export complete backup”. Keep the file somewhere safe. Do this once now and again before you try anything that restores or replaces data.",
+      "pass": "A .guitar-academy file is saved and its size is not zero.",
+      "link": {
+        "route": "settings",
+        "label": "Open Settings"
+      },
+      "source": "Completion brief §7.2: George has real data on the live site and his phone.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "guitar-unit-1-pilot",
+      "group": "guitar",
+      "title": "Play the Unit 1 question and answer",
+      "do": "Open Continue and start the one-note lesson. Play the two bars with the reference at 60 BPM, then try one repair (start, stop a ringing note, or hold the pulse through silence) and return to both bars.",
+      "pass": "The note (open high E), counts, muting action and hand instruction match what you actually do on the guitar, and the repair you chose made the next attempt easier.",
+      "link": {
+        "route": "today",
+        "label": "Open Continue"
+      },
+      "source": "Phase 3 gate (log, 26 Sep); Phase 5 gate review item 2.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "guitar-unit-6-c-am",
+      "group": "guitar",
+      "title": "Play the C-to-Am lesson",
+      "do": "In the Course map, open Unit 6 and choose “Place it in time” (marked “full lesson”). Hear the exact music at 60 BPM, then play the four-count and two-count studies with it. Try the G-to-Em transfer once you have reported the unaided check.",
+      "pass": "The chord shapes, fingers and the one moving finger match what your hand does, the synthesised guitar is in time with the count, and the two-count study is playable at its slowest tempo (40 BPM).",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Unit 6 · Keep what stays: C to Am"
+      },
+      "source": "Phase 6 lesson pipeline (Package 3); lesson drafted by an agent and not yet played on a guitar.",
+      "added": "2026-10-23 · Package 3"
+    },
+    {
+      "id": "guitar-unit-10-thirds",
+      "group": "guitar",
+      "title": "Play the third-colour lesson",
+      "do": "In the Course map, open Unit 10 and choose “Put it under the hands”. Play E–G–E and E–G♯–E on the high E string with the reference, then the reversed order and the F-root transfer.",
+      "pass": "The frets shown (0–3–0, 0–4–0; then 1–4–1, 1–5–1 from F) are what you play, and the one-fret difference between minor and major third is clear by ear.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Unit 10 · One fret changes the third"
+      },
+      "source": "Phase 6 lesson pipeline (Package 3); lesson drafted by an agent and not yet played on a guitar.",
+      "added": "2026-10-23 · Package 3"
+    },
+    {
+      "id": "guitar-front-step-capstone",
+      "group": "guitar",
+      "title": "Play the Stage 1 capstone, Front Step",
+      "do": "In the Course map, open Stage 1 and choose “Open the capstone”. Play along with the second guitar at 60–72 BPM: palm-muted roots through the 12-bar, the question and answer in the break, then the two E5 hits and the long E5. Then try it once with the tab hidden.",
+      "pass": "You keep your place through all sixteen bars, the second guitar's chords sit with your roots, and it feels like playing with someone rather than against a machine.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Stage 1 capstone · Front Step"
+      },
+      "source": "Batch 1 (Package 5): first piece and capstone, agent-drafted, not yet played on a guitar.",
+      "added": "2026-10-24 · Package 5"
+    },
+    {
+      "id": "guitar-low-road-riff",
+      "group": "guitar",
+      "title": "Play the Low Road riff",
+      "do": "Open Play › Low Road and choose “The riff”. Play along at 66–84 BPM: muted A chugs with C5 and D5 kicking on the “and” of 2 and of 4.",
+      "pass": "The palm mute thuds rather than choking the note, the shape slides without rebuilding, the accents land on the off-beats, and the riff does not remind you of an existing song. If it does, leave a note naming it.",
+      "link": {
+        "route": "play",
+        "label": "Open Play",
+        "lesson": "Low Road · The riff"
+      },
+      "source": "Batch 1 (Package 5); originality rule in decision A13.",
+      "added": "2026-10-24 · Package 5"
+    },
+    {
+      "id": "guitar-unit-17-curl",
+      "group": "guitar",
+      "title": "Curl the ♭3 and answer a call",
+      "do": "Open the full lesson in Unit 17 (“Put it under the hands”). Practise the curl study: push the G on the high E (fret 3) a quarter-tone sharp and let it fall back. Then hear the app's call and play the answer in the next two bars.",
+      "pass": "The curl stays a colour, well short of a half bend, and you can tell when it has gone too far; the answer starts on time after the call. If “third finger with the second behind it” is the wrong advice for your hand, leave a note.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Unit 17 · Call and answer"
+      },
+      "source": "Batch 2 (Package 6): the course's first bend, agent-drafted; flagged by the independent review.",
+      "added": "2026-10-24 · Package 6"
+    },
+    {
+      "id": "guitar-lantern-capstone",
+      "group": "guitar",
+      "title": "Play the Stage 3 capstone, Lantern, and make an answer",
+      "do": "In the Course map, open Stage 3 and choose “Open the capstone”. Play the melody along with the second guitar's chords at 60–72 BPM, once with the tab showing and once hidden. Then use “Open a new sketch in Create” to write two bars that answer Lantern's first two bars and end on G, save it, and come back to the capstone to report.",
+      "pass": "Phrase 1 sounds unfinished on A and phrase 2 sounds home on G; the melody sits under the fingers in open position; and making the answer in Create took minutes, not a fight with the editor.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Stage 3 capstone · Lantern"
+      },
+      "source": "Batch 2 (Package 6): Stage 3 capstone with a making step, agent-drafted, not yet played on a guitar.",
+      "added": "2026-10-24 · Package 6"
+    },
+    {
+      "id": "guitar-porch-light-travis",
+      "group": "guitar",
+      "title": "Play the Stage 4 capstone, Porch Light",
+      "do": "In the Course map, open Stage 4 and choose “Open the capstone”. Start at 56 BPM: thumb alternating on every count (G on the low E and open D; Em low E and D-string fret 2; C on the A and D strings; D on the D and G strings) with the melody pinched on 1 and 3, and the hammer from B to C in bar 3.",
+      "pass": "The thumb keeps going without thinking about it by the third attempt, the melody is louder than the bass, and none of the eight bars needs a stretch or a change you cannot make in time. Note the tempo where it falls apart.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Stage 4 capstone · Porch Light"
+      },
+      "source": "Batch 2 (Package 6): Stage 4 capstone, agent-drafted; Travis picking is the hardest new hand skill in Stages 3–4.",
+      "added": "2026-10-24 · Package 6"
+    },
+    {
+      "id": "guitar-batch-2-up-the-neck",
+      "group": "guitar",
+      "title": "Try the small shapes up the neck",
+      "do": "Open the full lessons in Units 19, 20 and 23 (top-string triads at the 7th fret, three shapes of D, sliding sixths). Play each first study at its slowest tempo, then Sunday Glide's rhythm part from Play.",
+      "pass": "Each shape rings on all its strings, the hammer-on and the slides land on their counts, and the swung sixteenths feel like a groove rather than a drill. Leave a note on any shape that buzzes or any jump you cannot make.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Units 19, 20 and 23 · Learn it"
+      },
+      "source": "Batch 2 (Package 6): the course's first shapes above the 5th fret and its first swung sixteenths (decision A17), agent-drafted.",
+      "added": "2026-10-24 · Package 6"
+    },
+    {
+      "id": "guitar-night-market-capstone",
+      "group": "guitar",
+      "title": "Play the Stage 5 capstone, Night Market",
+      "do": "In the Course map, open Stage 5 and choose “Open the capstone”. Start at 60 BPM with the second guitar: Em7 (xx2433) and A7 (first finger across fret 2) on the top four strings, the hand moving in sixteenths, chords on 1, the “a” of 1 and the “and” of 2, ghosted scratches between, then the break, where the second guitar hits only the stabs with you.",
+      "pass": "Your hand never stops, the accents sit on 1 and the “and” of 2, the A7 barre rings on all four strings, and the break feels like space rather than a mistake. Note the tempo where the groove starts to stiffen.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Stage 5 capstone · Night Market"
+      },
+      "source": "Batch 3 (Package 7): Stage 5 capstone and the course's first sixteenth funk groove, agent-drafted.",
+      "added": "2026-10-24 · Package 7"
+    },
+    {
+      "id": "guitar-front-step-full",
+      "group": "guitar",
+      "title": "Play the Stage 6 capstone, Front Step in full",
+      "do": "In the Course map, open Stage 6 and choose “Open the capstone”. Play the three shuffle choruses in turn with the second guitar's boogie: E7, A7 and B7; the calls and answers, now in shuffle; the solo chorus, whose long notes are fretted so they can be shaken (B at G-string fret 4, E at B-string fret 5). Try the boogie part too, with B as root and fifth if the stretch to fret 6 is too far.",
+      "pass": "The shuffle feels long-short without effort, every bend in the solo reaches its note (play the target fret first if unsure), and you keep your place through the quick change and the turnaround. Leave a note on any bend that falls short.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Stage 6 capstone · Front Step"
+      },
+      "source": "Batch 3 (Package 7): Stage 6 capstone with bends, vibrato and the boogie stretch, agent-drafted.",
+      "added": "2026-10-24 · Package 7"
+    },
+    {
+      "id": "guitar-batch-3-bends",
+      "group": "guitar",
+      "title": "Bend to the note: Unit 27",
+      "do": "Open the full lesson in Unit 27. Play the bends at the 7th fret first (D up to E on the G string, C up a half step to C♯ on the high E), then the same bends near the nut (A up to B at G-string fret 2, G up to G♯ at high-E fret 3), then the phrase with vibrato on the fretted B.",
+      "pass": "Each bent note matches the fretted target you played first, the open-position bends reach their notes without straining, and the vibrato on B is even. Leave a note on any bend that falls short, and whether bending at fret 2 needs to wait for later in the course.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Unit 27 · Learn it"
+      },
+      "source": "Batch 3 (Package 7), after review: bends taught at the 7th fret first, vibrato only on fretted notes.",
+      "added": "2026-10-25 · Package 7"
+    },
+    {
+      "id": "guitar-batch-3-barres",
+      "group": "guitar",
+      "title": "Try the barres and the small F",
+      "do": "Open the full lessons in Units 32 and 35. Build G at the 3rd fret from the power chord, play C and D as A-shape barres, the minor barres Am (5th fret) and Em (x79987), then F (xx3211) and Fm (xx3111) and the jump from Em at the 7th fret down to F.",
+      "pass": "Each barre rings on every string it should within a minute of trying, and the jump from Em to F lands by count 1 at the slowest tempo. Leave a note naming any shape that will not ring, and how long it took.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Units 32 and 35 · Learn it"
+      },
+      "source": "Batch 3 (Package 7): the course's first barre chords, agent-drafted.",
+      "added": "2026-10-24 · Package 7"
+    },
+    {
+      "id": "guitar-hand-guidance",
+      "group": "guitar",
+      "title": "Check the written hand guidance",
+      "do": "Open the full lessons in Units 2, 3 and 4 (palm muting, the thumb pulse, constant-motion strumming). Read “Your hands” in Learn it and try each instruction.",
+      "pass": "The words were enough to do it. Where they were not, leave a note on that lesson: those become the first demonstration videos to make.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Units 2–4 · Learn it"
+      },
+      "source": "Completion brief §4.5: techniques that need seeing show “demonstration video still needed”.",
+      "added": "2026-10-24 · Package 5"
+    },
+    {
+      "id": "guitar-unison-tuning",
+      "group": "guitar",
+      "title": "Tune by the unison pairs",
+      "do": "Open Unit 7's full lesson and tune with the fifth-fret pairs (fourth fret on the G string), listening for the wobble to slow.",
+      "pass": "Afterwards a tuner app agrees within a few cents on each string, or chords sound clearly in tune.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Unit 7 · Six landmarks and a drone"
+      },
+      "source": "Batch 1 (Package 5).",
+      "added": "2026-10-24 · Package 5"
+    },
+    {
+      "id": "guitar-pitch-sustained",
+      "group": "guitar",
+      "title": "Try the sustained-note pitch check with real input",
+      "do": "In Strengthen, open the microphone check. Play open high E cleanly; then the B string by mistake; then a very soft pluck; then a loud, overloaded one; then stay silent. Do it once in a quiet room and once with ordinary background noise (a radio or TV on). If a result does not match what you played, use the “Something's wrong here” link under it.",
+      "pass": "The clean and the soft E are identified as near E, the B string is named as a different note (never “near E”), and the overloaded and silent tries come back uncertain.",
+      "link": {
+        "route": "practice",
+        "label": "Open Strengthen"
+      },
+      "source": "Phase 5 gate review item 1; thresholds retuned on synthetic input on 20 October (gate addendum, decision A6).",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "guitar-pitch-sequences",
+      "group": "guitar",
+      "title": "Try the two-pluck and E–G–E checks",
+      "do": "In the same card, play two E plucks with a real silence between them, then without one. Then play E–G–E on the high string (frets 0–3–0), then once with the wrong middle fret (0–2–0), then with an extra pluck.",
+      "pass": "The displayed order matches what you played; without a silence, with the wrong fret or with an extra pluck the result is uncertain or names the different note, never a match. Note any try where the room or the phone's volume made it say uncertain when you played cleanly.",
+      "link": {
+        "route": "practice",
+        "label": "Open Strengthen"
+      },
+      "source": "Phase 5 gate review item 1; thresholds retuned on synthetic input on 20 October (gate addendum, decision A6).",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "guitar-review-retry",
+      "group": "guitar",
+      "title": "One real review-to-retry journey",
+      "do": "Record a temporary take in the Unit 1 lesson, compare it with the reference, and write what you intended, what you noticed and one change. Reopen it from Strengthen, do the suggested smaller exercise and return to both bars.",
+      "pass": "The suggested exercise addresses the thing you noticed, and your next take is better in that one detail by your own judgement.",
+      "link": {
+        "route": "practice",
+        "label": "Open Strengthen"
+      },
+      "source": "Phase 5 gate review item 2.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "laptop-keyboard-pass",
+      "group": "laptop",
+      "title": "Keyboard-only pass",
+      "do": "Without the mouse, use Tab, Shift+Tab, Enter, Space, Escape and the arrow keys to go through Learn, a lesson, Play, Create, Explore and Settings. On a fretboard, move with the arrow keys.",
+      "pass": "You can reach and operate everything, you can always see where focus is, dialogs keep focus inside and Escape closes them, and focus returns to where you were.",
+      "link": {
+        "route": "today",
+        "label": "Open Learn"
+      },
+      "source": "Phase 2A-4 accessibility review: manual keyboard pass not yet performed.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "laptop-screen-reader-pass",
+      "group": "laptop",
+      "title": "VoiceOver pass",
+      "do": "Turn on VoiceOver (Cmd+F5) and go through Continue, one lesson step, the fretboard and Settings.",
+      "pass": "Each control is announced with a sensible name, the fretboard announces string, fret, note and relationship, and nothing important is silent.",
+      "link": {
+        "route": "today",
+        "label": "Open Learn"
+      },
+      "source": "Phase 2A-4 accessibility review: screen-reader pass not yet performed.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "laptop-music-stand-view",
+      "group": "laptop",
+      "title": "Read a lesson from where you play",
+      "do": "Open either full lesson, tick “Music-stand view”, put the laptop where a music stand would be and sit with the guitar. Play the study while the reference runs.",
+      "pass": "From your playing position you can read the count, the tab and the highlighted chord or fret without leaning in.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map"
+      },
+      "source": "Completion brief Package 3: the player must work at music-stand distance.",
+      "added": "2026-10-23 · Package 3"
+    },
+    {
+      "id": "laptop-listening-checks",
+      "group": "laptop",
+      "title": "Try the two listening checks with headphones",
+      "do": "Open the full lessons in Units 30 (three feels) and 34 (modes) and go to “Try unaided”. Hear each example, choose an answer, and read the explanation.",
+      "pass": "You can tell the feels and the modes apart by ear rather than by guessing; in particular, say whether swung sixteenths can be told from straight ones (the app's swing is light), and whether the synthesised shuffle sounds like a shuffle. Nothing on screen gives an answer away before you choose, and “Try the set again” comes back in a new order, marked as practice.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map",
+        "lesson": "Units 30 and 34 · Try unaided"
+      },
+      "source": "Batch 3 (Package 7): the first exact-answer listening checks (decision A19).",
+      "added": "2026-10-24 · Package 7"
+    },
+    {
+      "id": "pixel-install-and-name",
+      "group": "pixel",
+      "title": "Installed app shows Interval and opens",
+      "do": "Open the installed app on the Pixel (or install it from Chrome's menu). Accept an update if one is offered.",
+      "pass": "The home-screen name and icon are Interval's, and the app opens to your existing progress.",
+      "link": {
+        "route": "today",
+        "label": "Open Learn"
+      },
+      "source": "Rename and 1 October consolidation: installed app not yet checked.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "pixel-sign-in-sync",
+      "group": "pixel",
+      "title": "Sign in and sync after the Firebase update",
+      "do": "In Settings, sign in with Google on the Pixel. Make a small change on the laptop (for example, favourite an activity), then reopen the app on the Pixel.",
+      "pass": "Sign-in works, the sync status reaches synced, and the change appears on the other device.",
+      "link": {
+        "route": "settings",
+        "label": "Open Settings"
+      },
+      "source": "1 October consolidation: sign-in and sync with the refreshed SDK not verified.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "pixel-audio-background",
+      "group": "pixel",
+      "title": "Playback sounds right and stops when backgrounded",
+      "do": "Play the Unit 1 reference on the phone speaker and on headphones. While it plays, switch to another app, then come back.",
+      "pass": "The count-in and notes sound steady and audible, playback stops when the app goes to the background, and nothing keeps playing or overlaps when you return.",
+      "link": {
+        "route": "today",
+        "label": "Open Continue"
+      },
+      "source": "Plan §10 real-device checks; Phase 3 log.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "pixel-offline-lesson",
+      "group": "pixel",
+      "title": "A selected lesson works offline",
+      "do": "In the Course map, open a unit in the stage you are working in and wait for “Ready offline on this device”. For a stage you are not in yet, tap “Save this stage for offline” first. Turn on aeroplane mode, close the app fully and reopen it. Open that unit's full lesson (Unit 6 or Unit 10) and play it.",
+      "pass": "The app opens, the full lesson opens and plays, and anything you save is kept and appears after you reconnect.",
+      "link": {
+        "route": "path",
+        "label": "Open Course map"
+      },
+      "source": "Plan §10; Phase 2B-5 offline shell; Package 3 per-stage lesson packs.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "pixel-microphone-denied",
+      "group": "pixel",
+      "title": "Refusing the microphone leaves the lesson usable",
+      "do": "In the Unit 1 lesson, start a take and deny microphone access when Chrome asks.",
+      "pass": "You see a clear message and can carry on with the lesson without the recording.",
+      "link": {
+        "route": "today",
+        "label": "Open Continue"
+      },
+      "source": "Plan §10; Phase 3 log.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "pixel-update-during-work",
+      "group": "pixel",
+      "title": "An update waits while you are working",
+      "do": "After a new release, open the app while you are partway through writing a review or a sketch edit.",
+      "pass": "The app offers the update rather than reloading by itself, and nothing you were typing is lost.",
+      "link": {
+        "route": "today",
+        "label": "Open Learn"
+      },
+      "source": "Plan §10; Phase 1D update policy.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "laptop-cross-device-delete",
+      "group": "laptop",
+      "title": "A deleted sketch stays deleted on the other device",
+      "do": "Signed in on both devices, make a throwaway sketch, wait until it appears on the Pixel, then delete it on the laptop. Reopen the app on the Pixel.",
+      "pass": "The sketch is gone on both devices and does not come back after either device reloads.",
+      "link": {
+        "route": "create",
+        "label": "Open Create"
+      },
+      "source": "Plan §12 boundary table: two devices editing and deleting.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "days-delayed-recall",
+      "group": "days",
+      "title": "Come back on a later day without help",
+      "do": "On a different day from your first Unit 1 success, open Continue and do the later check it offers, and answer the changed concept example in Strengthen.",
+      "pass": "You can do the phrase and answer the changed example without looking at the earlier answer.",
+      "link": {
+        "route": "today",
+        "label": "Open Continue"
+      },
+      "source": "Phase 5 gate review item 3.",
+      "added": "2026-10-20 · Package 0"
+    },
+    {
+      "id": "days-which-lessons-stuck",
+      "group": "days",
+      "title": "Notice what you came back to",
+      "do": "After a week of normal use, look at which lessons or pieces you returned to by choice and which you avoided. Leave a feedback note on one of each.",
+      "pass": "Two feedback notes exist: one on something you enjoyed returning to, one on something you avoided, each saying why.",
+      "link": {
+        "route": "today",
+        "label": "Open Learn"
+      },
+      "source": "Plan §10 personal trial, made non-blocking by the 20 October decisions.",
+      "added": "2026-10-20 · Package 0"
+    }
+  ]
+}

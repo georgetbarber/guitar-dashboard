@@ -1,0 +1,214 @@
+/**
+ * THE AUTHORED LESSON: EVERYTHING AN EPISODE NEEDS, AS REQUIRED DATA.
+ *
+ * Completion brief §4.3 lists what every episode must have. Each item is a
+ * required field here, and validate.ts fails a lesson that leaves one out:
+ * exact music (format 2 scores), an inviting purpose and audible destination,
+ * a demonstration with written hand guidance, at least two musically distinct
+ * studies, the variable being changed, capabilities, honest success criteria,
+ * likely errors with specific repairs, a cue-fading sequence, a delayed
+ * retrieval task, a real transfer, a route into a performance or personal
+ * artefact, and provenance.
+ *
+ * A lesson stands in for one templated activity of its unit; a self-report
+ * from its unaided check is recorded against that activity, so progress keeps
+ * one meaning across templated and authored units.
+ */
+import type { ModeId } from "../../core/music/types";
+import type { ChangedDimension, Provenance, Score } from "../../core/score/types";
+import type { CapabilityAction } from "../capabilities";
+import type { ActivityKind } from "../types";
+
+export interface LessonCapability {
+  id: string;
+  action: CapabilityAction;
+  title: string;
+  /** What doing it looks or sounds like; shown beside the self-report. */
+  criterion: string;
+}
+
+export interface LessonStudy {
+  id: string;
+  scoreId: string;
+  title: string;
+  /** What is different from the study before it, in musical terms. */
+  changes: string;
+}
+
+export interface LikelyError {
+  id: string;
+  /** What the learner notices, in their words. */
+  signal: string;
+  /** A specific changed support, ending with a return to the whole study. */
+  repair: string;
+  scoreId: string;
+  /** The span to loop while repairing, in ticks of that score. */
+  from: number;
+  to: number;
+}
+
+export type CuePhase = "learn" | "practise" | "try-unaided";
+export type CueLevel = "full" | "count-only" | "none";
+
+export interface CueStep {
+  id: string;
+  phase: CuePhase;
+  cues: CueLevel;
+  scoreId: string;
+  instruction: string;
+}
+
+/** Techniques whose hand movement really needs seeing; a lesson using one must flag the missing video. */
+export type VisibleTechnique =
+  "bends" | "vibrato" | "muting" | "fingerpicking hand" | "legato" | "strumming hand" | "fretting hand";
+
+/**
+ * What the unaided check asks for. It must match the evidence the stand-in
+ * activity records: playing (performance or production), listening
+ * (recognition), creating (creation) or reflecting (reflection).
+ */
+export type CheckKind = "playing" | "listening" | "creating" | "reflecting";
+
+export interface Lesson {
+  id: string;
+  version: number;
+  provenance: Provenance;
+  unitId: string;
+  stage: number;
+  activityKind: ActivityKind;
+  checkKind: CheckKind;
+  title: string;
+  /** Why someone would want to play this, in a sentence. */
+  purpose: string;
+  /** What the learner will hear themselves play by the end. */
+  destination: string;
+  /** The one musical variable the studies change. */
+  variable: string;
+  capabilities: readonly LessonCapability[];
+  scores: readonly Score[];
+  demonstration: {
+    scoreId: string;
+    /** Written hand guidance standing in for a filmed demonstration. */
+    handGuidance: readonly string[];
+    /** Shown as "demonstration video still needed" until a reviewed video exists. */
+    videoNeeded: readonly VisibleTechnique[];
+  };
+  studies: readonly LessonStudy[];
+  successCriteria: readonly string[];
+  likelyErrors: readonly LikelyError[];
+  cueFading: readonly CueStep[];
+  retrieval: { afterDays: number; scoreId: string; tempo: number; instruction: string };
+  transfer: { scoreId: string; instruction: string; changed: readonly ChangedDimension[] };
+  performance:
+    { kind: "create"; instruction: string } | { kind: "piece"; pieceId: string; partId?: string; instruction: string };
+  /**
+   * Parts the app plays while the learner plays a score: learner score id →
+   * the score ids sounding with it (a drone, a melody over strummed chords).
+   * They must line up with the learner's score (core/score/ensemble.ts) and
+   * never duplicate it, since in a check they keep sounding.
+   */
+  accompaniment?: Readonly<Record<string, readonly string[]>>;
+  /** Required for a making check (checkKind "creating"), absent otherwise. */
+  making?: MakingCheck;
+  /** Required for a listening check (checkKind "listening"), absent otherwise. */
+  listening?: ListeningCheck;
+}
+
+/**
+ * A listening check: concealed examples, each with one right answer among a
+ * few choices. The app marks each answer, so it is recorded as an exact answer
+ * rather than a self-report.
+ */
+export interface ListeningCheck {
+  questions: readonly ListeningQuestion[];
+}
+
+export interface ListeningQuestion {
+  /** Unique within the lesson; with the lesson id it names the check in every recorded answer. */
+  id: string;
+  /**
+   * The content version recorded with each answer. It starts at 2: builds
+   * from before lesson questions existed refuse an unknown version-1 check as
+   * a forged concept check (decision A19).
+   */
+  version: number;
+  /** The example played. Its notes are never shown before the answer. */
+  scoreId: string;
+  prompt: string;
+  choices: readonly string[];
+  answer: string;
+  /** Shown once the learner has answered, right or wrong. */
+  explanation: string;
+}
+
+/** What the app shell keeps of a listening question, so an answer can be checked before any lesson loads. */
+export interface LessonAnswerKey {
+  questionId: string;
+  version: number;
+  choices: readonly string[];
+  answer: string;
+  key: string;
+  mode: ModeId;
+}
+
+/** The id recorded with a lesson question's answers: `lesson:<lesson id>:<question id>`. */
+export function lessonCheckId(lessonId: string, questionId: string): string {
+  return `lesson:${lessonId}:${questionId}`;
+}
+
+/**
+ * What a making check asks the learner to make. The check's music opens in
+ * Create; the report waits until the learner has made something of their own.
+ */
+export interface MakingCheck {
+  /** What counts as made: chords added, the melody changed, or either. */
+  adds: "chords" | "melody" | "any";
+  /** Shown before the learner opens Create: what they will find and what to do there. */
+  start: string;
+  /** The question the observation answers. */
+  prompt: string;
+}
+
+/** The part of a lesson the app needs before its stage's content has loaded. */
+export interface LessonEntry {
+  id: string;
+  version: number;
+  unitId: string;
+  stage: number;
+  activityKind: ActivityKind;
+  title: string;
+  /** For a listening check: each question's answer key, so recorded answers can be validated anywhere. */
+  answers?: readonly LessonAnswerKey[];
+}
+
+export function entryOf(lesson: Lesson): LessonEntry {
+  const entry: LessonEntry = {
+    id: lesson.id,
+    version: lesson.version,
+    unitId: lesson.unitId,
+    stage: lesson.stage,
+    activityKind: lesson.activityKind,
+    title: lesson.title,
+  };
+  if (!lesson.listening) return entry;
+  return {
+    ...entry,
+    answers: lesson.listening.questions.map((question) => {
+      const { key } = scoreById(lesson, question.scoreId);
+      return {
+        questionId: question.id,
+        version: question.version,
+        choices: question.choices,
+        answer: question.answer,
+        key: key.tonic,
+        mode: key.mode,
+      };
+    }),
+  };
+}
+
+export function scoreById(lesson: Lesson, id: string): Score {
+  const found = lesson.scores.find((score) => score.id === id);
+  if (!found) throw new Error(`Lesson ${lesson.id} has no score ${id}.`);
+  return found;
+}

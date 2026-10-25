@@ -1,0 +1,211 @@
+/**
+ * Where a learner is in an authored lesson, and what their own reports say.
+ *
+ * Mirrors pilotProgress.ts for every lesson in src/v8/lessons. Attempts are
+ * self-reports tied to an exact lesson and score version; a revised lesson
+ * starts again rather than inheriting reports about different music.
+ */
+import type { Score } from "../core/score/types";
+import { calendarDaysBetween, localDateAt } from "./dates";
+import { newId } from "./identity";
+import { lessonCheckId, scoreById, type Lesson, type ListeningQuestion, type MakingCheck } from "./lessons/format";
+import { newSketch } from "./repository";
+import type { ActivityDefinition, CompetencyEvidence, LessonAttempt, LessonCursor, Sketch, V8State } from "./types";
+
+export function newLessonCursor(lesson: Lesson, now = new Date()): LessonCursor {
+  const first = lesson.cueFading[0];
+  const score = lesson.scores.find((item) => item.id === first.scoreId)!;
+  return {
+    id: newId("lesson-session"),
+    lessonId: lesson.id,
+    lessonVersion: lesson.version,
+    step: "learn",
+    scoreId: first.scoreId,
+    tempo: score.tempo.default,
+    assistance: "none",
+    updatedAt: now.toISOString(),
+  };
+}
+
+export function lessonCursor(
+  state: Pick<V8State, "lessonCursors">,
+  lesson: Pick<Lesson, "id" | "version">,
+): LessonCursor | null {
+  return (
+    (state.lessonCursors ?? []).find(
+      (cursor) => cursor.lessonId === lesson.id && cursor.lessonVersion === lesson.version,
+    ) ?? null
+  );
+}
+
+export function lessonAttempts(
+  state: Pick<V8State, "lessonAttempts">,
+  lesson: Pick<Lesson, "id" | "version">,
+): LessonAttempt[] {
+  return (state.lessonAttempts ?? []).filter(
+    (item) => item.lessonId === lesson.id && item.lessonVersion === lesson.version,
+  );
+}
+
+export function firstLessonSuccess(attempts: readonly LessonAttempt[]): LessonAttempt | undefined {
+  return attempts.find((item) => item.kind === "first-check" && item.outcome === "successful");
+}
+
+export function transferSuccess(attempts: readonly LessonAttempt[]): LessonAttempt | undefined {
+  return attempts.find((item) => item.kind === "transfer-check" && item.outcome === "successful");
+}
+
+export function lessonRecallDue(
+  lesson: Pick<Lesson, "retrieval">,
+  first: LessonAttempt | undefined,
+  today = localDateAt(new Date()),
+): boolean {
+  return Boolean(first && calendarDaysBetween(first.localDate, today) >= lesson.retrieval.afterDays);
+}
+
+/** A later success counts only if it was unaided, at the recall tempo, on a later day. */
+export function lessonLaterSuccess(
+  lesson: Pick<Lesson, "retrieval">,
+  attempts: readonly LessonAttempt[],
+): LessonAttempt | undefined {
+  const first = firstLessonSuccess(attempts);
+  return attempts.find(
+    (item) =>
+      item.kind === "later-check" &&
+      item.outcome === "successful" &&
+      item.assistance === "none" &&
+      item.tempo === lesson.retrieval.tempo &&
+      lessonRecallDue(lesson, first, item.localDate),
+  );
+}
+
+/**
+ * An editable copy of a lesson score for Create. The sketch carries no
+ * origin record (older app versions accept only pilot and Free Play origins),
+ * so its source is written into its notes instead.
+ */
+export function sketchFromScore(lesson: Lesson, score: Score, tempo: number, index: number): Sketch {
+  const sketch = newSketch(index, { key: score.key.tonic, mode: score.key.mode });
+  sketch.name = lesson.title;
+  sketch.intention = lesson.performance.instruction;
+  sketch.tempo = tempo;
+  sketch.metre = score.metre === "3/4" || score.metre === "6/8" ? score.metre : "4/4";
+  sketch.sections = score.sections.map((section) => section.label);
+  sketch.chords = score.events.flatMap((event) => {
+    if (event.kind !== "strum" || !event.chord || event.art?.tie || event.art?.dead) return [];
+    const voicing = score.voicings.find((item) => item.id === event.chord);
+    if (!voicing) return [];
+    return [
+      {
+        id: newId("chord"),
+        symbol: voicing.symbol,
+        beats: event.dur / 48,
+        // Sketch voicings run from the high E (index 0) to the low E (index 5).
+        voicing: [...voicing.frets].reverse(),
+      },
+    ];
+  });
+  sketch.melody = score.events.flatMap((event) =>
+    event.kind === "note" && !event.art?.tie
+      ? event.notes.map((note) => ({
+          id: newId("melody"),
+          string: note.string - 1,
+          fret: note.fret,
+          beat: event.at / 48,
+          duration: event.dur / 48,
+        }))
+      : [],
+  );
+  sketch.rhythmPattern = score.sections.map((section) => section.label).join(" | ");
+  sketch.notes = `Started from the draft lesson “${lesson.title}” (${score.title}, score ${score.id} version ${score.version}). The lesson stays as it is in Learn; this is your copy to change.`;
+  return sketch;
+}
+
+/** Whether a making check's sketch now holds something of the learner's own, by what the lesson asks for. */
+export function madeSomething(sketch: Sketch, making: MakingCheck): boolean {
+  const chords = sketch.chords.length > 0;
+  const changed = sketch.revisions.length > 0;
+  return making.adds === "chords" ? chords : making.adds === "melody" ? changed : chords || changed;
+}
+
+/** What the learner has made so far, in words: "3 chords", "1 change". */
+export function madeSummary(sketch: Sketch, making: MakingCheck): string {
+  const count = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  const chords = count(sketch.chords.length, "chord");
+  const changes = count(sketch.revisions.length, "change");
+  return making.adds === "chords" ? chords : making.adds === "melody" ? changes : `${chords} and ${changes}`;
+}
+
+/** What to do when the version holds nothing of the learner's yet. */
+export const NOTHING_YET: Readonly<Record<MakingCheck["adds"], string>> = {
+  chords: "Add your chords in Create, then come back.",
+  melody: "Change the melody in Create, then come back.",
+  any: "Add or change something in Create, then come back.",
+};
+
+/**
+ * A listening set in a fresh order, each question's choices shuffled too, so
+ * a second run never repeats the first run's sequence. `random` is injectable
+ * for tests; Math.random is enough here, since nothing secret rides on it.
+ */
+export function shuffleListeningSet(
+  questions: readonly ListeningQuestion[],
+  random: () => number = Math.random,
+): ListeningQuestion[] {
+  const shuffle = <T>(items: readonly T[]): T[] => {
+    const out = [...items];
+    for (let i = out.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(random() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  };
+  return shuffle(questions).map((question) => ({ ...question, choices: shuffle(question.choices) }));
+}
+
+/** Whether this workspace already holds checked answers to this lesson's questions from today. */
+export function answersSeenToday(lesson: Lesson, evidence: readonly CompetencyEvidence[], now = new Date()): boolean {
+  const prefix = lessonCheckId(lesson.id, "");
+  const today = localDateAt(now);
+  return evidence.some(
+    (item) => item.method === "exact-answer" && item.checkId?.startsWith(prefix) && item.localDate === today,
+  );
+}
+
+/**
+ * One answer to a listening question, as exact-answer evidence against the
+ * lesson's stand-in activity: one record per capability the activity builds.
+ * A set's answers are recorded together, with one time, when the set is
+ * finished; completion then follows the whole set (learning.ts).
+ */
+export function recordLessonAnswer(
+  lesson: Lesson,
+  question: ListeningQuestion,
+  response: string,
+  usedHint: boolean,
+  activity: Pick<ActivityDefinition, "id" | "competencyIds">,
+  now = new Date(),
+): CompetencyEvidence[] {
+  if (!question.choices.includes(response)) throw new Error("Choose one of the answers shown in this check.");
+  const { key } = scoreById(lesson, question.scoreId);
+  return activity.competencyIds.map((competencyId) => ({
+    id: newId("evidence"),
+    competencyId,
+    source: "recognition" as const,
+    assistance: usedHint ? ("hint" as const) : ("none" as const),
+    context: { key: key.tonic, mode: key.mode },
+    outcome: response === question.answer ? ("successful" as const) : ("retry" as const),
+    occurredAt: now.toISOString(),
+    localDate: localDateAt(now),
+    activityId: activity.id,
+    method: "exact-answer" as const,
+    checkId: lessonCheckId(lesson.id, question.id),
+    contentVersion: question.version,
+    response,
+  }));
+}
+
+/** A whole set of answers as one lesson outcome: all right is a success, at least half is partial. */
+export function listeningOutcome(right: number, total: number): LessonAttempt["outcome"] {
+  return right === total ? "successful" : right * 2 >= total ? "partial" : "retry";
+}

@@ -421,1110 +421,134 @@ Phase 2B and Phase 7.
 
 ---
 
-## Next package at the end of Phase 1 (historical)
+## Completion brief Package 3 — Phase 6 music engine and authoring pipeline (23 October 2026)
 
-**Phase 2 — accessibility and release foundations.** 2A is the interface work:
-the mobile settings/new-sketch collision and cramped Learn tabs (B11), text and
-control contrast (B12), dialog focus entry, containment, Escape and restoration
-(B13), a usable keyboard fretboard (B14), automated and manual accessibility
-checks (B15), fonts supplied locally or chosen deliberately (B16), and removing
-"V8" and build language from learner-facing copy (B17).
+**Status: implemented and verified locally; PR #9 open for George to merge after #6–#8 (decision R3).** Brief §6 Package 3, §4.3, §4.5 and §4.6.
 
-2B is the release side: browser journeys in CI (B21), deployment concurrency
-protection (B22), linting, formatting and coverage visibility (B23), reviewed
-dependency upgrades (B30), lazy-loading Firebase so guest startup omits the
-594 kB chunk (B18), startup and cache measurement (B19), iteration 07 in the
-verification script (B24), and the app-directory README and two broken
-historical links (B25, B26).
-
-**Worth doing early in 2B:** a DOM test environment. `runSave`, the restore hold
-and the update holds are all provider or component state covered by reading
-rather than by a rendered test. Their rules are tested; their wiring is not.
-That gap has now accrued across 1A, 1C and 1D.
-
-
----
-
-## Phase 2B-1 — rendered reliability tests and release checks
-
-Completed locally 17 September 2026, starting at `d0cf81d` on
-`codex/public-hardening`. This is the first Phase 2 package, not completion of
-Phase 2 or a release approval. Earlier changes in the root `.gitignore` and
-`scripts/publish-live.sh` were preserved separately.
-
-### What changed
-
-- Added jsdom and React Testing Library. Nine new rendered tests run the actual
-  store, save notices, Create recording controls, restore controls, update
-  coordinator, and cloud provider. Storage and Firebase SDK operations are
-  controlled test doubles; no production account or microphone is used.
-- Four update-protection defects were reproduced and fixed: React's transition
-  from recording to temporary take could release the last hold too early;
-  keeping a take could release its temporary hold before the sketch's save
-  indicator rendered; backup file preparation was unprotected; and completing
-  activation could reload away the pending account choice. Update activation
-  now rechecks holds after React's effect handoff and is sent at most once.
-  The store owns save protection from the start of the write, through failures
-  and retries, rather than depending on a status component rendering.
-- Restore preparation, activation and cancellation keep Settings open.
-  Conflicting import, sign-in/out and erasure controls are disabled while a
-  restore is pending. Failed cancellation keeps the preview and an actionable
-  error. Failed recording storage keeps the temporary take available for retry;
-  bounds are checked before storing it, and keep/discard cannot race each other.
-- Added a real browser journey covering export, preview, cancel, confirmed
-  restore and reload. Added a Firestore emulator case exercising `commitIsolating`
-  against real rules: one denied sketch is withheld while a valid sketch is saved.
-- Both hosting workflows now run unit/component coverage and desktop/mobile
-  browser journeys, retain coverage and browser failure evidence, and keep the
-  existing Java 21 rules gate. CI refuses focused browser tests and always starts
-  its own server. These are workflow changes, not claims of executed GitHub runs.
-- Live publication has a shared concurrency group with cancellation disabled,
-  protecting the rules-to-hosting sequence. `check-release-head.sh` rejects
-  non-main branches, mismatched checkouts, stale reruns and unreadable remote
-  refs. Five disposable-local-Git tests exercise these cases without GitHub writes.
-  Concurrency alone does not establish release order; the final remote-head
-  check is necessary. See [GitHub's concurrency documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency).
-- `test:coverage` reports selected critical domains and UI, including gaps, with
-  HTML and JSON output. There is deliberately no blanket percentage target.
-  Lint and formatting gates remain separate Phase 2 work.
-- `verify-all.sh` now includes history iteration 07. The app-directory README
-  identifies V8 and seven historical snapshots, and iteration 07's two broken
-  root-document links resolve. No historical application code changed.
-
-### Dependency review
-
-Added development-only DOM testing and coverage tools. Updated Vitest and its
-coverage reporter together from 4.1.8 to 4.1.11 to address
-[GHSA-82fw-gwwq-j7x9](https://github.com/advisories/GHSA-82fw-gwwq-j7x9).
-A second compatible update group covered Browserslist/browser data, fast-uri,
-js-yaml, Hono and Morgan within their existing dependency constraints. The
-lockfile was inspected; Firebase application dependencies were not changed.
-
-The initial audit found 18 development advisories. Adding coverage briefly
-increased the dependency-path count to 19; the reviewed updates leave **10
-moderate, zero high, zero critical**. Every remaining affected lockfile path is
-a development dependency. Remaining reports concern Firebase CLI dependencies
-including OpenTelemetry, csv-parse, stream-json and uuid, plus Express/body-parser
-and qs. npm's suggested Firebase CLI 10.1.1 downgrade was not applied. The
-compatible qs update attempt did not resolve its constrained nested copy.
-This is partial B30 remediation, not a claim that dependency review is closed.
-
-### Verification
-
-| Check | Result |
+| | |
 | --- | --- |
-| `npm run test:coverage` | 194 tests in 27 files passed on Vitest 4.1.11. |
-| `CI=true npm run test:e2e` | 34 passed; desktop Chromium and Pixel 7 viewport/emulation. Complete exit status 0 recorded. |
-| `npm run test:rules` with local Java 21 | 10 passed against Firestore and Storage emulators using `demo-guitar-academy`; complete exit status 0. |
-| `npm run build` | TypeScript and production bundle passed; existing large-chunk warning remains. |
-| Targeted mutation checks | All four update-protection defects reintroduced individually failed their selected rendered test; source restored after each run. |
-| Release guard | Five cases passed against disposable local repositories, including a stale rerun with its matching checkout and a failed remote lookup. |
-| Workflow/config review | Both YAML files parsed; browser, coverage and Java 21 gates present. Shell syntax and diff whitespace checks passed. |
-| Preservation documentation | Both repaired historical links resolve; iteration 07 is in the verification list. Full historical-app suite was not rerun. |
+| **Findings** | D04/D05 (exact, playable musical material and synchronised displays), D08 (honest demonstrations: synthesised, labelled, with written hand guidance), D03/D10 provenance carried into lessons; supports B27 by naming superseded draft code (A11). Closes none on its own: guitar review and real-phone checks are `needs George` |
+| **Changed** | `src/core/score/` (score format 2: whole-tick timing at 48 per quarter, voices, voicings checked against `core/music/chordSymbols.ts`, fingerpicking fingers, articulations, straight/swing/shuffle/swung-sixteenth feels; structure, theory and playability validation; a pure performance renderer; view projections; display/audio correspondence); `src/audio/pluck.ts` (Karplus–Strong strings, per-string voices, palm mute and dead scratch, tuned to within 3 cents) and `scorePlayer.ts` (count-in, loop, tempo, sections and modes on the audio clock; one player per tab); `src/v8/components/score/` (tab with technique marks, count and rhythm rows, chord shapes from the voicing, fretboard, concealed check view, music-stand view); `src/v8/lessons/` (authored-lesson format with every §4.3 part as a required field, validator, shell catalogue, per-stage loaders, the Unit 6 and Unit 10 lessons); `LessonPlayer.tsx`, `lessonProgress.ts`, `ActivityPlayer.tsx`, `learning.ts`, `store.tsx`, `types.ts`, `validation.ts`; `lessonPacks.ts`, `OfflineLessonStatus.tsx`, `install.ts`, `App.tsx`, `vite.config.ts`, `scripts/check-offline-shell.mjs`; `offlineReadiness.ts` (pre-existing defect, below) |
+| **Behaviour** | In the Course map, Unit 6 "Place it in time" and Unit 10 "Put it under the hands" are marked "full lesson" and open the authored C–Am and third-colour lessons, tagged "Not yet checked on a guitar". Six steps: learn (hear the exact music, see tab, count, chord shapes and fretboard move together), practise (sections, two-count variation, likely errors with looped repairs at a slower tempo), try unaided (score hidden; revealing it records the check as assisted), move it (G–Em in a new key; thirds from F), make it yours (an editable copy in Create), return later (on a later day). Checks are self-reports recorded against the unit's activity or transfer activity (A10). The synth is labelled as a synthesised guitar for timing and pitch, not a recording of hands. Continue sessions reach an authored lesson first |
+| **Offline** | Lesson players, engine and lessons sit outside the automatic shell in per-stage packs (A9): stage 1 76.3 KiB, stage 2 57.2 KiB. The working and selected stages save automatically online; "Save this stage for offline" saves any other; a waiting update's packs are saved before it applies, and starting the running build again no longer prunes them. The course map says when a stage's full lessons are not saved yet |
+| **Defects found and fixed** | (1) Saved lesson files never matched a module import offline when the host sends `Vary: Origin` (the import sends Origin, the save did not), so a stage reported ready but its lessons would not open offline. The lesson route now matches ignoring Vary. (2) **Pre-existing, also live:** the offline status compared every link in the live page with the installed `index.html`; once account code loaded, the bundler's preload links made a fully installed shell read "Offline copy not ready yet". It now matches the build by its entry script. (3) Startup pruning could delete a waiting update's pre-saved packs |
+| **Migration impact** | Additive. Lesson cursors and attempts are optional workspace fields, validated when present, tolerated by older clients (unknown fields are kept), included in backups and never synced. Evidence uses existing activity and capability ids, so sync and rules are unchanged. Format 1 material and the September chord draft upgrade to format 2 with every id, pitch and count unchanged (tested). No rules change |
 
-Coverage for the selected reported files: **75.35% lines, 51.77% branches**.
-The cloud provider remains only 53.11% line-covered; this is useful visibility,
-not evidence that all auth, upload and restoration interactions are tested.
-PWA build measurement: **14 precached entries, 1024.60 KiB**. B18/B19 loading and
-cache work has not happened in this package.
+**Verification (local).** 492 unit/interface tests across 60 files with coverage; lint; format check against `origin/main`; production build. Guest entry graph 406.9 KiB (420 KiB threshold; Package 2 was 398.9 KiB, the growth is the lesson catalogue, readiness and reducer code, not engine code, which is absent from the entry). Offline shell 1269.1 KiB local and 1269.3 KiB with Firebase-length configuration values (1280 KiB threshold restored, A7). Full browser suite: 98 desktop/phone checks passed in development mode, including the new lesson journeys (C–Am at 320px: hear, practise, repair, hidden check, self-report, reload keeps the step; thirds: exact frets, one section, reveal recorded as assisted; axe WCAG 2.2 A/AA on three lesson steps in light and dark themes). Against a Firebase-configured production preview, both production offline journeys passed three times in a row on desktop and phone: the Unit 1 pilot from the stage 1 pack, and stage 2 saved on request, opened and played after a disconnected reload, with no lesson file in the precache. **Mutation checks this session**, each failing only its own test(s): ignoreVary removed (both offline lesson journeys fail); entry-script readiness reverted (its new unit test); prune union removed (its new unit test); voicing foreign-note check removed (the voicing test); cue-fading "only fades" check removed (the cue test). The engine commits' own tests (synth tuning, swing placement, tempo moving time not pitch, bends to target, strum spread, one player per tab) are in the PR. **Not verified:** Firebase rules (unchanged; CI), Firebase Hosting's actual `Vary` header, any real guitar, phone, headphones or Bluetooth latency, and whether the synth sounds convincing to a person.
 
-Local Node was 26.8.1. CI specifies Node 22; jsdom requires 22.22.2 or newer in
-that line. npm warns that Firebase's `superstatic` package declares support for
-Node 20/22/24. Local success is not a substitute for running the configured CI
-runtime. Java 21 was downloaded from Adoptium, checksum-verified against its
-release metadata, and extracted inside ignored `.local-recovery/java21/`;
-no system Java or production Firebase configuration was changed.
-
-Logs are retained in ignored `.local-recovery/phase-2-unit.log`,
-`phase-2-browser.log`, `phase-2-rules.log`, `phase-2-build.log`,
-`phase-2-audit-final.json`, and `mutation-*.log`. HTML coverage is under
-`apps/current/coverage/`. The browser rerun was initially blocked by automatic
-approval review when account usage was exhausted; it subsequently completed
-after George asked to continue.
-
-### Remaining scope and release limits
-
-- **Signed-in restore needs another reliability package before release:** the
-  account decision still lives in provider memory. App-requested updates now
-  wait for it, but manual reloads/crashes can lose that pause. Make the pending
-  decision durable alongside activation, and verify remount, sign-in and incoming
-  cloud snapshots cannot bypass it. The current cloud component test establishes
-  cancellation of a scheduled upload and explicit resumption in one mounted
-  session only. It does not establish exact cloud-history replacement semantics.
-- Phase 2A remains: mobile layout, contrast, dialog focus/keyboard/inertness,
-  fretboard keyboard navigation, accessibility checks, fonts and learner copy.
-- Phase 2B remains: lint/format gates, remaining advisory review, Firebase lazy
-  loading, and startup/offline-cache policy. B23 and B30 are only partially met.
-- No CI job, physical Pixel, installed-PWA update, cross-tab update, real Google
-  sign-in or live hosting header has been verified here. Nothing was pushed or
-  deployed. These checks retain their explicit later gates.
-
-Next: durable restore-decision protection, then the remaining Phase 2 interface
-and loading work. Keep the rendered tests in the normal test command so fixes
-cannot silently become unwired again.
+**Limits.** Only two units have authored lessons; the other 46 are still templated activities. No hand demonstration exists; neither lesson currently uses a technique that needs a video marker. Lesson positions do not follow George between devices (A10). The superseded Phase 6 draft modules remain as test fixtures (A11).
 
 ---
 
-## Phase 2B-2 — the restore decision survives reloads
+## Completion brief Package 4 — curriculum map and repertoire plan (23–24 October 2026)
 
-Implemented 17 September 2026 (Codex session, after the 2B-1 entry above was
-written). Verified locally, and mutation-checked, in a later session the same
-day. Findings: B04 follow-up (restore versus account history), B03 (updates
-during work). Uncommitted, like 2B-1: see "Commit status" below.
+**Status: written, independently reviewed and revised; PR open for George to merge after #9 (decision R3).** Brief §6 Package 4. Documentation and one repository test; no app behaviour changed.
 
-### What changed
-
-- **The pause is stored with the restored workspace.** Activation writes
-  `pendingRestoreId` in the same IndexedDB transaction that replaces the
-  workspace. Reloading, crashing, signing out and signing back in all reopen
-  the pause. It used to be provider memory.
-- **Confirmation is durable before sync resumes.** `confirmRestoreMerge` clears
-  the marker in its own transaction, only if it still names the same restore.
-  An older confirmation cannot clear a newer restore or another account's.
-  If writing the choice fails, sync stays paused and the choice can be retried.
-- **Sync is paused in both directions.** No Firestore subscription starts while
-  the marker is present. Late snapshots from a retired subscription are
-  ignored, and the reducer refuses `mergeCloud` while the marker is set.
-- **Write ordering.** Restore waits for in-flight autosaves before activating,
-  so an older save cannot land afterwards and replace the restored copy.
-  Activation refuses a preview prepared for a different workspace.
-- **The marker is device-only.** Exports strip it, `cloudProfile` omits it and
-  validation checks its shape.
-- **Copy corrected.** The notice says "Merge with my account" and explains that
-  this merges records by recency. It does not replace the account's history,
-  which is what the sync code actually does.
-
-### Verification
-
-Mutation checks: each defect was reintroduced on its own.
-
-| Defect reintroduced | Tests that failed |
+| | |
 | --- | --- |
-| Activation does not persist the marker | 3 restore tests |
-| Restore does not wait for older autosaves | rendered restore-hold test |
-| A stale confirmation is accepted | older-confirmation test |
-| Subscription ignores the marker | 3 cloud provider tests |
-| Memory is cleared before the durable write | failed-confirmation test |
-| Activation ignores the expected workspace | workspace-mismatch test |
-| Export keeps the marker | archive test |
-| Reducer merges cloud data while paused | **none, at first** |
+| **Findings** | D03 (authored episodes), D08 (earlier application, growing repertoire, layered parts and style), D11 (several kinds of episode before extending) planned for the whole course; none closed until the batches ship |
+| **Changed** | `docs/CURRICULUM_MAP.md` (new): all 48 units revised in place with ids kept (A12), the episode each becomes, the activity each lesson stands in for, a prerequisite graph with rules that never lock started work (A14), eleven original pieces with layered parts (A13), eight capstones (Stages 7 and 8 through Create), the physical coverage matrix, the style plan, the engine work the batches need, and a capability catalogue for every unit; `docs/reviews/2026-10-24-curriculum-map-review.md`; `apps/current/tests/curriculumMap.test.ts` (in the `test` script); decisions A12–A15 |
+| **Review** | A separate reviewer agent with fresh context checked theory note by note, prerequisites, playability, pacing, style fit, originality, brief compliance and data safety. Three blocking findings (a wrong rotation, a wrong common-tone claim, a lock rule that could hide started work) and fourteen should-fix findings were all fixed; the record lists each |
+| **Migration impact** | None now. The map commits later batches to keeping every unit and activity id, never renaming a released capability id, and never locking a unit with recorded work |
 
-The reducer guard had no test, because the subscription guard stopped every
-case the existing tests covered. That leaves a real gap: a `mergeCloud`
-dispatched in the same React update as the restore decision.
-`ignores cloud data dispatched after a restore decision, even in the same
-update` now covers it, and fails under that mutation.
-
-### Limitations
-
-- Only the emulated provider has tested this. Real Google sign-in and a
-  physical device reload have not been checked.
-- A guest workspace also keeps the marker, which surfaces once the learner
-  signs in. That is intended, but no learner has seen it yet.
+**Verification.** By code: the new test checks all 48 units appear once with their current titles, prerequisites exist and come earlier, every stand-in activity exists and matches the authored lessons and the pilot, and the catalogue covers every unit, reuses no id and contains every capability already in use. Each rule was broken in a scratch copy and failed only its own test. By review: the reviewer worked out every voicing, interval, degree and Roman numeral in the map (listed in the review record). Not checked: anything on a guitar, and whether George enjoys the pieces (`needs George`, added per batch).
 
 ---
 
-## Phase 2A-1 — modal dialogs and a keyboard fretboard
+## Completion brief Package 5 — Batch 1, Units 1–12 (24 October 2026)
 
-Verified locally 17 September 2026. Findings: **B13** (dialog focus, Escape,
-restoration, inertness) and **B14** (fretboard keyboard traversal). B15 is
-partly met: new browser checks exist, but nothing automated for contrast yet.
-Codex started this package, and it was completed in a later session. It was
-unfinished at handover: Settings failed its own new focus test, and the
-fretboard edit was partial.
+**Status: implemented, independently reviewed and revised (24 October); PR #11 ready for review, CI green, for George to merge after #10 (decision R3).** Brief §6 Packages 5–8 (first batch); `docs/CURRICULUM_MAP.md` §3, §6, §7, §10.
 
-### What changed
-
-- **`Modal` wraps the native `<dialog>` with `showModal()`.** Settings and the
-  activity player use it. The browser keeps focus inside and makes the rest of
-  the page inert. Escape and backdrop presses are only *requests*, and the
-  owning component decides whether to close.
-- **Chromium can close a dialog without a `cancel` event.** It does this when
-  Escape is pressed repeatedly with no user activation in between. At handover,
-  three Escapes closed Settings with a restore still pending. The dialog
-  disappeared, the page stayed interactive, and React still considered it open.
-  An unrequested close now reopens the dialog and counts as a request. Removing
-  that handling fails the restore and reflection browser journeys.
-- **Initial focus is explicit.** Chromium focuses the first focusable
-  descendant, and in Settings that was the scrolling panel, not a control.
-  Controls marked `data-autofocus` (the close buttons) receive focus instead.
-  Focus returns to the trigger on close.
-- **Only Settings closes from its backdrop.** A backdrop press no longer moves
-  focus after the trigger has been refocused. The handover version also closed
-  an activity when its margin was pressed, which would lose work.
-- **React StrictMode remounts** used to leave a queued close event that shut
-  every dialog as it opened. Stale close events are now ignored.
-- **Escape keeps an activity open while a written reflection is unsaved.** A
-  notice names the explicit exit, Close activity, which still works. With no
-  draft, Escape closes. This follows the plan's "explicit safe exit when work
-  is in progress".
-- **The fretboard is one tab stop.** It uses roving `tabindex`: arrow keys move
-  between strings and frets, Home/End jump along a string, and Ctrl/Cmd+Home/End
-  jump to the corners. Tab leaves the grid, and focus returns to the last
-  position. Before this, all 96 frets were separate tab stops.
-- **Announcements.** Each cell reads string, fret, spelled pitch with octave,
-  then relationship, for example "String 2, fret 1, B#3, Key 7". Selection uses
-  `aria-selected`, and the grid is multi-selectable when a pitch class is
-  selected.
-- **Octaves are spelled correctly.** The handover code used
-  `floor(midi / 12) - 1`, which labels B#3 as "B#4" and Cb4 as "Cb3". The octave
-  number belongs to the letter, so the new `pitchWithOctave` in `theory.ts`
-  takes accidentals into account, with ten tests.
-- **Keyboard help matches what the fretboard does.** It appears only while
-  keyboard focus is on the neck and is always exposed through
-  `aria-describedby`. It says "selects", not "plays". A read-only fretboard
-  makes no promise about Enter.
-- **Test-helper race.** `completeDiagnostic` counted the onboarding heading
-  before the loading screen had finished. When startup was slow it skipped
-  onboarding, then timed out. This caused the intermittent failures
-  (1–3 per run) seen when this package was picked up. It now waits for either
-  screen first.
-
-### Verification
-
-Run in a Linux container from a copy of the working tree (Node 22.22.2, the CI
-line). The Mac's local shell was unavailable this session.
-
-| Check | Result |
+| | |
 | --- | --- |
-| `npm run build` | Passed; existing large-chunk warning; 14 precache entries, 1030.37 KiB. |
-| `npm test` | 229 tests in 29 files passed. |
-| Browser journeys | 42 passed on desktop Chromium and Pixel 7 emulation, twice consecutively. The bundled Chromium build differs from Playwright 1.60's pinned one, so a local config override supplied `executablePath`. |
-| `npm run test:rules` | **Not run.** The container cannot download the Firestore emulator jar. This package does not touch rules; 2B-1's local run stands. |
+| **Findings** | D03, D05, D08 (authored episodes, cue fading, repertoire and layered parts) for Units 1–12; D09 (the same music across Learn, Play and Continue); none closed until reviewed on a guitar |
+| **Engine** | Pieces as data (`src/v8/pieces/`: format, validator, library, shell catalogue); play-along (the score player's `accompaniment` parts sound in every pass, refused unless metre, bars, feel and tempo range line up); the piece player (parts by layer, form, "Play along with the band", "Hear everything", hide the tab, music-stand view, video markers, favourites); capstone self-reports recorded against `stage-N-capstone` with the stage's catalogued capability, assisted whenever the tab was showing; the capability catalogue in code (`lessons/capabilityCatalogue.ts`), enforced for lessons and capstones and kept identical to the map; lessons declare a check kind that must match their stand-in's evidence source; a "fretting hand" video marker for strummed barres; the prerequisite graph with the map's rules (met by completion or placement, open to one past current, never locked once it has work); "new full lesson" for activities completed before their lesson existed; the Unit 1 pilot links to Front Step |
+| **Content** | Draft lessons for Units 2, 3, 4, 5, 7, 8, 9, 11 and 12 (Units 6 and 10 existed; Unit 1 keeps its pilot, A15). Pieces: *Front Step* v1 (question and answer; the Stage 1 capstone, a 16-bar one-finger 12-bar in E with a second guitar) and *Low Road* v1 (chugs, riff, the Stage 2 capstone in A and from E). Lessons for Units 2, 5, 9, 11 and 12 end in their piece; the rest in Create |
+| **Budgets** | Guest entry 410.4 KiB (420 KiB); the lesson-pack helper now loads on demand. Offline shell 1278.7 KiB with Firebase-length configuration; review threshold moved once to 1300 KiB for the shell-side catalogues and checklist the later batches add (A16). Lesson packs: stage 1 112.2 KiB, stage 2 95.8 KiB, both players and the piece library in each |
+| **Migration impact** | Additive. Capstone evidence uses a new activity id that validation and rules already accept; it completes no unit and moves no path (tested, and round-tripped through a backup). Favourite pieces share the familiar-favourites list as `piece:<id>`, which older builds filter out. No new stored fields, no rules change |
 
-Mutation checks: each defect was reintroduced on its own, and the full unit
-suite plus the named browser journeys were rerun.
+**Verification (local).** 540 unit/interface tests across 65 files; lint; format against `origin/main`; production build; budgets. New tests: every Batch 1 lesson's verbal claims checked against its notes (unisons, octaves, fifths, thirds and sixths by interval, strum and stab placement, transpositions by exact semitones); the two pieces (form, roots, band chords, the riff's fingerprint and absence of ♭5, the E version exactly a fourth lower); the piece validator's refusals; the piece player (play-along calls, capstone records, favourites, missing piece); capstone records' validation, path neutrality and backup round-trip; the prerequisite rules on a George-shaped workspace and against the old rule at every point of Stages 1–2. **Mutation checks**, each failing only its own test: accompaniment not scheduled; started work lockable; placement ignored; capstone recorded against a unit; check kind not enforced; capstone using a later-stage part; visible tab counted as unaided; opened lesson still flagged new. Browser: 108 desktop/phone checks passed (4 production-only skipped in development), including new journeys for the Unit 5 lesson at 320px, the Unit 9 lesson ending in Low Road, both capstones from the course map, pieces in Play and favourites in Continue, and axe WCAG 2.2 A/AA scans of a Batch 1 lesson and the piece player in both themes. Both production offline journeys passed twice against a Firebase-configured build. **Not verified:** anything on a guitar, Firebase rules (unchanged; CI), real phones.
 
-| Defect reintroduced | Tests that failed |
+**Independent review (24 October).** A fresh-context reviewer worked out every note of the eleven lessons and both pieces and compared them with every claim ([record](reviews/2026-10-24-batch-1-review.md)). Three blocking findings (*Front Step*'s ending was not the Unit 5 E5 hits it claimed; the *Low Road* from-E tag instruction misnamed the strings; a Unit 9 repair looped the wrong bars) and nine should-fix findings (the second guitar's C5 under the chugs; Unit 8's unheard swing, A17; muting, A5, sixths, tuning-reference and hand-role guidance; Unit 9 added to Unit 11's prerequisites; a free beat before *Front Step*'s break) were fixed, with the minor wording points ("second guitar" for "band" throughout, later pieces marked as later). While fixing, a hook called after an early return in the lesson player was found from React's warning in the browser suite and fixed, with a test that failed before the fix. After the fixes: 541 unit/interface tests across 65 files, lint, format, build and budgets (offline shell 1280.9 KiB local against 1300 KiB; packs 112.7 and 97.5 KiB); the full browser suite (108 passed, 4 production-only skipped, no hook-order warning in the server log); both production offline journeys against a Firebase-configured build. CI on the PR runs the rules suite.
+
+---
+
+## Completion brief Package 6 — Batch 2, Units 13–24 (24 October 2026)
+
+**Status: implemented, independently reviewed and revised (24 October); PR #12 open, stacked on #11, for George to merge after it (decision R3).** Brief §6 Packages 5–8 (second batch); `docs/CURRICULUM_MAP.md` §3, §6, §7, §10 item 7.
+
+| | |
 | --- | --- |
-| Browser chooses initial focus | 3 Modal unit tests; Settings journey (both viewports) |
-| Native close without cancel accepted | Modal unit test; restore and reflection journeys (both) |
-| Backdrop closes every dialog | Modal backdrop unit test |
-| Backdrop press moves focus | Settings journey (both) |
-| Stale StrictMode close treated as a request | Settings journey (both) |
-| App bypasses the player's guard | reflection journey (both) |
-| Player guard ignores drafts | Modal/activity unit test |
-| Every fret tabbable | 2 fretboard unit tests; Explore journey (both) |
-| Octave from `floor(midi / 12)` | 2 theory tests; fretboard announcement test |
-| Help promises selection when read-only | read-only fretboard test |
-| Settings closes during a pending restore | restore journey (both) |
-| Fret clamp removed | none: equivalent mutant (movement starts from the focused cell, and a missing cell is never focused) |
+| **Findings** | D03, D05, D08 for Units 13–24 (authored episodes, cue fading, repertoire with layered parts, the first making check); D09 (the same pieces reached from Learn, Play and the course map); none closed until reviewed on a guitar |
+| **Engine** | Optional staff notation in every score view (map §10 item 7: treble clef an octave up, key signature, note values, ledger lines; a toggle remembered per device, never required, hidden during checks); a **making check** (`checkKind: "creating"`): at "Try unaided" the score stays visible, "Make my version in Create" opens the check's music as an editable sketch with no chords, the report waits until the sketch has chords, and the attempt and evidence carry the sketch's id; **lesson accompaniment**: a lesson score can sound with parts the app plays as a second guitar, named under the score, with the same line-up rules as pieces; a capstone can ask for something made in Create (A18), and first-person capstone criteria are worded as what to report; the validator counts chord marks as harmony for fingerpicked transfers and no longer asks for a video marker on a part only the app plays |
+| **Content** | Twelve draft lessons, Units 13–24 (`stage3.ts`, `stage4.ts`): drone degrees, the major pentatonic shape, the *Lantern* motif, two endings and the first D chord, call and answer in E minor pentatonic with the ♭3 curl, a waltz melody by ear, top-string triads with sus2 hammer-ons, inversions and swung sixteenths, common tones in a fingerpicked waltz, Travis picking in three steps, sliding sixths, and harmonising *Lantern* in Create (Unit 24, the first making check). Pieces: *Lantern* (drone, chords, melody; Stage 3 capstone with an answer made in Create), *Porch Light* (thumb roots, Travis picking, melody pinched over the thumb; Stage 4 capstone), *Harbour Song* (waltz bass, p-i-m-a arpeggio, melody), *Sunday Glide* (octave roots, sus2 shapes made major by hammer-ons, the top-string rhythm part in swung sixteenths, sliding sixths), and *Front Step* v2 with its calls-and-answers layer. Every Stage 3–4 lesson ends in its piece |
+| **Budgets** | Guest entry 412.7 KiB (420 KiB). Offline shell 1287.7 KiB with Firebase-length configuration (1300 KiB, A16): Batch 2's catalogue entries and checklist items cost about 9 KiB, so Batches 3 and 4 will need the shell-side additions kept small or the threshold reconsidered. Lesson packs: stage 1 135.5, stage 2 120.4, stage 3 121.2, stage 4 123.2 KiB (each carries the piece library and the staff view) |
+| **Migration impact** | Additive. A lesson attempt may carry `artifactId` (the sketch made for a making check) and a lesson position may carry `sketchId`; both optional, validated when present, local only and kept by older builds. Making-check evidence uses the existing optional `artifactId`. Capstone evidence for Stages 3 and 4 uses the existing `stage-N-capstone` ids. No rules change |
 
-### Limitations and findings
+**Verification (local, before review).** 576 unit/interface tests across 68 files; lint; format against `origin/main`; production build; budgets. New tests: every Batch 2 lesson's and piece's verbal claims against its notes (degrees against the tonic, intervals of every sixth, triad and inversion, the one fret that turns major into minor, the strings each thumb pattern alternates, pinches and off-beats by tick, swung-sixteenth hit positions, the shared fingers in the waltz, chord tones under every melody and arpeggio note, the motif's rhythm in every bar of *Lantern*, *Front Step*'s first calls equal to Unit 17's); the making check and lesson accompaniment in the lesson player; the capstone's making step and report wording; the validator's new rules. Browser: 116 desktop/phone checks passed (4 production-only skipped), including new journeys for the Unit 16 lesson at 320px ending in *Lantern*, the Unit 24 making check through Create and back, both new capstones from the course map, and axe WCAG 2.2 A/AA scans of the making check, *Porch Light* with the staff shown and *Lantern*, in both themes. Both production offline journeys passed against a Firebase-configured build. **Not verified:** anything on a guitar, Firebase rules (unchanged; CI), real phones.
 
-- **Save failures are hidden during an activity (newly identified).**
-  `SaveFailureAlert` and the other notices live in `<main>`. The full-screen
-  activity dialog covers them, as its fixed overlay already did, and they are
-  now inert as well. Meanwhile the partial/retry completion screen says "The
-  evidence is saved" whatever the save outcome. This is a B02 truthfulness gap outside this
-  package, and it should come next rather than wait.
-- Screen-reader output has not been listened to. The announcements are checked
-  through accessible names in jsdom and Chromium, not with VoiceOver, TalkBack
-  or NVDA. B15's manual check is still outstanding.
-- Tab from a native modal's last control goes to the browser's own UI before
-  wrapping, and the journey asserts that. This is native `<dialog>` behaviour,
-  not a hand-rolled trap.
-- Only the v8 Explore fretboard is reachable. The older `src/features` screens
-  also render `Fretboard`, and they get the same behaviour, but they are
-  unreachable (B27).
-- Not addressed yet: B11, B12, B16, B17, and axe or contrast automation.
+**Independent review (24 October).** A fresh-context reviewer dumped every note of the twelve lessons and five pieces with the repository's builder and compared them with every claim, and read the engine changes ([record](reviews/2026-10-24-batch-2-review.md)). There were two blocking findings: *Sunday Glide*'s re-pluck was misplaced in words, and reopening a making check's version made an empty second copy. There were eight should-fix findings: one fingering now keeps the D down from D to G and gives the sus2 hammer-ons a finger; the D shape is taught where the folk thread uses it; Unit 24's transfer is now a real choice; Unit 23's sixths sound against their chords; Unit 17's call curls its G; Unit 20's groove is now checked; *Sunday Glide* has a sus2 part for Unit 19; and making checks take their wording from lesson data. Fifteen minor findings were fixed as well: dotted rests, staff drawings hidden from readers, accompaniment unnamed in hidden checks, `artifactId` validated on lesson attempts, harmony compared regardless of order, the answer sketch opening in the piece's key, and wording. Units 3 and 8 now end in *Porch Light* and *Sunday Glide*. After the fixes: 578 unit/interface tests across 68 files; lint; format against `origin/main`; build; budgets; the full browser suite (116 passed, 4 production-only skipped); both production offline journeys against a Firebase-configured build. **Mutation checks**, each failing only its own test: reopening disabled; the accompaniment exemption removed (also fails the whole-set validity test, as it should); harmony order-sensitive; hidden checks naming their accompaniment; rest dots removed; the making data not required; lesson-attempt `artifactId` unchecked; a vague capstone `make` accepted. CI on the PR runs the rules suite.
 
 ---
 
-## Decisions on 2A-1, confirmed
+## Completion brief Package 7 — Batch 3, Units 25–36 (24 October 2026)
 
-George was asked about the three judgement calls in 2A-1 and left them to the
-implementer. All three stand as implemented:
+**Status: implemented (24 October), independently reviewed and revised (25 October); PR #13 open, stacked on #12, for George to merge after it (decision R3).** Brief §6 Packages 5–8 (third batch); `docs/CURRICULUM_MAP.md` §3, §6, §7.
 
-- Escape keeps an activity open while a written reflection is unsaved.
-- Tab passes through the browser's own UI, as native `<dialog>` does, rather
-  than a hand-built focus wrap.
-- The hidden save-failure finding became the next package, ahead of B11/B12.
-
----
-
-## Phase 2A-2 — urgent notices reach the learner, and records aren't called saved too early
-
-Verified locally 17 September 2026. Findings: **B02** (invisible local-save
-failure), whose 1A fix did not reach dialogs or onboarding; **B13** follow-up;
-the 1E principle "don't let the interface claim what the app doesn't do".
-
-### What was wrong
-
-1. **During an activity, save failures could not be seen or used.** The save
-   failure alert, the unreadable-workspace notice, the restore choice and the
-   update offer were all rendered inside `<main>`. The activity player (where
-   learners spend most of their time) and Settings are full-screen or backdrop
-   dialogs that cover `<main>`. Since 2A-1 they also make it inert.
-2. **The partial/retry completion screen said "The evidence is saved"** as soon
-   as the button was pressed, before any write had started, and whether or not
-   the write succeeded.
-3. **An unreadable workspace looked like a brand-new install.** This was not in
-   the original finding. An unreadable workspace loads default settings, and
-   default settings mean the onboarding screen, which rendered no notices at
-   all. That is exactly the case 1A set out to prevent: an empty app that looks
-   like total data loss, while saving is silently suspended. The recovery
-   notice's rendered test mounted the notice directly, so it never exercised
-   what the application actually shows.
-
-### What changed
-
-- **`NoticeHost` renders `AppNotices` in exactly one place.** While a dialog
-  that can host them is open, the notices appear at the top of that dialog and
-  step aside on the page. Each alert is announced once, and update holds are
-  not duplicated; `holdUpdates` already rechecks after React's effect handoff,
-  so moving them cannot trigger an update in the gap. Inside dialogs the
-  notices are in the normal flow, not sticky, so they never cover the dialog's
-  heading or close button. The Settings dialog is now a flex column: as a grid
-  row, its scrolling panel could shrink and slide underneath the notices on a
-  phone.
-- **Both onboarding screens now render `AppNotices`:** the diagnostic and the
-  account-history choice.
-- **`isEvidenceSaved(ids)` in the store** is true only once a *current*
-  (non-superseded) write that contained those observations has completed, in
-  the same workspace. It can say "not yet" about something already stored,
-  never the reverse. `RecordSaveStatus` uses it on both completion screens:
-  - "Saving on this device…"
-  - "Saved on this device." (or the limited-backup wording)
-  - "Not saved on this device yet…", pointing to the notice at the top
-  - "Not saved: … saving is paused", when the workspace is unreadable
-- **An unsaved written reflection holds updates.** An update reloads the page,
-  which would lose the draft just as Escape would.
-
-### Verification
-
-| Check | Result |
+| | |
 | --- | --- |
-| `npm run build` | Passed; 14 precache entries, 1032.96 KiB. |
-| `npm test` | 238 tests in 30 files passed. |
-| Browser journeys | 46 passed on desktop Chromium and Pixel 7 emulation. New: a save failure injected during an activity (IndexedDB and its localStorage fallback both refuse) is visible and operable inside the dialog, and the record reads "Not saved" until a retry succeeds; an unreadable stored workspace is explained on the first screen. |
-| Visual check | Screenshots at desktop and phone width of the failure inside an activity, inside Settings, and on onboarding. The first attempt showed sticky notices covering the activity heading and overlapping the Settings panel on a phone; both were fixed before this entry. |
-| `npm run test:rules` | Not run: the emulator download is blocked from this workspace, and this package does not touch rules. |
+| **Findings** | D03, D05, D08 for Units 25–36; D11 (several kinds of episode: the first listening checks, alongside playing and making); none closed until reviewed on a guitar |
+| **Engine** | An **exact-answer listening check** for lessons whose check is listening (Units 30 and 34). The examples play with no notes shown; the learner chooses an answer and sees at once whether it was right and why. When the set ends, every answer is recorded together as exact-answer evidence against the unit's activity, which the set completes only if every answer was right; the set is one lesson attempt the app marked (all right is a success, at least half partial), kept to values older builds accept (A19). Each run shuffles the examples and choices, and a run after the answers were shown that day is practice with help. Hearing the lesson's version again marks later answers as hinted. Answer keys travel in the shell catalogue so validation checks recorded answers on any device, and question versions start at 2 so builds that predate lesson questions accept them without a sync error (A19). The validator requires at least three questions with two different right answers, refuses vibrato on an open string, keeps the examples out of sight before the check, and refuses questions on other lessons |
+| **Content** | Twelve draft lessons, Units 25–36 (`stage5.ts`, `stage6.ts`): Low Road's riff as single notes with a pull-off and hammer-on, locked to the power chords; Night Market's sixteenth groove; bends to a fretted target, at the 7th fret first, with vibrato on a fretted note; developing a riff one dimension at a time; the boogie shuffle and improvising with three notes; three feels, one motif (listening); bass walks between I, IV and V; E- and A-shape barres, major and minor, and the soul loop; blues sevenths with major and minor pentatonic; major, Mixolydian, natural minor or Dorian (listening); the borrowed iv; slide-ins and chromatic passing notes. Pieces: *Night Market* (Em7 bounce and stabs, the sixteenth groove where A7 turns E minor into E Dorian, a riff that answers the chords, a break, slide-ins; the Stage 5 capstone), *Two Rivers* (A Mixolydian and A Dorian, with melodies that lean on ♭7 and on the natural 6), *Glasshouse* (A-shape barres and F to Fm), and new layers for *Low Road* (single-note riff, A A A′ B), *Front Step* (boogie, E7/A7/B7 in shuffle, the calls in shuffle, a solo chorus; the Stage 6 capstone of three shuffle choruses), *Porch Light* (bass walks) and *Sunday Glide* (slide-ins and ghosts) |
+| **Budgets** | Guest entry 418.6 KiB (420 KiB): the answer keys and twelve catalogue entries cost about 6 KiB. Offline shell 1297.1 KiB with Firebase-length configuration (1300 KiB, A16). Lesson packs: stages 1–6 between 144 and 159 KiB each. Batch 4 cannot fit both budgets without either moving shell-side data or revisiting the thresholds with evidence (Next package) |
+| **Migration impact** | Additive. Exact-answer evidence for lesson questions uses fields the evidence format and rules already allow; versions from 2 keep older builds quiet (A19). A listening set's lesson attempt keeps `method: "self-reported"` and adds an optional `checkedAnswers`, which older builds ignore; the Batch 2 build and the live site were run against the new records and accept them. No rules change |
 
-Mutation checks: each defect was reintroduced on its own.
+**Verification (local, before review).** 605 unit/interface tests across 70 files; lint; format against `origin/main`; production build; budgets. New tests: every Batch 3 lesson's and piece's verbal claims against its notes (accents and kicks by tick, legato direction, the groove's hit positions and the notes Em7 and A7 share, bend targets, development one dimension at a time, the boogie's intervals, the three-note answers and the empty fourth bars, the feels, the walks, the barre built from G5, the licks' degrees, each mode example's characteristic note, the F-to-Fm move, slide-ins and the passing note, the riff in the groove's gap, the break, the shuffle form and the solo's bends); the listening check, its evidence and its compatibility with builds that predate it. Browser: 124 desktop/phone checks passed (4 production-only skipped), including new journeys for the Unit 30 listening check at 320px, the Unit 33 lesson ending in *Front Step*, both capstones from the course map, and axe WCAG 2.2 A/AA scans of the listening check, *Night Market* and *Glasshouse* in both themes. Both production offline journeys passed against a Firebase-configured build. **Not verified:** anything on a guitar or by ear, Firebase rules (unchanged; CI), real phones.
 
-| Defect reintroduced | Tests that failed |
-| --- | --- |
-| Dialogs never host notices | 3 rendered tests; activity-failure journey (both viewports) |
-| Page notices never step aside | 2 rendered tests; activity-failure journey (both), which counts one alert |
-| Onboarding without notices | unreadable-workspace journey (both) |
-| Record line trusts `save.status` | unrelated-save test |
-| Superseded write counts as durable | existing `save.test.ts` superseded-success test |
-| "The evidence is saved" copy restored | rendered retry test; activity-failure journey (both) |
-| Draft does not hold updates | draft update-hold test |
-| Record line ignores an unreadable workspace | unreadable-workspace record test |
-| Durable status not scoped to its workspace | workspace-switch test |
-| Durable ids read from current state rather than from the write | none: equivalent in practice, because a newer save always supersedes the older one |
+**Independent review (24–25 October).** A fresh-context reviewer dumped every new or changed score with the repository's builder, compared them with every claim, read the engine, and ran the Batch 2 build's and the live site's validators against listening records ([record](reviews/2026-10-25-batch-3-review.md)). There were four blocking findings:
 
-### Limitations
+- vibrato written on open strings;
+- Unit 30's straight and swung examples differing only in four hammered notes the synth barely marks;
+- a retry straight after the answers were shown being recorded as unaided evidence;
+- the *Night Market* riff placed on the wrong count.
 
-- Notices move into a dialog only if its owner opts in through the app
-  shell's context. Both current dialogs do, and a future dialog added outside
-  the shell would not.
-- On a phone, a failure notice at the top of a long activity scrolls away with
-  the content, as it does on the page. The record's own status line repeats the
-  outcome where the learner is looking.
-- The Settings "Backup restored …" and cloud messages are unchanged. They report
-  operations that do complete before the message is set.
-- Screen-reader announcement order has not been checked with a real screen
-  reader.
+There were thirteen should-fix findings:
 
----
+- one right answer completed a listening activity;
+- the set's attempt used a method older builds refuse, so a rollback would have left a workspace unreadable;
+- Unit 34's examples were answerable from the third and the root motion, with no natural minor;
+- the Stage 6 capstone mixed a straight part with shuffle parts;
+- the break's riff, the A-minor bend, the bends taught first near the nut, one slide where two were promised, "one fret higher", unexplained walk fingerings, the unrouted Unit 4 wording and untaught minor barres.
 
-## Phase 2A-3 — the phone layout and learner-facing copy
+All were fixed, and so were twelve minor findings. Units 5 and 12 keep their capstone endings; the parts list them as practice. After the fixes: 610 unit/interface tests across 70 files; lint; format against `origin/main`; build; budgets (guest 418.6 KiB, shell 1297.1 KiB); the full browser suite (124 passed, 4 production-only skipped); both production offline journeys against a Firebase-configured build; the reviewer's mixed-version script against both older builds. **Mutation checks**, each failing only its own tests:
 
-Verified locally 17 September 2026. Findings: **B11** (mobile settings and
-new-sketch collision; cramped Learn tabs) and **B17** (internal version copy),
-plus a B02 gap on phones found while reproducing B11.
+- vibrato allowed on an open string;
+- set completion ignored;
+- no reshuffle on retry;
+- a retry not marked as helped;
+- today's answers ignored after a reload;
+- answers recorded one at a time;
+- the attempt's method set to `exact-answer`;
+- `checkedAnswers` unchecked;
+- the riff restored to the break;
+- one slide per bar.
 
-### What was wrong (reproduced before changing anything)
-
-The screens were measured at 320×640, 390×844, 640×360 (a 1280×720 laptop at
-200% zoom) and 320×256.
-
-- **The floating settings button covered controls.** The ⚙ button was fixed
-  to the top right on phones and sat on top of Create's "+" new-sketch button,
-  the Strengthen tab, and the Explore and Play headings. It floated over
-  whatever was scrolled beneath it.
-- **The Learn tabs were cramped.** On phones each tab squeezed a 0.55rem
-  (8.8px) purpose line under its label, and at 390px the Strengthen label ran
-  under the settings button.
-- **Create overflowed at 320px.** The chord track header could not wrap, so its
-  "Add a chord…" select pushed the page 42px wider than the screen.
-- **Phones had no local save status.** The quiet save indicator lived only in
-  the desktop sidebar, which is hidden on phones, so its half of the 1A save
-  contract never appeared there.
-- **Internal language reached learners (B17):**
-  - the page title "Guitar Academy V8"
-  - the onboarding "A clean V8 beginning" and "Guitar Academy V8" mark
-  - the sidebar "Musical freedom · V8"
-  - backup errors saying "not a supported Guitar Academy V8 backup/archive"
-  - on builds without sync: "Firebase connection required", "Add the Firebase
-    web configuration to `.env.local`", "Cloud sync is ready for Firebase
-    configuration" and "Firebase is not configured yet"
-
-### What changed
-
-- **An in-flow top bar on phones replaces the floating button.** It holds the
-  brand, the local save indicator and a labelled Settings button (at least
-  44px). Because it scrolls with the page, nothing can sit on top of the page's
-  controls. The brand name hides below 380px, leaving the mark.
-- **Learn tabs on phones show their labels only.** The purpose line stays in
-  each tab's accessible name but no longer squeezes onto the screen. Tabs are
-  at least 44px tall.
-- **Create no longer overflows.** The chord track header wraps, the select is
-  capped at the container width, and headings break long words rather than
-  widening the page.
-- **Short screens get a compact bottom navigation.** When the height is at most
-  500px (for example a laptop at 200% zoom), the navigation shrinks from about
-  72px to 52px, and the page's bottom padding and Free Play's sticky footer
-  follow it.
-- **Copy.** The title and onboarding now say "Guitar Academy" and "Welcome to
-  Guitar Academy". Two onboarding promises were claims the app could not
-  always keep, so they now match what it does:
-  - "25-minute sessions" → "Sessions sized to your time"
-  - "Offline and synchronised" → a line that depends on whether sync exists
-    in the build
-
-  Settings no longer claims progress "synchronises after sign-in" when sync is
-  not set up. Its messages and errors now use learner language, for example
-  "Sync is not set up", or "Sharing recordings is not set up in this copy",
-  now separate from "Sign in before sharing a take". Backup errors read "This
-  file is not a Guitar Academy backup this version can read."
-- **Diagnostics are kept in Settings → About this app.** It shows the version
-  (from `package.json` through a Vite `define`), build mode, whether sync is
-  configured and why, and whether the window is installed or a browser tab.
-
-### Verification
-
-| Check | Result |
-| --- | --- |
-| `npm run build` | Passed; 14 precache entries, 1036.35 KiB. |
-| `npm test` | 238 tests passed (no unit tests changed; this package is layout and copy). |
-| Browser journeys | 54 passed on desktop Chromium and Pixel 7 emulation. New: a phone-layout journey at 320×640, 390×844 and 640×360 across Continue, Course map, Strengthen, Play, Create (empty and with a long sketch name), Explore and Settings. On every screen it checks that there is no horizontal overflow and no control under the Settings button, that the last control scrolls clear of the bottom navigation, and that Learn tabs are at least 44px, unclipped and at least 12px text. It also checks that the save status is visible and that no learner-visible text matches `V<digit>`, `.env`, Firebase, IndexedDB or localStorage. That copy check now also runs on every journey's home screen at both viewports, and a new journey checks that About this app shows the version. |
-| Visual check | Before and after screenshots at the four sizes, and About this app on desktop. |
-
-Mutation checks: each defect was reintroduced on its own.
-
-| Defect reintroduced | Tests that failed |
-| --- | --- |
-| Settings button fixed over the page again | phone journey (both projects) |
-| Learn tab purpose text squeezed back onto phones | phone journey (both) |
-| Chord track header cannot wrap | small-phone journey (both) |
-| "A clean V8 beginning" restored | phone journey (both) |
-| "Guitar Academy V8" title restored | phone journey (both) |
-| "Firebase connection required" restored | phone journey (both) |
-| No bottom clearance for the navigation | phone journey (both) |
-| Save status removed from the phone top bar | phone journey (both) |
-| "Musical freedom · V8" restored in the sidebar | desktop navigation journey |
-| Version removed from About this app | About journey (both) |
-
-### Limitations
-
-- Emulated only. Real Pixel rendering, the on-screen keyboard over inputs,
-  safe-area insets and browser-level zoom rather than a reduced viewport are
-  not tested. B32 remains for Phase 7.
-- Small text elsewhere is untouched: the bottom navigation labels (0.58rem) and
-  the top bar's save status (0.6rem) are below 10px. That belongs with
-  contrast and typography in 2A-4, not here.
-- Two things seen but left alone: in Settings the "Reduce interface motion"
-  checkbox sits apart from its label, and the onboarding claims "48 connected
-  units". Both are out of scope: the first is a layout detail for 2A-4, and
-  the second is curriculum copy that Phase 3 revisits.
-- The version comes from `package.json` (0.8.0) and does not identify a
-  specific build. A commit hash would need the release workflow to supply one.
+CI on the PR runs the rules suite.
 
 ---
-
-## Release attempt, 17 September 2026 — first CI run, and a project with no Storage
-
-George committed 2B-1 to 2A-3 as `c514a47` on `codex/public-hardening`, merged it
-into `main` as `601fec9`, and ran the publisher. It pushed and triggered the live
-workflow.
-
-### First CI evidence
-
-On GitHub (Node 22, Temurin 21), runs 35226754514 and 35226754904 passed:
-
-- `test:coverage`
-- the desktop and Pixel 7 browser journeys
-- `test:rules` against the emulators
-- the Firebase-enabled build
-- the release-head check
-
-This is the first CI execution of anything since 1A. **B21 is verified in CI**
-for this revision, and B31's rules evidence now exists in CI as well as
-locally.
-
-### Why nothing deployed
-
-1. **The first failure was a permission error.** "Deploy tested Firestore and
-   Storage rules" got a 403 on `firebasestorage.defaultBucket.get`. The GitHub
-   deploy service account had only Hosting roles. George added **Firebase Rules
-   Admin** and **Cloud Storage for Firebase Viewer**.
-2. **The rerun reached the real problem:** "Firebase Storage has not been set up
-   on project 'learn-the-guitar'." Both failures happened before any rules
-   release, so live rules and hosting were unchanged.
-3. **The August merge had also failed.** Its run, 31817680675, failed, so the
-   live site was still July's "v8 curriculum" build. bb8e04c's rule hardening
-   had never gone live either.
-
-Cross-device take sharing had therefore never worked live. The app offered a
-"Share this take across devices" button because a bucket *name* was configured,
-but no bucket existed. New default buckets require the Blaze plan (Firebase FAQ
-on the September 2024 Storage changes).
-
-### Decision (George, 17 September 2026): deploy without Storage
-
-- **Sharing is an explicit opt-in.** `cloud.tsx` creates Storage only when
-  `VITE_RECORDING_SHARING=enabled` *and* a bucket name is set, and exposes
-  `sharingAvailable`. Create offers no share or remove control without it.
-  Settings says "Recordings never leave this device", and About this app
-  reports that recording sharing is not enabled.
-- **The live workflow deploys `firestore:rules` only.** It adds `storage` when
-  the repository variable `VITE_RECORDING_SHARING` is `enabled`. Both workflows
-  pass that variable to the build.
-- **Docs updated.** `.env.example`, `PUBLISHING.md` and the Pixel setup guide now
-  describe the opt-in, the Blaze requirement, the US-only always-free regions,
-  and the service-account roles.
-- **Tests.** Rendered tests check that a bucket name alone does not enable
-  sharing, that the finished-take control appears only when sharing is
-  available, and that the workflow adds storage rules only under the variable.
-  Each was mutation-checked by re-enabling sharing from the bucket name,
-  ungating the button, and making storage unconditional.
-- **Local verification.** Build passed (1023.35 KiB precache; the disabled
-  Storage path is now dropped from the build). 244 unit and interface tests and
-  54 browser journeys passed.
-
-### Still to do for this release
-
-- Commit and push. The live run must still pass "Deploy tested security rules"
-  with Firestore only, then Hosting.
-- Watch the first live load. This deploy takes the site from July to Phase 2A-3
-  in one step, including the Firestore rules written since August. The rules
-  tests include pre-change records, but George's real account data has not been
-  exercised against them.
-- **Cloud Storage for Firebase Viewer** is no longer needed while storage rules
-  are not deployed, and can be removed to keep the deploy account minimal.
-- CI warnings to address with B30: several pinned actions still target Node 20,
-  and `setup-java` v4 is deprecated.
-
----
-
-## Live at last, and what the live site showed (17–18 September 2026)
-
-Run 35231938517 deployed `3298963`. Every step passed, including the browser
-journeys, the rules tests and, for the first time, "Deploy tested security
-rules" (Firestore only) and Hosting. https://learn-the-guitar.web.app serves the
-new build: its title is "Guitar Academy" and its bundle is `index-DDRljqpO.js`.
-
-### Verified on the live site
-
-Checked from a separate browser, against the real deployment:
-
-| Check | Result |
-| --- | --- |
-| `/sw.js` cache header | `Cache-Control: no-cache`. **B20 is verified live**, on the filename the build actually emits. |
-| Security headers | CSP, `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` are present on the page, the worker and the manifest. |
-| Page cache header | `/` is served `max-age=3600`. The worker serves navigations from its precache, so this does not delay an update, but an hour of browser caching on the shell is worth revisiting with B19. |
-
-### The CSP blocks Google sign-in (found live, not by any test)
-
-August's hardening added a Content-Security-Policy that had never been deployed
-until today. Firebase Auth's popup flow needs two things the policy forbids:
-
-- `https://apis.google.com/js/api.js`, the loader the SDK injects — blocked by
-  `script-src-elem`.
-- an iframe on the auth domain, `https://learn-the-guitar.firebaseapp.com` —
-  blocked by `frame-src`.
-
-Both were confirmed on the live page by loading each resource and catching the
-`securitypolicyviolation` events. `VITE_FIREBASE_AUTH_DOMAIN` is
-`learn-the-guitar.firebaseapp.com`, so the iframe host is that project domain.
-Signing in again would fail. An existing signed-in session keeps working:
-token refresh and Firestore both use `*.googleapis.com`, which the policy allows.
-
-No test caught this. The rules tests use the emulator, the browser journeys never
-sign in to a real account, and nothing asserted the policy against Firebase
-Auth's requirements. `hosting.test.ts` now checks that the policy admits the
-Google API loader, the auth domain's iframe and the token endpoints; each
-assertion fails against the deployed policy.
-
-**Prepared for the next release:** `firebase.json` adds those two hosts, and
-nothing else. A deploy is needed before sign-in works again.
-
-### Also corrected
-
-The publisher and `PUBLISHING.md` still said the phone reloads itself when an
-update arrives. Since 1D it does not: the app offers the update and waits (B03).
-Both now say so, and note the one exception — a build older than 1D cannot ask,
-so the first update from July's build only takes effect once every window is
-closed and reopened.
-
----
-
-## Sign-in policy fix, verified live (18 September 2026)
-
-Run 35337753164 deployed `4cb8bc1`. The live policy now reads
-`script-src ... https://apis.google.com ...` and
-`frame-src https://learn-the-guitar.firebaseapp.com https://www.google.com`.
-Checked from a separate browser against the live site: the Google API loader
-loads (`window.gapi` is an object), the auth domain's iframe loads, and no
-`securitypolicyviolation` events fire. Before the deploy the same check
-reported both as blocked.
-
-**A header change does not reach a device until that device applies the
-update.** The first check after this deploy still reported the old policy: the
-service worker was serving the cached page, and a cached response carries the
-headers it was stored with. Unregistering the worker and reloading showed the
-new policy immediately. So for any header or CSP change:
-
-- a returning learner keeps the old headers until the new build is applied;
-- `/` is served `max-age=3600`, so an uncontrolled browser can hold the old
-  headers for up to an hour as well;
-- a header fix cannot be assumed live from the deploy alone — check it from a
-  browser that is not running the previous worker.
-
-Sign-in with a real Google account has still not been exercised; that needs
-George's account.
-
----
-
-## Commit status
-
-**Superseded 17 September 2026:** 2B-1 to 2A-3 were committed as `c514a47` and merged to `main` as `601fec9`; see the release attempt above. The paragraphs below record the situation before that.
-
-Nothing had been committed since `d0cf81d` (1E, 14 September). 2B-1, 2B-2,
-2A-1, 2A-2 and 2A-3 are all in the working tree on `codex/public-hardening`. The shell
-on George's Mac was unavailable in the session that did 2A-1 to 2A-3, so they
-were built and verified on a copy and written back file by file.
-
-Several files carry changes from more than one package (`SettingsPanel.tsx`,
-`App.tsx`, `store.tsx`, `app.css`, the browser spec). Committing each package
-separately would mean inventing intermediate states that were never built or
-tested. The honest options are one commit naming all five packages, or two:
-2B-1+2B-2, then 2A-1 to 2A-3. The latter split is also only approximate for
-`SettingsPanel.tsx`. The earlier `.gitignore` and `scripts/publish-live.sh`
-changes are still waiting for George's review and must stay out; stage paths
-explicitly. Nothing has been pushed or deployed.
-
-**Publisher, 17 September 2026.** George ran `PUBLISH_LIVE.command` from
-`codex/public-hardening`. `publish-live.sh` correctly refused, because
-publishing is only allowed from `main`, so nothing was committed, pushed or
-deployed. The wrapper then failed with `read-only variable: status`, because zsh
-reserves `status`. That aborted the window before it could report the outcome or
-wait for Return. The variable is now `publish_status`, checked under zsh with
-both a failing and a succeeding step.
-
-Publishing this work needs three things. First, commit it on the branch. Then
-merge it into `main`, which is a clean merge because `main`'s tree equals
-`6d4e5bf`, the base these commits build on. Finally, run the publisher, which
-also runs `test:rules` and so needs Java 21 on the path it sets (Homebrew's
-`openjdk@21`); the Java that 2B-1 downloaded lives only in `.local-recovery/`.
-The pending root `.gitignore` change is what keeps `.local-recovery/` (a JDK
-download, logs, `firebase-config/`, `phase-01-start/`) out of a public commit.
-It must be kept before anything runs `git add -A`, which the publisher does.
 
 ## Next package
 
-**Phase 2A-4: contrast, legibility and automated accessibility checks (B12,
-B15).** Measure text, control and focus contrast against WCAG AA in both
-themes. Keep the palette and adjust colour roles. Include the sub-10px bottom
-navigation labels and top-bar status, and the Settings motion checkbox layout.
-Add axe (or an equivalent) to the browser journeys for the core screens and
-dialogs, and record a manual keyboard and screen-reader pass.
+**First, George:** merge the open pull requests in order, each only once its CI is green: #6 (Package 0), #7 (Package 1), #8 (Package 2), #9 (Package 3), #10 (Package 4), #11 (Batch 1), #12 (Batch 2), then #13 (Batch 3). Merging publishes (decision R3). After #6 merges, the three `codex/*` branches can be deleted (decision A1).
 
-Then 2A-5, fonts (B16).
+**Next agent package: Package 8 — Batch 4, Units 37–48 (Stages 7–8),** on a new branch `phase6/batch-4-units-37-48` stacked on #13. Per map §3, §6 and §7:
 
----
+- **Budget first.** Guest entry 418.6 of 420 KiB; offline shell 1297.1 of 1300 KiB (A16). Batches 2 and 3 added about 18 KiB to the shell between them, more than A16's estimate of 15 KiB for Batches 2–4, so twelve more catalogue entries, two pieces' entries, a few checklist items and a reflection check will not fit as things stand. Measure what grows in the guest entry and the shell (the source map explorer, or a by-module size dump of the build). Then either move descriptive text the course map does not show before a lesson opens out of the shell catalogues, or record a decision that revises A16 and the guest budget with the measured cost of a slow first download. Do not push the checklist or catalogue into lesson packs (A16's alternatives).
+- **Engine:** a **reflection check** for the `reflection` units (46 "revise with intention", 48 "design your next path"): the learner compares a before and an after (two recordings or two sketches) and names one change, with evidence that links both artifacts and stays a self-report. Stage 7's capstone *Tide Table* and Stage 8's *Your Own Tune* are **made in Create** (A18's capstone making step, extended to a given A section the learner adds a B section to, and to a sketch with two or more sections, an intro and an ending). Unit 43 (transcribe a fingerprint) is an exact-answer listening check over an agent-authored original phrase until *Bring your own music* exists (Package 10). Its questions are rhythm first, then contour, then notes, and start at version 2 (A19).
+- **Pieces:** *Tide Table* (new; the given A section: fingerpicked D with Dsus2 and Dsus4 hammer-ons and pull-offs), *Your Own Tune* (the learner's; seeded from Unit 44's transformation), and new layers for *Harbour Song* (harmonic rhythm, Unit 37; the descending bass with F as 1x3211, Unit 41), *Porch Light* (the bridge, hammer-ons and let-ring left over from Batch 3, Unit 38), *Lantern* (the motif family and two reharmonisations, Units 39 and 45), *Glasshouse* (two guitar parts, Unit 42) and *Two Rivers*' A/B form as Unit 40's worked example. The Stage 8 capstone's three-piece set plays three favourites in turn.
+- **Carried over from the Batch 3 review:** Unit 14's exact-answer degree check (the listening check now exists for it), and Unit 29's improvising over the whole 12-bar, if either fits without crowding Batch 4; otherwise Package 9.
+- **Then** twelve lessons per map §3, their claim and correspondence tests, browser journeys (one episode per stage, both capstones, the reflection check), accessibility scans, budgets, the independent review and the batch review record.
 
-## Phase 2B-3 — lint, format and coverage visibility (23 September 2026)
+**After Batch 4: Package 8A, easy practice** (added to the brief by George on 25 October): one-tap Practice with a length choice, "Just play" for low-energy days, an optional comfortable / about right / a stretch read that adjusts pacing and is never evidence, and Free Play learning from what he plays and skips. It has its own branch, PR and release before Package 9, and may start earlier if a session finishes a batch with time to spare. Its done-when list also requires the shell and guest budgets to hold, which is one more reason to settle the budget step at the start of Batch 4.
 
-**Status: verified locally; CI and live release not verified here.** This
-package addresses the lint/format/coverage portion of B23. Phase 2A-4 and
-2A-5 were completed separately; their evidence is in the linked review notes
-from the implementation plan.
-
-ESLint now checks all current TypeScript source with recommended JavaScript and
-TypeScript rules. The save, restore, sync, cloud, validation, identity and
-update modules receive additional type-aware checks for floating and misused
-promises and unsafe assignments. The initial findings were fixed in the
-affected files. Prettier checks a small adopted set plus newly added app files;
-legacy files are intentionally not reformatted as a whole. Both Firebase
-Hosting workflows run lint and format checks before their existing tests and
-build. The local publisher runs lint, format and coverage checks before it can
-commit or push. Coverage is reported without a global percentage threshold.
-
-| Check | Result |
-| --- | --- |
-| `npm run lint` | Passed. A deliberately dropped promise in a critical file failed the rule in a temporary mutation check. |
-| `npm run format:check` | Passed. A deliberately unformatted new file failed the gate in a temporary mutation check. |
-| `npm run test:coverage` | 247 tests in 32 files passed; 69.41% statements, 55.96% branches and 77.64% lines overall. `cloud.tsx` remains comparatively weak at 57.87% lines. |
-| `npm run test:e2e` | 60 desktop and phone browser checks passed. |
-| `npm run build` | Passed; the existing large Firebase chunk warning remains. |
-| Workflow and diff review | Both workflow files parsed as YAML; lint/format steps precede tests; `git diff --check` passed. |
-
-The changes were included in `11b22a1` on `main` by a separate publisher run
-while the browser suite was running. This session did not run the publisher or
-push. The checkout was clean and tracked `origin/main` after that commit. A
-GitHub run query was inconclusive: one query returned no run for that commit,
-and a later query could not reach `api.github.com`. CI and live behaviour are
-therefore not claimed as verified by this entry.
-
-**Next:** finish Phase 2B guest-loading and offline-cache work (B18/B19), then
-reconcile the remaining development advisories (B30). The manual keyboard,
-screen-reader and real-phone checks from Phase 2A remain open. Do not treat
-coverage percentages or browser emulation as proof of those experiences.
-
----
-
-## Phase 2B-4 — defer account code on guest startup (23 September 2026)
-
-**Status: verified locally for the startup module graph; offline-cache transfer
-remains open under B19.** The app now uses a small cloud facade for guests.
-Firebase and account sync load only after sign-in is prepared, when a retained
-account hint exists, or when a one-time check finds an account workspace or
-earlier guest learning from an older installation. The hint is only a loading choice: Firebase still
-verifies the account, and guest/account workspaces remain separate.
-
-The first guest sign-in is deliberately two taps: **Prepare Google sign-in**
-loads the SDK, then **Open Google sign-in** opens the existing popup from a new
-user gesture. This avoids relying on popup permission surviving an asynchronous
-download. Redirect sign-in was considered and rejected for this package:
-Firebase's guidance requires additional domain setup for `web.app` hosting.
-An account restored on this device opens the SDK automatically; a signed-out
-guest no longer pays that load on later visits. The facade also owns the guest
-connection notice so going offline still remains visible without Firebase.
-
-| Check | Result |
-| --- | --- |
-| `npm run test:coverage` | 253 tests in 33 files passed; 69.50% statements, 55.71% branches, 77.77% lines. |
-| `npm run lint` and `npm run format:check` | Passed. |
-| Firebase-configured production build and `npm run check:guest-bundle` | Passed with non-secret placeholder configuration. The initial static graph contains two JavaScript files and no cloud or Firebase chunk. The deferred account chunk imports Firebase. |
-| Browser journeys | 58 of 60 passed initially; the two offline-notice failures were fixed and both then passed. Welcome and automated accessibility journeys also passed after the last copy change. |
-| Account boundary tests | A new guest does not import the account module; first sign-in prepares it, then popup opening occurs on the next click; a retained account or pre-hint workspace/guest history loads it. Existing restore and sync provider tests pass through the facade. |
-
-The configured build's entry graph is **372.6 KiB uncompressed**; Firebase is a
-deferred **594.8 KiB uncompressed** chunk. These are bundle file sizes, not a
-measured mobile transfer or time-to-interaction improvement. The current PWA
-service worker still precaches all JavaScript: **19 entries, 1108.36 KiB**,
-including cloud and Firebase. That preserves a returning signed-in learner's
-offline startup after an update, but means the browser may still download
-account code in the background. B19 must design and verify a smaller cache
-without hiding signed-in offline work. Real Google sign-in, installed-PWA
-updates, physical-phone behavior and CI remain unverified here.
-
-**Next:** B19 startup transfer/offline-cache policy, including a safe account
-offline path, then remaining development dependency advisories (B30).
-
----
-
-## Phase 2B-5 — deliberate offline shell and selected-unit readiness (23 September 2026)
-
-**Status: verified locally in a production preview; not verified on an installed
-Pixel or with a real signed-in account.** B19's cache policy is now an explicit
-allowlist of app code, styles, fonts, font notices and install icons. All built
-JavaScript remains precached, including the deferred cloud and Firebase chunks.
-Dropping those chunks without a version-safe replacement would hide a retained
-account workspace after an update while offline. No separate lesson media
-exists today: curriculum text is bundled and lesson sounds are synthesised in
-the browser. Future demonstration files belong under `lesson-media/` and must
-be fetched for a selected lesson rather than entering the install-time shell.
-The build gate rejects any unexpected precache URL, missing app asset or
-duplicate entry, with review thresholds of 420 KiB for the guest entry graph
-and 1280 KiB for the full raw shell.
-
-The selected unit in Course map now reports offline readiness only after it
-finds the current page's index, entry script and stylesheet together in an
-installed precache. A stale cache does not earn a ready label. The status
-claims the unit's activities and built-in sounds, not downloaded recordings or
-future demonstration media. On a browser without offline downloads it says so.
-The production-preview journey installs the worker, goes offline, reloads the
-unit and opens an activity at desktop and phone viewports. That journey and
-the shell gate are added to both Hosting workflows; the local publisher runs
-the shell gate too.
-
-| Measure | Result |
-| --- | --- |
-| Guest entry graph | 374.3 KiB uncompressed JavaScript; the account chunk remains deferred. |
-| Offline precache | 15 unique entries, 1110.2 KiB raw built files (1,136,893 bytes measured in Chromium CacheStorage); 381.7 KiB summed gzip estimates. The PWA plugin reports 1090.47 KiB, down from its prior 1108.36 KiB report after duplicate icon/manifest entries were removed. |
-| Local preview foreground first-page transfer | 191,232 bytes recorded by Chromium's Navigation and Resource Timing entries. This excludes background worker downloads and is a local-server measurement, not a mobile-network estimate. |
-| Verification | 256 unit/interface tests across 34 files, lint, format, build, guest/offline bundle gates, and two production-preview offline reload journeys passed. |
-
-The remaining B19 media work is conditional: when real demonstration assets
-are introduced in Phases 3 or 6, attach them to a unit, fetch/cache only that
-unit's selected assets, include those assets in the readiness check, and test
-eviction and interrupted downloads. Real Google sign-in, an installed-PWA
-update across versions, actual phone storage behavior and CI are still open.
-
-**Next:** reconcile remaining development dependency advisories (B30), then
-continue into Phase 3's teaching journey.
-
----
-
-## Phase 2B-6 — current dependency review and compatible repairs (23 September 2026)
-
-**Status: locally verified; seven moderate development-tool paths remain under
-documented review.** A fresh `npm audit` reported 10 moderate, zero high and
-zero critical paths. `npm audit --omit=dev` reported zero. All 10 paths came
-through the development-only Firebase CLI, not the shipped browser app.
-
-I tested two candidates in temporary lockfiles before changing the project:
-updating Firebase CLI to 15.30.2 alone left all 10 paths, whereas a non-forced
-compatible audit fix reduced them to seven. The committed lockfile change is
-limited to `firebase-tools` 15.27.0 → 15.30.2, `express` 4.22.2 → 4.22.3,
-`body-parser` 1.20.6 → 1.20.8 and `qs` 6.15.3 → 6.16.0. This removes the
-`qs` advisory paths, including [GHSA-4mjr-xmp4-gh2g](https://github.com/advisories/GHSA-4mjr-xmp4-gh2g)
-and [GHSA-x5fp-wj9c-mxmx](https://github.com/advisories/GHSA-x5fp-wj9c-mxmx),
-without adding overrides or changing app dependencies. The Firebase CLI
-15.30.2 [release](https://github.com/firebase/firebase-tools/releases/tag/v15.30.2)
-stays within this project's declared `^15.26.0` range.
-
-The seven remaining npm paths include three affected parent packages
-(`firebase-tools`, `@google-cloud/pubsub`, `gaxios`) and four root advisories:
-
-| Root package in Firebase CLI | Locked version | Upstream issue |
-| --- | --- | --- |
-| `@opentelemetry/core` | 1.30.1 | [Inbound baggage allocation; fixed in 2.8.0](https://github.com/advisories/GHSA-8988-4f7v-96qf) |
-| `csv-parse` | 5.6.0 | [Prototype replacement in duplicate columns; fixed in 7.0.2](https://github.com/advisories/GHSA-8cw4-87c7-c6xx) |
-| `stream-json` | 1.9.1 | [Deeply nested filter CPU exhaustion; fixed in 3.5.0](https://github.com/advisories/GHSA-528h-pc64-c93x) |
-| `uuid` | 9.0.1 | [Buffer bounds for v3/v5/v6; fixed in 11.1.1](https://github.com/advisories/GHSA-w5hq-g745-h8pq) |
-
-Firebase CLI 15.30.2 still declares `@google-cloud/pubsub ^5.2.0`,
-`csv-parse ^5.0.4`, `stream-json ^1.7.3` and `gaxios ^6.7.0`; their nested
-requirements retain the older OpenTelemetry and uuid versions. Forcing the
-patched major versions would bypass the CLI's declared compatibility. npm's
-`--force` suggestion instead downgrades the CLI to 10.1.1, so it was not
-applied. These reports are a development-tool watchlist, not a claim of zero
-remaining advisories; recheck them when Firebase CLI updates its dependency
-ranges. A newer advisory or changed exposure should be assessed afresh.
-
-| Verification after `npm ci` | Result |
-| --- | --- |
-| Live audit | Seven moderate paths; zero high/critical; production-only audit zero. |
-| Coverage, lint, formatting | 256 tests in 34 files passed; lint and formatting passed. |
-| Build and bundle gates | Production build, guest-startup graph and offline-shell checks passed. |
-| Firebase rules | 10 tests passed with Firebase CLI 15.30.2, Java 21 and local emulators. |
-| Browser | 60 desktop/phone checks passed, two production-only checks skipped in the development run; both passed against the production preview. |
-
-Node 26 on this Mac elicits an engine warning from `superstatic@10` (which
-declares Node 20, 22 or 24). The checked workflows use Node 22, and all local
-checks above passed; no claim is made about a live deployment or CI run of
-this lockfile.
-
-**Next:** Phase 3's complete teaching journey, with the manual accessibility
-and physical-phone checks still outstanding from Phase 2.
-
----
-
-## Phase 3A-1 — authored one-note pilot material (26 September 2026)
-
-**Status: first structured material and one visible lesson task, locally verified. Phase 3A and the Phase 3 gate remain open.**
-
-The first pilot is an open high-E rhythmic question and answer. Its two 4/4 bars at 60 BPM have explicit one-beat events: question **play, rest, play, rest**; answer **play, play, rest, play**. Each note is E4 on string 1, fret 0. A versioned material record owns tuning, tonal centre, tempo range, sections, durations, rests, note spelling, MIDI pitch and guitar position. Validation checks the event timeline, pitch/position agreement and section coverage. A separate versioned variation shifts the middle answer attack from count 2 to count 3 while preserving the other attacks and the pitch. Reviewed human-guitar reference media is modelled separately and remains empty.
-
-The episode definition names a learning objective, success criterion, three teaching moves, three specific obstacles with changed support, a variation and a later unaided check. These are authored content, not yet a functioning guided episode or evidence of mastery. Only the first unit's rhythm activity is connected to the phrase today: its instruction and visible two-bar count grid come from the pilot; the other early units keep their own tasks. The visible activity still uses self-reported outcomes, and the other activities in the first unit retain their legacy micro-study.
-
-Verification: 261 unit/interface tests across 35 files, typecheck and production build, lint, formatting, guest bundle and offline-shell gates passed. The new lesson journey passed in desktop and mobile Chromium at a 320px viewport, including the exact event order and no horizontal overflow. The guest entry graph is 379.4 KiB before compression, below its 420 KiB review threshold. No physical guitar review, independent learner test, real-phone check or deployed check has occurred.
-
-**Next:** persist the episode cursor and attempt identity with conservative legacy mapping; then build exact audio-clock playback and meaningful repair flows around this material. The Phase 3 gate remains unmet until the whole journey works and a learner can use it without outside coaching.
-
----
-
-## Phase 3A-2, 3B and 3C — first complete pilot journey (26 September 2026)
-
-**Status: implemented and locally verified; the Phase 3 human-learning and physical-review gate remains open.**
-
-The first unit's rhythm activity now opens a guided one-note question-and-answer lesson. Learn presents the exact two-bar phrase, its counts, high-E open-string tab and a small fretboard position. Practise alternates a synthesized example with learner bars. Try gives a four-click count-in, then removes the model sound, pulse, highlighted answer and tab until the learner asks to reveal the notes. The learner reports an outcome and one concrete observation; the app does not claim to hear, score or verify the playing. This pilot is also offered from Continue. The older activities, sketches and broad progress records remain accessible.
-
-A versioned local episode cursor keeps the current step, selected section, tempo, repair, assistance and stable attempt identity across reloads. Versioned pilot attempts and the constrained answer variation live in the device workspace and its exported backup. They are structurally validated on load/import and do not turn older broad activity evidence into pilot success. The first reported success also writes the existing rhythm activity evidence for compatibility, explicitly marked self-reported; granular pilot records are **not cloud-synced** between devices. A later check opens on a different local calendar day after the first reported success and saved variation. It uses the original phrase at 72 BPM and only counts toward the pilot's reported completion if the learner reports an unaided success. Starting over does not erase earlier attempts.
-
-One audio-clock transport schedules the count-in, clicks and notes from the same events used by the count, tab and fretboard. It supports 50, 60, 72 and 88 BPM, full or selected-bar playback, optional looping and immediate stop; legacy sounds pre-empt it rather than overlap. Backgrounding the tab stops playback. The three repair choices narrow the material and change the instruction for starting, stopping a ringing note and holding pulse through silence, then return to both bars. The learner can pause without claiming mastery. The final variation is a deliberately constrained rhythm change (answer attacks on 1, 3 and 4 instead of 1, 2 and 4), not a general composition editor.
-
-Optional microphone capture stays as a temporary object URL in the current tab. The learner can replay it beside the synthesized reference, download it or discard it; the pilot never uploads it. Leaving with an undownloaded take requires a choice. A failed microphone request leaves the lesson usable. Recording on a physical phone and successful positive capture have **not** yet been exercised. The reference is synthesized timing guidance, not a reviewed human guitar demonstration; the material remains marked `draft` and has no performed-reference asset.
-
-| Local verification | Result |
-| --- | --- |
-| Unit/interface tests | 268 passed across 37 files, including musical material, versioned progress, exact playback cues, audio-clock scheduling, interruption and cancellation. |
-| Browser journeys | 64 passed in desktop and mobile Chromium, including the repair/variation/resume journey at 320px, delayed unaided check, denied microphone, and automated accessibility scans in both themes. |
-| Production offline preview | Both desktop and mobile disconnected-reload journeys passed, opening and playing the pilot from the installed shell. Local first-page foreground transfer was 199,570 bytes; measured installed precache was 1,168,383 bytes. These are local Chromium measurements. |
-| Code and size checks | Typecheck/production build, lint, formatting, guest-bundle and offline-shell gates passed. Guest entry graph: 400.8 KiB raw JavaScript (420 KiB review threshold); shell: 1,141.0 KiB raw (1,280 KiB threshold). |
-
-To close the Phase 3 gate, a guitarist must check the note, string, count, muting action, hand instruction and three repair prompts at the actual instrument; an uncoached learner must try the start → hear → practise → repair → vary → return journey; and the installed app's audio, controls, storage and optional microphone must be checked on a real phone. Those observations may require changes. No CI, deployment or live-account claim is made here. Phase 4's software handoffs proceeded at the learner's request while that review remained pending.
-
----
-
-## Phase 4A–4D — connect the learning journey around the same music (28 September 2026)
-
-**Status: implemented and locally verified as a software journey; musical and real-device review remains open.** The Phase 3 guitar trial was deferred because the learner does not have a guitar at present. Browser actions that report playing are test simulations, not observations of a person playing.
-
-- **4A, Learn:** Continue keeps an editable personal musical goal and one fixed session plan through activities, detours, refreshes and returns. A changed duration offers an explicit new plan instead of silently replacing the active one. The first unit's guided playing slot now chooses its authored one-note episode. A short return session starts with a familiar activity after a gap; it requires a new attempt rather than treating an old success as today's recall. Learners can save familiar favourites. Completion reports only the learner's recorded attempts and offers a next musical action.
-- **4B, Explore:** The pilot opens an explanation of its exact selected phrase, tempo, note and open-string position, then returns to the same lesson step. The E–G♯–E versus E–G–E comparison changes 3 to ♭3 while retaining the root and rhythm, and is explicitly separate from the one-note rhythm lesson. The general explorer remains available below it. This exact contextual treatment currently covers the authored pilot; the legacy templated units await Phase 6 content work.
-- **4C, Create:** “Make an editable sketch” copies the pilot's actual note events, while Free Play carries its stored groove, riff, degree or chord guide and musical context into a new sketch. Six experiment intentions now produce musical changes only in valid domains: harmony, rhythm, common tone, one interval, two-semitone transposition and a related B section. Each offers a readable before/after preview, two sounds, confirmation and a revision that can restore the previous material and key. Common tones use a shared sounding guitar position in fingering-checked voicings. The guided transposition stays within frets 0–12; when that or another operation is unavailable, the app explains an alternative rather than claiming a change. The original pilot or Free Play guide stays audible beside the edited version. Source provenance lives in this device's workspace and backup; the current cloud sketch schema syncs the edited music but does not yet carry that provenance to another device.
-- **4D, Free Play:** Guides now have a four-click count-in and a stable beat grid, can repeat four times, and can optionally move at the end of the guide. Automatic movement is recorded as unreported, never as playing. Hiding the tab interrupts the guide rather than advancing from a stale timer. A promising fragment can move into Create during the flow or after its last prompt. Completion copy distinguishes marked-as-played, skipped and automatically passed prompts.
-
-The automated end-to-end journey sets a ten-minute session, completes one reported activity, detours from the pilot to Explore and back, records a simulated pilot attempt, reveals a Free Play variation, carries a groove to Create, changes an accent and reopens the same sourced sketch after refresh. Separate tests cover a pilot phrase copied to Create, reversible B-section creation, unchanged source material, all six transformation domains, the return-session recall rule, count-in loops, offline routes and mobile layouts.
-
-| Local verification | Result |
-| --- | --- |
-| Unit/interface tests | 279 passed across 39 files. |
-| Browser journeys | 74 passed on desktop and phone-sized Chromium; two production-only checks skipped in the development run. |
-| Built PWA offline | Two production-preview journeys passed on desktop and phone-sized Chromium, including a cold Free Play route after a disconnected reload. The final local preview measured 185,700 first-page foreground bytes and 1,203,267 installed precache bytes; these are local Chromium measurements, not phone-network estimates. |
-| Code and bundle checks | Typecheck/build, lint, formatting, guest-bundle and offline-shell gates passed. Guest entry graph: 346.3 KiB raw JavaScript; offline shell: 1,175.1 KiB raw. |
-| Firebase emulator rules | Attempted, but the current Mac environment has no Java runtime on its path, so no new emulator result is claimed. The last recorded emulator run was Phase 2B-6. |
-
-The software handoff gate has automated evidence. The learning gate still needs the deferred Phase 3 instrument review, an uncoached learner's complete journey, the installed app on a physical phone, actual audible timing and feel, and later recall with the guitar. No CI, deployment, live-account sync or cross-device provenance claim is made here. Those observations may change the design before Phase 5 and release.
-
----
-
-## Phase 5A-1 — honest evidence and first capability map (28 September 2026)
-
-**Status: first Phase 5 package implemented; Phase 5 and its assessment gate remain open.**
-
-The first authored episode now has a six-item capability catalogue that separates listening, naming, locating, timing and playing. Continue shows that the pilot's one whole-phrase outcome is a self-report about timing and playing, not separate checks of hearing, names or fretboard location. It keeps the episode and material version boundary, so a report for a changed version does not silently count as a current check. The granular pilot attempts remain device-local and in backups, not cloud-synchronised.
-
-Generic activity reports no longer become “Secure” or “Transfer-ready” after two days or a change of saved settings. All current generic outcomes are self-reported, so they remain practice history. An unaided reported success and the date of the latest attempt remain visible, while checked success days and verified contexts remain zero until a real assessment method exists. This is intentionally conservative and does not revoke completed course activities. A completed activity means the learner reported doing its action, not that its underlying physical skill was measured.
-
-Activity reports now ask optionally which key, guitar and tempo were actually used. These start blank; the app no longer copies Settings, the unit tempo or a suggested fret region into evidence as though those were attempted conditions. New evidence and pilot attempts store the learner-local calendar date at capture alongside the UTC timestamp; old records remain valid and use their UTC date as a stated fallback. Delayed pilot checks and return-session day gaps use the stored calendar date, avoiding a later timezone change reclassifying an old attempt. Strengthen ignores retracted observations, explains suggestions as reports, and gives a smaller changed-support step after a difficult report before returning to the musical activity.
-
-Local verification: 284 unit/interface tests across 40 files; typecheck/production build, lint, formatting, guest-bundle and offline-shell checks passed. Browser journeys: 76 passed on desktop and phone-sized Chromium; the two production-only checks were skipped in the development run. Firebase emulator rules have a new valid/invalid local-date test, but no Java runtime is installed here, so that rule has **not** been emulator-verified. No guitar performance, microphone measurement, physical-phone trial, independent learner trial, CI run or deployment is claimed.
-
-**Next:** add optional placement sampling; exact-answer checks tied to named capabilities and content versions; distinct measured-pitch evidence only after suitable signal and latency handling; actual changed-example transfer; structured recording comparison; and real-input trials. The broader Phase 5 gate remains open.
-
----
-
-## Phase 5B — first exact-answer checks and delayed conceptual recall (29 September 2026)
-
-**Status: four theory relationships implemented and locally verified; the wider Phase 5 assessment gate remains open.**
-
-Strengthen now offers an optional, initially folded-away check for an interval, scale degree, chord tone or Roman numeral. Each has two versioned examples drawn from the shared music-theory model, with changed notes, key or quality. The question and a non-answer-bearing hint are shown before submission; the answer and reasoning appear only afterward. These are written relationship checks. They do not play audio, listen to the learner, assess fretboard movement or complete a guitar-playing lesson.
-
-An answer record names the check, content version, chosen response, actual prompted key/mode, hint use, UTC timestamp and learner-local date. It carries the distinct `exact-answer` method; pilot and generic playing reports remain `self-reported`. The local validator checks the outcome against the answer for known question versions and rejects tampered current answers. A future question version may be retained through sync, but is not counted by this build. The Firestore rule admits only structurally complete exact-answer records and continues to reject unlabelled claims of measurement; it cannot itself calculate music-theory correctness. Older evidence records remain valid. A correction appends a retraction rather than rewriting an answer.
-
-A correct unaided answer on one day can make a changed example available in Continue on a later learner-local day. The app records when both were answered correctly without claiming broad mastery. Assisted answers, a repeated example on the same day, self-reported playing and future-version records cannot satisfy that recall condition. Failed later answers do not erase earlier correct work. Strengthen's playing recommendations remain based only on the playing-related strands, so a correct on-screen answer cannot masquerade as guitar skill.
-
-Local verification: 289 unit/interface tests across 41 files; build, lint, formatting, guest-bundle and offline-shell checks passed. The full browser run passed 78 desktop/phone-sized Chromium checks, with two production-only checks skipped in development mode. The Firebase emulator cases were extended for the new evidence shape, but this Mac still has no Java runtime, so the rules change is not emulator-verified here. No real guitar or microphone assessment was performed.
-
-**Next:** optional placement across sound control, ear, fretboard and chord knowledge; richer recall and transfer tied to actual changed examples; then microphone assessment and structured recording self-review with real-input trials. The checked-answer method must remain separate from any future measured-pitch or teacher-observed method.
-
----
-
-## Phase 5C — optional, capability-specific starting sample (29 September 2026)
-
-**Status: implemented locally; this is provisional placement, not a verified guitar assessment. Phase 5 remains open.**
-
-The first-run starting choice now offers an optional five-part sample, and the Course map lets a learner revisit it later. Pulse uses four audible clicks, four silent beats and a return click; the learner reports whether their taps met the return after it has played. Note release is a separate guitar-dependent self-report and can be left unanswered when no guitar is available. Neither report is measured. An ear comparison plays two note pairs and waits for the sequence to finish before enabling its answer. Fretboard and chord-tone items check one written relationship each without claiming the learner found or played it on the guitar. The sound check copy also now distinguishes starting playback from actually hearing it.
-
-The two new ear and two new fretboard items are versioned exact-answer records with real prompted key/context, using shared theory and standard-tuning models for their answers. The chord item reuses the existing versioned check. Responses, hint use and actual report dates enter the same validated, append-only evidence path as Phase 5B; old records still load. Each of the five domains has its own latest status. Missed or hinted concept answers produce a specific next action, while unanswered domains stay unknown rather than failed.
-
-The starting recommendation is deliberately conservative: Unit 3 is offered only when the learner reports both pulse and note release as successful; otherwise it offers Unit 1. A correct knowledge answer cannot substitute for sound or timing, and the sampler never automatically recommends Unit 7 or marks any skipped unit mastered. The learner can override the suggestion; changing the start from the Course map explicitly creates a new session plan without deleting prior work.
-
-**Verification:** 292 unit/interface tests across 42 files passed. Build, lint, formatting, guest-bundle and offline-shell checks passed. The full browser run passed 80 desktop/phone-sized Chromium checks; two production-only checks were skipped in development mode. The placement journey also checked that a guitar-free answer survives reload, that the pulse report waits for the return-click sequence, that opened samples do not cause sideways overflow, and that choosing Unit 3 changes the session while leaving course completion at zero. Browser clicks that report pulse or note release are simulations, not observed playing. This software flow has no measured timing, guitar audio analysis, physical-device validation or independent learner trial. The existing Firestore structural rule accepts these established evidence methods, but the emulator remains unavailable without Java. The Phase 5 assessment gate and instrument trial remain open.
-
-**Next:** assess sustained monophonic pitch with a clear unsuitable-signal/latency path; build structured recording self-review for tone, muting and phrasing; and test actual learning decisions with a guitar and an uncoached learner before considering any stronger readiness claim.
-
----
-
-## Phase 5D — optional sustained-note signal check (29 September 2026)
-
-**Status: a narrow microphone estimate is implemented locally; measured learning evidence and the Phase 5 gate remain open.**
-
-Strengthen now has an initially folded-away check for the open high E string in standard tuning. It listens only after an explicit tap, estimates one sustained fundamental over multiple frames, and closes the microphone after about two seconds or when stopped. Silence, clipping, unclear or changing input, and delayed or interrupted capture return an uncertain result with a specific retry suggestion. A stable pitch is described as a pitch-only estimate, including when it differs from the reference; it is not scored as technique, timing, release, tone, lesson completion or mastery. The waveform and result exist only during this screen's check and are not recorded, stored or uploaded. Audio setup failure after permission is granted now also stops the stream.
-
-The estimator has synthetic checks for a harmonic-rich E4, a nearby F4, silence, clipping, noise, two simultaneous notes, changing pitch and capture gaps. Browser checks on desktop and phone-sized Chromium cover permission denial and a simulated clean note; both leave course progress unchanged, the simulated microphone is stopped, and its result disappears on reload. A wider browser run exposed the new card overlapping the fixed phone navigation at the bottom of Strengthen. Additional bottom clearance corrected that at 320px, 390px and a short 200%-zoom viewport.
-
-**Verification:** 296 unit/interface tests across 43 files passed; 84 browser checks passed and two production-only checks were skipped in development mode. Build, lint, formatting, guest-bundle and offline-shell checks passed. The checks use generated signals and simulated browser input. No actual guitar, microphone hardware, physical phone, latency calibration, independent learner trial, CI run or deployment is claimed. No `measured-pitch` evidence method or progression rule was added, so existing self-reports and exact-answer records remain distinct. Firebase rules were unchanged and the emulator was not run.
-
-**Next:** try this narrow check with a real guitar and the installed phone app, including quiet rooms and noisy/weak input; revise the thresholds and wording from those observations. Only then consider versioned measured-pitch evidence. Separated attacks, short monophonic sequences and structured recording self-review remain separate Phase 5 work; none is implied by this sustained-pitch check.
-
-## Visual system — By George design language (29 September 2026)
-
-**Status: implemented and verified locally; needs device and learner review of the new visual hierarchy.**
-
-The current app now uses George's By George design system rather than its own dark-sidebar, rounded-card styling. `src/styles/tokens.css` holds every colour, face, size, weight, line-height, spacing step, width and duration; the other style files compose them by area (shell, Learn, activity, Play, Create, Explore, dialogs, motion) and `app.css` imports them in order. Three self-hosted OFL faces replace DM Sans and Instrument Serif: Libre Caslon Display names things, Newsreader carries reading text and IBM Plex Mono carries labels, controls, facts, tab and fret numbers. They are subset so the offline shell stays inside its existing 1280 KiB budget: Newsreader keeps Latin-1 for everything a learner reads or writes, while the display and mono faces keep ASCII plus the symbols the app sets in them (° · × ø, dashes, quotes). Music symbols fall back to the system serif as before.
-
-The shell is a paper header with the wordmark and a ruled mono navigation, plus a reference bar for key, instrument, session length and local save status. Phones keep the four destinations in a ruled bottom band. Surfaces are square, 1px-ruled panels with no shadows or gradients; selected states add an ink bar to a teal field so they never rely on colour alone. The Play prompt is the only dark ground. The fretboard is redrawn as a ruled chart with a heavy nut, heavier wound strings and square relationship tags whose labels now meet the 12px minimum. One bounded relationship palette (tonic, chord tone, selection, interval target) replaces the previous coral/blue/moss/gold mix, with a matching dark-theme set. No learning logic, data flow or copy was changed beyond removing decorative glyphs and giving the Play hand-cue, names and variation toggles a pressed state.
-
-Phase 5D's pitch-check card was merged in and restyled in the same system.
-
-**Verification:** 296 unit/interface tests across 43 files; build, lint, formatting, guest-bundle and offline-shell (1273.4 KiB) checks passed. The full browser run passed 84 desktop/phone-sized Chromium checks with two workers, including the WCAG 2.2 A/AA scans in both themes; the two production-only offline-shell checks and the font check also passed against a production preview. The long accessibility scan can exceed its 30-second timeout when four browser workers run at once; this happens identically on the previous commit and is not a style regression. Screens were reviewed at 1440px and 390px (320px spot-checked) in both themes.
-
-**Next:** decide whether the wordmark should carry the By George full stop; refresh the app icon, which still uses the previous palette; and consider a fretboard colour key beside the text legend.
-
----
-
-## Phase 5E — focused self-review after a temporary take (30 September 2026)
-
-**Status: implemented and locally verified as learner-authored reflection; the Phase 5 assessment gate remains open.**
-
-The pilot's existing reference-versus-temporary-take flow now offers a short written review after a take. The learner chooses one focus — phrasing, muting and release, physical ease, tone and touch, or musical intention — then records what they intended, one specific thing they noticed, and one change to test next. The physical-ease prompt explicitly says a recording cannot reveal tension. Saying that a detail could not be heard clearly is allowed; the app does not produce a score or treat the words as measured playing evidence. The review is versioned to the pilot material and marked `self-reported`. It is saved in this device workspace and its backup, separately from the temporary audio, and never changes course completion or readiness. Earlier reviews can be reopened in the pilot. A partly written review blocks ordinary lesson exit or a new take until saved or cleared; downloading or discarding the audio is still a separate choice.
-
-A reload test found an existing recovery defect: closing any activity stored an empty active-activity ID, but the stored-workspace validator rejected that ID on the next launch. Closing now writes `null`. Existing workspaces with exactly that old sentinel are normalized before validation, and both current and legacy backup formats receive the same narrow repair before staging. Other malformed workspace data still remains quarantined. This recovery belongs in this package because the new review's central promise is that its text survives reopening.
-
-**Verification:** 300 unit/interface tests across 43 files passed. The full browser run passed 86 desktop and phone-sized Chromium checks, with two production-only checks skipped in development mode; the review journey was rerun after the archive repair. The review browser check used a simulated temporary take at 320px, verified unfinished-draft protection, discarded the audio, saved the words, reloaded them, and confirmed course progress stayed at zero. A backup round-trip preserved the written review without a recording. Local and archive compatibility checks cover the old empty activity ID. Build, lint, formatting, guest-bundle and offline-shell checks passed. The browser recording and the text are synthetic test input; no real guitar, microphone hardware, physical phone, independent learner trial, CI run or deployment is claimed. No Firestore rule or cloud sync method changed; pilot reviews remain device-workspace data rather than cross-device evidence.
-
-**Next:** use a real take to judge whether the prompts lead to a useful next attempt, and review the sustained-pitch check on actual hardware. Separated attacks and short monophonic sequences need their own signal checks; neither should be inferred from this reflection or from one sustained pitch.
-
----
-
-## Phase 5F — take one self-chosen change back into the lesson (30 September 2026)
-
-**Status: implemented and locally verified as a practice route; the Phase 5 assessment gate remains open.**
-
-Strengthen now shows the latest written review for the current pilot and material version, including the learner's exact next change. Its suggested starting place follows the focus the learner selected, not analysis of the recording. A muting focus opens the pilot's authored one-sound/one-rest release exercise at 50 BPM, then offers a return to both bars. The card explains that this first-rest movement must be applied to the rest the learner actually noticed. Physical ease and tone start with the short question bar; phrasing and musical intention start with the full two-bar phrase. The existing tempo and section controls remain available. The chosen change stays visible during this practice route and can be revisited after closing the lesson. A new temporary take is optional; no audio is retained by this route.
-
-The link back to practice is stored as an optional review ID on the pilot cursor. Older workspaces remain valid, and reviews for a different episode or material version are not selected. The route neither records a successful attempt nor changes course completion, mastery or readiness. Its text says plainly that the change is the learner's own plan and has not been verified by a microphone.
-
-**Verification:** 302 unit/interface tests across 44 files passed. The full browser run passed 86 desktop and phone-sized Chromium checks, with two production-only checks skipped in development mode. The 320px recording-review journey saved and reloaded the written change, opened the release repair from Strengthen, returned to both bars and confirmed course progress stayed at zero. After adding a direct whole-phrase return for the short question-bar practice, the expanded review journey passed on both browser sizes with a second, tone-focused review. Build, lint, formatting, guest-bundle and offline-shell checks passed after that addition. The takes and reviews in the browser test are simulated. No real guitar, microphone hardware, physical phone, independent learner trial, CI run or deployment is claimed; Firebase rules and cloud sync were unchanged.
-
-**Next:** try the full review-to-retry route with a real take and check whether the learner's chosen change actually improves the next phrase. Review the sustained-pitch check on the installed phone with real input. Separated attacks and short sequences still need their own signal design and validation before any measured evidence or stronger assessment claim.
-
----
-
-## Phase 5G — bounded separated-note signal checks (30 September 2026)
-
-**Status: Phase 5's planned software paths are locally implemented; its real-input assessment gate remains open.**
-
-The optional microphone card now progresses from one sustained high E to two high-E plucks separated by silence and then to open E–G–E on the high string. The displayed minor-third relationship connects the sound to fret 3, and a synthesised pitch pattern can be heard before a check. The two newer checks estimate pitch order only: they require distinct quiet gaps and return uncertain for missing or extra attacks, unsuitable input, changing pitch or delayed capture. They do not score rhythm, muting quality, tone or technique. All waveform frames and results remain temporary in the tab; no new evidence method, mastery rule, account upload or cloud rule was added. The interface labels the segmented checks experimental until real guitar and phone input can be tried.
-
-The longer card initially exposed hidden controls to the phone layout, leaving Strengthen's final button behind its bottom navigation. A closed microphone disclosure now removes its body from layout; collapsing it during a check also closes the microphone. The regression suite covers narrow phones and 200% zoom as well as stream closure. Synthetic signal checks cover E–E and E–G–E, a wrong middle note, a continuous pitch slide, missing and extra sounds, clipping, noise, silence and delayed capture.
-
-**Verification:** 306 unit/interface tests across 45 files passed; 88 desktop and phone-sized Chromium checks passed, with two production-only checks skipped in development mode. Build, lint, formatting, guest-bundle and offline-shell checks passed. The browser microphone is simulated. No real guitar, microphone hardware, physical phone, independent learner trial, CI run or deployment is claimed. See the [Phase 5 gate review](reviews/2026-09-30-phase-5-gate.md) for the remaining real-input, review-to-retry, delayed-learning and evidence decisions. George confirmed the guitar and Pixel were unavailable during this package, so the assessment gate cannot honestly be closed yet.
-
----
-
-## Phases 6–8 entry package — two lesson drafts, release-document repair and extension decisions (30 September 2026)
-
-**Status: preparatory work only. Phase 6 curriculum, Phase 7 evaluation/release and Phase 8 feature admission remain open.**
-
-Phase 6 now has two unshipped, versioned teaching drafts in `apps/current/src/v8/phase6Drafts.ts`: an E–G/E–G♯ one-fret third comparison with reversed-order variation, and a C-to-Am common-tone chord change with a two-count phrase. Their exact notes or voicings, timings, tempo ranges, cue fading, obstacle repairs and later recall prompts are written down. The first uses the existing monophonic score schema. The second is deliberately separate because the live pilot player cannot represent polyphonic chords. A validator checks guitar-note mappings, chord tone sets and phrase continuity, and tests catch a wrong chord fret and a timeline gap. Neither draft is wired into Learn, reviewed on a guitar, or presented as completed curriculum. The other 47 units beyond the live Unit 1 pilot remain outlines; no bulk-authoring batch has passed its gate.
-
-Phase 7 documentation was reconciled where it overstated general streak/expanding review, secure playing mastery and timing-aware microphone assessment. The learning model, architecture, current-app README, development guide and future-feature wording now describe the narrower behaviour. An initial static import review found the older UI outside the live entry graph and confirmed the new drafts are unreachable by design. This is a candidate cleanup map, not deletion proof; no application code was moved. Real-input, learner, full-suite, physical-device, CI and release checks remain open.
-
-Phase 8's four optional ideas have a provisional admission order and concrete experiments in the [entry review](reviews/2026-09-30-phases-6-8-entry.md). No extension was built or silently promoted into core scope. The no-guitar companion is especially relevant while George lacks his instrument, but it cannot be judged by guitar-free clicks alone; its handoff to later physical use is the test.
-
-**Local verification:** 309 unit/interface tests across 46 files and their coverage run passed, as did the production build, lint, formatting, guest-entry bundle and offline-shell checks. The full desktop/phone-sized browser suite passed 88 checks, with two production-only checks skipped in development mode. The build is unchanged at runtime because both lesson drafts are unreferenced. The Firebase rules suite could not start without Java on this machine. No guitar, physical phone, independent learner, emulator, CI, deployment or live-account evidence is claimed. The existing Phase 5 gate remains open.
-
-## Name — Interval (30 September 2026)
-
-**Status: implemented and verified locally; released with the 1 October consolidation below.** Outside the plan: George chose the name on 26 September.
-
-The app is now called **Interval**: every note understood by its distance from another, which is the relationship-first method it teaches. All learner-facing text, the page title, the web-app manifest and the wordmark use it, and the wordmark carries the By George full stop (answering the question left by the design-system entry above). The icon is redrawn in the new palette: two notes on two strings joined by a line, on paper. Storage keys, the IndexedDB name, the `.guitar-academy` backup extension, the icon file names and the live address are unchanged, so nothing on a learner's device moves.
-
-This replaces the earlier `design/by-george-look` branch, whose separate "Paper" skin and look switch were superseded by the design-system entry above; only the name, icon and full stop were carried over.
-
-**Verification:** 296 unit/interface tests across 43 files; lint, formatting, build, guest-bundle (377.3 KiB) and offline-shell (1262.0 KiB, down from 1273.4 with the lighter icons) checks passed. The browser run passed 84 desktop/phone Chromium checks with two workers (two production-only checks skipped), and both production-only checks plus the font check passed against a production preview. One earlier run of the same suite had a single failure that did not recur, consistent with the known accessibility-scan timeout noted above. Not verified: an installed phone app picking up the new name and icon.
-
-## Release consolidation (1 October 2026)
-
-**Status: one release line again — `main` holds every finished piece of work; only Phase 6 work in progress lives outside it.**
-
-A cloud session published the By George redesign straight to GitHub on 29 September while local work continued on `codex/phase-5-evidence-feedback`, built on the version before it. This consolidation brings the two lines together on `main`: the redesign, the Interval name and its documentation, Phase 5E–5G, and the Phases 6–8 entry package (its lesson drafts are data and tests only; nothing in the app uses them yet). The new self-review form, review history, review cue, Strengthen route and pitch-check modes are restyled in the design system in place of their old `app.css` rules. `AGENTS.md` now tells every session to fetch and compare with `origin/main` before starting, and the full WCAG browser scan has a 90-second limit because it could pass 30 seconds under two workers without any violation.
-
-Dependencies: the Firebase SDK (12.16 → 12.19), Firebase CLI (15.30 → 15.32) and rules-testing package were refreshed within their existing version ranges, with `npm audit fix` for transitive fixes; audit findings fell from 19 to 14. The remainder have no upstream fix yet: Firestore pins a Node-only gRPC library that is not part of the browser build, and the rest sit inside the Firebase CLI's development tooling. Larger version jumps (TypeScript 7, Vitest 5) were deliberately left for a planned upgrade.
-
-Housekeeping: merged branches (`codex/phase-4-connected-journey`, `codex/public-hardening`, the superseded `design/by-george-look`) and a 26 September stash whose edits were already in `main` in later form are removed.
-
-**Verification (after the dependency refresh):** 309 unit/interface tests across 46 files; lint, formatting, build, guest-bundle (385.4 KiB) and offline-shell (1266.6 KiB raw against the 1280 KiB review threshold) checks passed. 88 desktop/phone Chromium browser checks passed with two workers (two production-only checks skipped), and both production-only offline checks and the font check passed against a production preview. Not verified: Google sign-in and cloud sync against the refreshed SDK (no live account in the test environment), Firebase rules tests (no Java 21 here), real guitar and phone input, and an installed phone app picking up the new name and icon.
-
-**Next:** Phase 6 continues on its own branch, which first takes in this `main` (a fast-forward; the redesign does not touch the files being edited there). After publishing, sign in once on the phone to confirm sync with the refreshed SDK. The offline shell is within about 14 KiB of its review threshold, so the next asset growth should prompt that review.
+Known test fragility, not caused by these packages: two Phase 5 tests (`pilotProgress.test.ts`, `capabilities.test.ts`) fail when run in time zones far from UTC (Auckland, Los Angeles); CI and London pass. Worth fixing in Package 9, along with a React hooks lint rule (the lesson player's hook-order defect in Batch 1 would have been caught by one).

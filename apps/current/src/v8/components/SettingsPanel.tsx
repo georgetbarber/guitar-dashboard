@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { cancelRestore, clearStoredRecordings, exportArchive, prepareRestore, requestPersistentStorage, retainedRecordingBytes, storageEstimate, storagePersistenceStatus } from "../repository";
 import type { RestorePreview } from "../repository";
 import { useCloudSync } from "../cloudFacade";
@@ -8,8 +8,12 @@ import { MODE_OPTIONS, TONAL_ROOTS } from "../validation";
 import { useUpdateHold } from "./UpdateNotice";
 import { Modal } from "./Modal";
 
-export function SettingsPanel({ onClose }: { onClose: () => void }) {
-  const { state, dispatch, workspaceId, restoreWorkspace } = useV8Store();
+const ChecksView = lazy(() => import("./ChecksView").then((module) => ({ default: module.ChecksView })));
+const FeedbackView = lazy(() => import("./FeedbackView").then((module) => ({ default: module.FeedbackView })));
+
+export function SettingsPanel({ onClose, initialView = "main" }: { onClose: () => void; initialView?: "main" | "checks" | "feedback" }) {
+  const { state, dispatch, workspaceId, restoreWorkspace, navigate } = useV8Store();
+  const [view, setView] = useState(initialView);
   const [restore, setRestore] = useState<RestorePreview | null>(null);
   const [restoreBusy, setRestoreBusy] = useState<"preparing" | "restoring" | "cancelling" | null>(null);
   // A staged restore is durable, but reloading mid-activation would discard it
@@ -55,6 +59,19 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
     <Modal className="settings-backdrop" labelledBy="settings-title" onRequestClose={close} closeOnBackdrop>
       <section className="settings-panel">
         <header><div><span>Device and account settings</span><h2 id="settings-title">Your instrument, sync and storage</h2></div><button className="icon-button" onClick={close} aria-label="Close settings" data-autofocus>×</button></header>
+        {view !== "main" && <Suspense fallback={<p role="status">Opening…</p>}>
+          {view === "checks"
+            ? <ChecksView onBack={() => setView("main")} onGo={(route) => { onClose(); navigate(route); }} />
+            : <FeedbackView onBack={() => setView("main")} />}
+        </Suspense>}
+        {view === "main" && <>
+        <section className="notes-panel-links" aria-label="Your notes and checks">
+          <div><span className="eyebrow">Your notes and checks</span><p>Lessons written by an agent show “Not yet checked on a guitar” until you mark them as checked.</p></div>
+          <div className="action-row">
+            <button className="secondary-action" onClick={() => setView("checks")}>Things to check · {(state.checklistTicks ?? []).filter((tick) => tick.done).length} ticked</button>
+            <button className="secondary-action" onClick={() => setView("feedback")}>Feedback · {(state.feedbackNotes ?? []).filter((note) => !note.resolvedAt).length} open</button>
+          </div>
+        </section>
         <section className={`sync-panel sync-${cloud.status}`} aria-label="Device synchronisation">
           <div><span className="eyebrow">Across your devices</span><h3>{cloud.user ? `Signed in as ${cloud.user.email ?? "your Google account"}` : cloud.configured ? "Sign in to synchronise" : "Sync is not set up"}</h3><p>{cloud.message}</p></div>
           {cloud.user ? <button className="secondary-action" disabled={Boolean(restore || restoreBusy)} onClick={() => { if (confirm("Sign out and open this device's separate guest workspace? The signed-in account's offline history will remain isolated on this device.")) void cloud.signOut(); }}>Sign out</button> : cloud.configured ? <button className="primary-action" disabled={Boolean(restore || restoreBusy)} onClick={() => void cloud.signIn().catch(() => undefined)}>{cloud.signInReady ? "Open Google sign-in" : "Prepare Google sign-in"}</button> : null}
@@ -159,6 +176,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             <div><dt>Window</dt><dd>{standalone ? "Installed app window" : "Browser tab"}</dd></div>
           </dl>
         </details>
+        </>}
       </section>
     </Modal>
   );
